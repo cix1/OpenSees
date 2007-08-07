@@ -35,7 +35,8 @@ class InelasticYS2DGNL : public UpdatedLagrangianBeam2D
 
   void createView(char *title, double scale, int x, int y, int cx, int cy, char displaytype = 'l');
 
-	virtual Response *setResponse(const char **argv, int argc);
+	virtual Response *setResponse(const char **argv, int argc,
+									Information &eleInformation);
 	virtual int getResponse(int responseID, Information &eleInformation);
 
  protected:

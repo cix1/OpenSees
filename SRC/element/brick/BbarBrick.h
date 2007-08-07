@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-06-27 00:24:34 $
+// $Revision: 1.10 $
+// $Date: 2006-08-04 21:25:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/brick/BbarBrick.h,v $
 
 // Ed "C++" Love
@@ -108,11 +108,8 @@ class BbarBrick : public Element {
     int recvSelf (int commitTag, Channel &theChannel, FEM_ObjectBroker 
 		  &theBroker);
       
-    Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &s);
     int getResponse(int responseID, Information &eleInformation);
-
-    int setParameter(const char **argv, int argc, Parameter &param);
-    int updateParameter(int parameterID, Information &info);
 
     //plotting 
     int displaySelf(Renderer &theViewer, int displayMode, float fact);

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.11 $
-// $Date: 2007-05-17 05:17:51 $
+// $Revision: 1.9 $
+// $Date: 2004-11-24 23:58:15 $
 // $Source: /usr/local/cvs/OpenSees/SRC/tcl/TclFeViewer.cpp,v $
                                                                         
 // Written: fmk 
@@ -40,18 +40,12 @@
 #include <Node.h>
 #include <NodeIter.h>
 
-#include <Renderer.h>
-
-#ifndef _NOGRAPHICS
-
 #ifdef _WGL
 #include <OpenGLRenderer.h>
 #elif _GLX
 #include <OpenGLRenderer.h>
 #else
 #include <X11Renderer.h>
-#endif
-
 #endif
 
 #include <PlainMap.h>
@@ -106,19 +100,7 @@ TclFeViewer_clearImage(ClientData clientData, Tcl_Interp *interp, int argc,
 		  TCL_Char **argv);		 
 //
 // the class constructor, destructor and methods
-
-
 //
-
-TclFeViewer::TclFeViewer()
-  :Recorder(RECORDER_TAGS_TclFeViewer),
-  theMap(0),theRenderer(0), theDomain(0), 
-  theEleMode(-1), theNodeMode(-1), theDisplayFact(1), wipeFlag(0),
-  vrpSet(0),vpwindowSet(0),clippingPlaneDistancesSet(0)
-{
-  theTclFeViewer = 0;
-  theMap = 0;
-}
 
 TclFeViewer::TclFeViewer(const char *title, int xLoc, int yLoc, int width, int height,
 			 Domain &_theDomain, int WipeFlag,
@@ -133,8 +115,6 @@ TclFeViewer::TclFeViewer(const char *title, int xLoc, int yLoc, int width, int h
   theTclFeViewer = this;
   theMap = new PlainMap();
 
-#ifndef _NOGRAPHICS
-
 #ifdef _WGL
   theRenderer = new OpenGLRenderer(title, xLoc, yLoc, width, height, *theMap);
 #elif _GLX
@@ -143,9 +123,8 @@ TclFeViewer::TclFeViewer(const char *title, int xLoc, int yLoc, int width, int h
   theRenderer = new X11Renderer(title, xLoc, yLoc, width, height, *theMap);
 #endif
 
-#endif
   
-  // Call Tcl_CreateCommand for class specific commands
+  // call Tcl_CreateCommand for class specific commands
   Tcl_CreateCommand(interp, "vrp", TclFeViewer_setVRP,
 		    (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
@@ -198,9 +177,6 @@ TclFeViewer::TclFeViewer(const char *title, int xLoc, int yLoc, int width, int h
   // set the static pointer used in the class
   theTclFeViewer = this;
   theMap = new PlainMap();
-
-#ifndef _NOGRAPHICS
-
 #ifdef _WGL
   theRenderer = new OpenGLRenderer(title, xLoc, yLoc, width, height, *theMap, 0, fileName);
 #elif _GLX
@@ -208,9 +184,6 @@ TclFeViewer::TclFeViewer(const char *title, int xLoc, int yLoc, int width, int h
 #else
   theRenderer = new X11Renderer(title, xLoc, yLoc, width, height, *theMap, fileName);
 #endif
-
-#endif
-
   // call Tcl_CreateCommand for class specific commands
   Tcl_CreateCommand(interp, "vrp", TclFeViewer_setVRP,
 		    (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
@@ -254,28 +227,14 @@ TclFeViewer::~TclFeViewer()
   // may possibly invoke Tcl_DeleteCommand() later
   // for moment just invoke destructor on map and renderer
   // and set pointer to NULL
-  if (theMap != 0)
-    delete theMap;
-
-  if (theRenderer != 0)
-    delete theRenderer;
-
+  delete theMap;
+  delete theRenderer;
   theTclFeViewer = 0;  
 }
     
 int 
 TclFeViewer::record(int cTag, double timeStamp)
 {
-
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
-
-  if (theRenderer == 0)
-    return 0;
-
-
   //  theRenderer->displayModel(thetheEleMode, theNodeMode, theDisplayFact);
 
   // loop over the elements getting each to display itself
@@ -347,7 +306,6 @@ TclFeViewer::record(int cTag, double timeStamp)
   theRenderer->doneImage();
 
   return res;
-#endif
 }
 
 int 
@@ -366,174 +324,97 @@ TclFeViewer::restart(void)
 int
 TclFeViewer::setVRP(float xLoc, float yLoc , float zLoc)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
-
   int ok =  theRenderer->setVRP(xLoc, yLoc, zLoc);
   if (ok == 0)
     vrpSet = 1;
 
   return ok;
-#endif
+
 }
 
 int
 TclFeViewer::setVPN(float xdirn, float ydirn, float zdirn)
 {
-#ifdef _NOGRAPHICS
-
-  // if no graphics .. just return 0
-  return 0;
-
-#else
-
-  // view plane normal
-  return theRenderer->setVPN(xdirn, ydirn, zdirn);
-
-#endif
+    // view plane normal
+    return theRenderer->setVPN(xdirn, ydirn, zdirn);
 }
 
 int
 TclFeViewer::setVUP(float xdirn, float ydirn, float zdirn)
 {
-#ifdef _NOGRAPHICS
-
-  // if no graphics .. just return 0
-  return 0;
-
-#else
-
   return theRenderer->setVUP(xdirn, ydirn, zdirn);
-
-#endif
 }    
 
 int
 TclFeViewer::setViewWindow(float uMin, float uMax, float vMin, float vMax)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
-
   int ok = theRenderer->setViewWindow(uMin, uMax, vMin, vMax);
   if (ok == 0)
     vpwindowSet = 1;
 
   return ok;
-
-#endif
 }        
 
 int
 TclFeViewer::setPlaneDist(float anear, float afar)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
-
   int ok = theRenderer->setPlaneDist(anear,afar);
   if (ok == 0)
     clippingPlaneDistancesSet = 1;
   return ok;
-
-#endif
 }            
 
 int
 TclFeViewer::setProjectionMode(const char *mode)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
-  return theRenderer->setProjectionMode(mode);
-#endif
+    return theRenderer->setProjectionMode(mode);
 }                
 
 int
 TclFeViewer::setFillMode(const char *mode)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->setFillMode(mode);
-#endif
 }                
 
 int
 TclFeViewer::setPRP(float uLoc, float vLoc , float nLoc)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->setPRP(uLoc, vLoc, nLoc);
-#endif
 }
     
     
 int
 TclFeViewer::setPortWindow(float left, float right, float bottom, float top)
 {     
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->setPortWindow(left,right,bottom,top);    
-#endif
 }
 
 int
 TclFeViewer::displayModel(int eleFlag, int nodeFlag, float displayFact)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   // methods invoked on the FE_Viewer
   theEleMode = eleFlag;
   theNodeMode = nodeFlag;    
   theDisplayFact = displayFact;    
   return this->record(0, 0.0);
-#endif
 }
 
 int
 TclFeViewer::clearImage(void)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->clearImage();
-#endif
 }
 
 int
 TclFeViewer::saveImage(const char *fileName)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->saveImage(fileName);
-#endif
 }
 
 int
 TclFeViewer::saveImage(const char *imageName, const char *fileName)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return 0;
-#else
   return theRenderer->saveImage(imageName, fileName);
-#endif
 }
     
 
@@ -543,10 +424,6 @@ int
 TclFeViewer_setVRP(ClientData clientData, Tcl_Interp *interp, int argc, 
 		   TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -574,17 +451,12 @@ TclFeViewer_setVRP(ClientData clientData, Tcl_Interp *interp, int argc,
   
   theTclFeViewer->setVRP(xLoc,yLoc,zLoc);
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setVPN(ClientData clientData, Tcl_Interp *interp, int argc, 
 		   TCL_Char **argv)
 {  
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -612,17 +484,12 @@ TclFeViewer_setVPN(ClientData clientData, Tcl_Interp *interp, int argc,
   
   theTclFeViewer->setVPN(xDirn,yDirn,zDirn);
   return 0;
-#endif
 }
 
 int
 TclFeViewer_setVUP(ClientData clientData, Tcl_Interp *interp, int argc, 
 		   TCL_Char **argv)
 {  
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -650,17 +517,12 @@ TclFeViewer_setVUP(ClientData clientData, Tcl_Interp *interp, int argc,
   
   theTclFeViewer->setVUP(xDirn,yDirn,zDirn);
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setViewWindow(ClientData clientData, Tcl_Interp *interp, int argc, 
 		   TCL_Char **argv)
 {  
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -691,17 +553,11 @@ TclFeViewer_setViewWindow(ClientData clientData, Tcl_Interp *interp, int argc,
   
   theTclFeViewer->setViewWindow(uMin,uMax,vMin,vMax);
   return TCL_OK;    
-#endif
 }
 int
 TclFeViewer_setPlaneDist(ClientData clientData, Tcl_Interp *interp, int argc, 
 			 TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -724,18 +580,12 @@ TclFeViewer_setPlaneDist(ClientData clientData, Tcl_Interp *interp, int argc,
 
   theTclFeViewer->setPlaneDist(anear, afar);    
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setProjectionMode(ClientData clientData, Tcl_Interp *interp, int argc, 
 			      TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -749,18 +599,12 @@ TclFeViewer_setProjectionMode(ClientData clientData, Tcl_Interp *interp, int arg
   // set the mode
   theTclFeViewer->setProjectionMode(argv[1]);    
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setFillMode(ClientData clientData, Tcl_Interp *interp, int argc, 
 			TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -774,18 +618,12 @@ TclFeViewer_setFillMode(ClientData clientData, Tcl_Interp *interp, int argc,
   // set the mode
   theTclFeViewer->setFillMode(argv[1]);    
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setPRP(ClientData clientData, Tcl_Interp *interp, int argc, 
 		   TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -813,18 +651,12 @@ TclFeViewer_setPRP(ClientData clientData, Tcl_Interp *interp, int argc,
   
   theTclFeViewer->setPRP(xLoc,yLoc,zLoc);
   return TCL_OK;  
-#endif
 }
 
 int
 TclFeViewer_setPortWindow(ClientData clientData, Tcl_Interp *interp, int argc, 
 			  TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -855,18 +687,12 @@ TclFeViewer_setPortWindow(ClientData clientData, Tcl_Interp *interp, int argc,
 
   theTclFeViewer->setPortWindow(uMin,uMax,vMin,vMax);    
   return TCL_OK;
-#endif
 }
 
 int
 TclFeViewer_displayModel(ClientData clientData, Tcl_Interp *interp, int argc, 
 			  TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -911,7 +737,6 @@ TclFeViewer_displayModel(ClientData clientData, Tcl_Interp *interp, int argc,
       theTclFeViewer->displayModel(eleFlag, nodeFlag, displayFact);
       return TCL_OK;    
   }
-#endif
 }
 
 
@@ -920,29 +745,18 @@ int
 TclFeViewer_clearImage(ClientData clientData, Tcl_Interp *interp, int argc, 
 		       TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
   
   theTclFeViewer->clearImage();
   return TCL_OK;
-#endif
 }
 
 int
 TclFeViewer_saveImage(ClientData clientData, Tcl_Interp *interp, int argc, 
 		      TCL_Char **argv)
 {
-#ifdef _NOGRAPHICS
-  // if no graphics .. just return 0
-  return TCL_OK;
-#else
-
   // check destructor has not been called
   if (theTclFeViewer == 0)
       return TCL_OK;    
@@ -978,18 +792,8 @@ TclFeViewer_saveImage(ClientData clientData, Tcl_Interp *interp, int argc,
   }
 
   return TCL_OK;
-#endif
 }
 
 
-int 
-TclFeViewer::sendSelf(int commitTag, Channel &theChannel)
-{
-  return 0;
-}     
 
-int 
-TclFeViewer::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
-{
-  return 0;
-}
+

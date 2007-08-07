@@ -18,20 +18,18 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-07-27 19:23:04 $
+// $Revision: 1.4 $
+// $Date: 2006-08-04 22:22:37 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/joint/BeamColumnJoint2d.cpp,v $
                                                                         
 // Written: NM (nmitra@u.washington.edu)
 // Created: April 2002
-// Last Revised: January 2007
+// Revised: August 2004
 //
 // Description: This file contains the class implementation for beam-column joint.
-// This element is a 4 noded 12 dof (3 dof at each node) finite area super-element.
-// The element takes in 13 different material types in order to simulate
+// This element is a 4 noded 12 dof (3 dof at each node) finite area super-element introduced by
+// Prof. Lowes and Arash. The element takes in 13 different material types in order to simulate
 // the inelastic action observed in a reinforced beam column joint.
-// Details about this element can be found in 
-// Mitra and Lowes, J. Struct. Eng. ASCE, Volume 133, Number 1 (January 2007), pp. 105-120
 // Updates: Several concerning Joint formulation (presently a revised formulation for joints)
 
 
@@ -340,8 +338,8 @@ BeamColumnJoint2d::setDomain(Domain *theDomain)
 	Node3 = Node3 - Node1;
 	Node2 = Node2 - Node4;
 
-	double beam = HgtFac; //1.0;
-	double col = WdtFac; //1.0;
+	double beam = 1.0; //HgtFac;
+	double col = 1.0; //WdtFac;
 
 	elemActHeight = fabs(Node3.Norm());
 	elemActWidth = fabs(Node2.Norm());
@@ -546,21 +544,12 @@ void BeamColumnJoint2d::getGlobalDispls(Vector &dg)
 
 			getMatResponse(u,fSpring,kSpring);		
 
-/*		// performs internal equilibrium (formulation 2)
+		// performs internal equilibrium 
 
 		intEq(0) = -fSpring(2)-fSpring(3)+fSpring(9)-fSpring(12)/elemHeight; 
 		intEq(1) = fSpring(1)-fSpring(5)-fSpring(7)+fSpring(12)/elemWidth; 
 		intEq(2) = -fSpring(4)-fSpring(8)+fSpring(10)+fSpring(12)/elemHeight; 
 		intEq(3) = fSpring(0)-fSpring(6)-fSpring(11)-fSpring(12)/elemWidth; 
-*/
-
-		// performs internal equilibrium (formulation 3) Oct 19, 2004
-
-		intEq(0) = -fSpring(2)-((1+HgtFac)/2)*(fSpring(3)-fSpring(9))-((1-HgtFac)/2)*(fSpring(4)-fSpring(10))-fSpring(12)/elemActHeight; 
-		intEq(1) = ((1-WdtFac)/2)*(fSpring(0)-fSpring(6))+((1+WdtFac)/2)*(fSpring(1)-fSpring(7))-fSpring(5)+fSpring(12)/elemActWidth; 
-		intEq(2) = -((1+HgtFac)/2)*(fSpring(4)-fSpring(10))-((1-HgtFac)/2)*(fSpring(3)-fSpring(9))-fSpring(8)+fSpring(12)/elemActHeight; 
-		intEq(3) = ((1+WdtFac)/2)*(fSpring(0)-fSpring(6))+((1-WdtFac)/2)*(fSpring(1)-fSpring(7))-fSpring(11)-fSpring(12)/elemActWidth; 
-
 
 		df_dDef.Zero();
 		matDiag(kSpring, df_dDef);
@@ -723,9 +712,8 @@ void BeamColumnJoint2d::getGlobalDispls(Vector &dg)
 
 void BeamColumnJoint2d::getMatResponse(Vector U, Vector &fS, Vector &kS)
 {
-// formulation 2 (abandoned Oct 19, 2004)
-//	double jh = HgtFac;            // factor for beams
-//	double jw = WdtFac;            // factor for column
+	double jh = HgtFac;            // factor for beams
+	double jw = WdtFac;            // factor for column
 
 	// obtains the material response from the material class
 	Vector defSpring(13);
@@ -735,7 +723,6 @@ void BeamColumnJoint2d::getMatResponse(Vector U, Vector &fS, Vector &kS)
 
 	defSpring.addMatrixVector(0.0, BCJoint, U, 1.0);
 
-/*  // formulation 2 (abandoned Oct 19, 2004)
 	// slip @ bar = slip @ spring * tc couple
 
 	defSpring(0) = defSpring(0)*jw;                   // new model applied on 
@@ -747,7 +734,7 @@ void BeamColumnJoint2d::getMatResponse(Vector U, Vector &fS, Vector &kS)
 	defSpring(4)  = defSpring(4)*jh;                  // similar case done for width
 	defSpring(9) = defSpring(9)*jh;
 	defSpring(10) = defSpring(10)*jh;
-*/
+
 	for (int j=0; j<13; j++)
 	{
 		MaterialPtr[j]->setTrialStrain(defSpring(j));
@@ -755,7 +742,6 @@ void BeamColumnJoint2d::getMatResponse(Vector U, Vector &fS, Vector &kS)
 		fS(j) = MaterialPtr[j]->getStress();
 	}
 
-/*  // formulation 2
 	// force @ spring = force @ bar * tc couple
 
 	fS(0) = fS(0)*jw;
@@ -779,7 +765,7 @@ void BeamColumnJoint2d::getMatResponse(Vector U, Vector &fS, Vector &kS)
 	kS(4) = kS(4)*jh*jh;
 	kS(9) = kS(9)*jh*jh;
 	kS(10) = kS(10)*jh*jh;
-*/
+
 }
 
 void BeamColumnJoint2d::getdDef_du()
@@ -885,8 +871,6 @@ void BeamColumnJoint2d::formK(Vector k)
 void BeamColumnJoint2d::getdg_df()
 {
 		dg_df.Zero();        // basically derivative of intEq
-
-/*      // formulation 2
 		dg_df(0,2) = -1;
 		dg_df(0,3) = -1;
 		dg_df(0,9) = 1;
@@ -903,85 +887,55 @@ void BeamColumnJoint2d::getdg_df()
 		dg_df(3,6) = -1;
 		dg_df(3,11) = -1;
 		dg_df(3,12) = -1/elemWidth;
-*/
-
-      // formulation 3 (Oct 19, 2004)
-		dg_df(0,2) = -1;
-		dg_df(0,3) = -(1+HgtFac)/2;
-		dg_df(0,4) = -(1-HgtFac)/2;
-		dg_df(0,9) =  (1+HgtFac)/2;
-		dg_df(0,10) = (1-HgtFac)/2;
-		dg_df(0,12) = -1/elemActHeight; 
-		dg_df(1,0) = (1-WdtFac)/2;
-		dg_df(1,1) = (1+WdtFac)/2;
-		dg_df(1,5) = -1;
-		dg_df(1,6) = -(1-WdtFac)/2;
-		dg_df(1,7) = -(1+WdtFac)/2;
-		dg_df(1,12) = 1/elemActWidth;
-		dg_df(2,3) = -(1-HgtFac)/2;
-		dg_df(2,4) = -(1+HgtFac)/2;
-		dg_df(2,8) = -1;
-		dg_df(2,9) = (1-HgtFac)/2;
-		dg_df(2,10) = (1+HgtFac)/2;	
-		dg_df(2,12) = 1/elemActHeight;
-		dg_df(3,0) = (1+WdtFac)/2;
-		dg_df(3,1) = (1-WdtFac)/2;
-		dg_df(3,6) = -(1+WdtFac)/2;
-		dg_df(3,7) = -(1-WdtFac)/2;
-		dg_df(3,11) = -1;
-		dg_df(3,12) = -1/elemActWidth;
-
 
 }
 
 void BeamColumnJoint2d::getBCJoint() 
 {
 	BCJoint.Zero();                  // basically the transformation matrix for the element
-
-// changes incorporated for formulation 3 (previously it was done @ Formulation 2) dt. Oct 19, 2004
 	BCJoint(0,1) =  -1;
 	BCJoint(0,2) =  elemWidth/2;
-	BCJoint(0,13) = (1-WdtFac)/2; BCJoint(0,15) = (1+WdtFac)/2; //BCJoint(0,15) = 1;
+	BCJoint(0,15) = 1;
 	BCJoint(1,1) =  -1;
 	BCJoint(1,2) =  -elemWidth/2;
-	BCJoint(1,13) = (1+WdtFac)/2; BCJoint(1,15) = (1-WdtFac)/2; //BCJoint(1,13) = 1;
+	BCJoint(1,13) = 1;
 	BCJoint(2,0) =  1;
 	BCJoint(2,12) = -1;
 	BCJoint(3,3) =  1;
 	BCJoint(3,5) =  elemHeight/2;
-	BCJoint(3,12) = -(1+HgtFac)/2; BCJoint(3,14) = -(1-HgtFac)/2; //BCJoint(3,12) = -1;
+	BCJoint(3,12) = -1;
 	BCJoint(4,3) = 1;
 	BCJoint(4,5) = -elemHeight/2;
-	BCJoint(4,12) = -(1-HgtFac)/2; BCJoint(4,14) = -(1+HgtFac)/2; //BCJoint(4,14) = -1;
+	BCJoint(4,14) = -1;
 	BCJoint(5,4) = 1;
 	BCJoint(5,13) = -1;
 	BCJoint(6,7) =  1;
 	BCJoint(6,8) =  -elemWidth/2;
-	BCJoint(6,13) = -(1-WdtFac)/2; BCJoint(6,15) = -(1+WdtFac)/2; //BCJoint(6,15) = -1;
+	BCJoint(6,15) = -1;
 	BCJoint(7,7) =  1;
 	BCJoint(7,8) =  elemWidth/2;
-	BCJoint(7,13) = -(1+WdtFac)/2; BCJoint(7,15) = -(1-WdtFac)/2; //BCJoint(7,13) = -1;
+	BCJoint(7,13) = -1;
 	BCJoint(8,6) =  1;
 	BCJoint(8,14) = -1;
 	BCJoint(9,9) =  -1;
 	BCJoint(9,11) =  -elemHeight/2;
-	BCJoint(9,12) = (1+HgtFac)/2; BCJoint(9,14) = (1-HgtFac)/2; //BCJoint(9,12) = 1;
+	BCJoint(9,12) = 1;
 	BCJoint(10,9) = -1;
 	BCJoint(10,11) = elemHeight/2;
-	BCJoint(10,12) = (1-HgtFac)/2; BCJoint(10,14) = (1+HgtFac)/2; //BCJoint(10,14) = 1;
+	BCJoint(10,14) = 1;
 	BCJoint(11,10) = 1;
 	BCJoint(11,15) = -1;
-	BCJoint(12,12) = -1/elemActHeight; //BCJoint(12,12) = -1/elemHeight;
-	BCJoint(12,13) = 1/elemActWidth; //BCJoint(12,13) = 1/elemWidth;
-	BCJoint(12,14) = 1/elemActHeight; //BCJoint(12,14) = 1/elemHeight;
-	BCJoint(12,15) = -1/elemActWidth; //BCJoint(12,15) = -1/elemWidth;
+	BCJoint(12,12) = -1/elemHeight;
+	BCJoint(12,13) = 1/elemWidth;
+	BCJoint(12,14) = 1/elemHeight;
+	BCJoint(12,15) = -1/elemWidth;
 
-/*	// based upon the new formulation (formulation 1 & 2)
+	// based upon the new formulation 
 	BCJoint(2,2) = -(elemActHeight - elemHeight)/2;
 	BCJoint(5,5) = -(elemActWidth - elemWidth)/2;
-	BCJoint(8,8) = (elemActHeight - elemHeight)/2;
-	BCJoint(11,11) = (elemActWidth - elemWidth)/2;
-*/
+	BCJoint(8,8) = (elemActHeight - elemHeight)/2;;
+	BCJoint(11,11) = (elemActWidth - elemWidth)/2;;
+
 }
 
 double BeamColumnJoint2d::getStepSize(double s0,double s1,Vector uExt,Vector duExt,Vector uInt,Vector duInt,double tol)
@@ -1035,20 +989,10 @@ double BeamColumnJoint2d::getStepSize(double s0,double s1,Vector uExt,Vector duE
 
 		getMatResponse(u,fSpr,kSpr);
 
-/*      // formualtion 2 (abandoned Oct 19 2004)
-
 		intEq(0) = -fSpr(2) - fSpr(3) + fSpr(9) - fSpr(12)/elemHeight;
 		intEq(1) = fSpr(1) - fSpr(5) - fSpr(7) + fSpr(12)/elemWidth;
 		intEq(2) = -fSpr(4) - fSpr(8) + fSpr(10) + fSpr(12)/elemHeight;
 		intEq(3) = fSpr(0) - fSpr(6) - fSpr(11) - fSpr(12)/elemWidth;
-*/
-
-
-//      formulation 3
-		intEq(0) = -fSpr(2)-((1+HgtFac)/2)*(fSpr(3)-fSpr(9))-((1-HgtFac)/2)*(fSpr(4)-fSpr(10))-fSpr(12)/elemActHeight; 
-		intEq(1) = ((1-WdtFac)/2)*(fSpr(0)-fSpr(6))+((1+WdtFac)/2)*(fSpr(1)-fSpr(7))-fSpr(5)+fSpr(12)/elemActWidth; 
-		intEq(2) = -((1+HgtFac)/2)*(fSpr(4)-fSpr(10))-((1-HgtFac)/2)*(fSpr(3)-fSpr(9))-fSpr(8)+fSpr(12)/elemActHeight; 
-		intEq(3) = ((1+WdtFac)/2)*(fSpr(0)-fSpr(6))+((1-WdtFac)/2)*(fSpr(1)-fSpr(7))-fSpr(11)-fSpr(12)/elemActWidth; 
 
 		sU = duInt^intEq;
 
@@ -1082,16 +1026,10 @@ double BeamColumnJoint2d::getStepSize(double s0,double s1,Vector uExt,Vector duE
 
 		getMatResponse(u,fSpr,kSpr);
 
-/*		intEq(0) = -fSpr(2) - fSpr(3) + fSpr(9) - fSpr(12)/elemHeight;
+		intEq(0) = -fSpr(2) - fSpr(3) + fSpr(9) - fSpr(12)/elemHeight;
 		intEq(1) = fSpr(1) - fSpr(5) - fSpr(7) + fSpr(12)/elemWidth;
 		intEq(2) = -fSpr(4) - fSpr(8) + fSpr(10) + fSpr(12)/elemHeight;
 		intEq(3) = fSpr(0) - fSpr(6) - fSpr(11) - fSpr(12)/elemWidth;
-*/
-		// formulation 3
-		intEq(0) = -fSpr(2)-((1+HgtFac)/2)*(fSpr(3)-fSpr(9))-((1-HgtFac)/2)*(fSpr(4)-fSpr(10))-fSpr(12)/elemActHeight; 
-		intEq(1) = ((1-WdtFac)/2)*(fSpr(0)-fSpr(6))+((1+WdtFac)/2)*(fSpr(1)-fSpr(7))-fSpr(5)+fSpr(12)/elemActWidth; 
-		intEq(2) = -((1+HgtFac)/2)*(fSpr(4)-fSpr(10))-((1-HgtFac)/2)*(fSpr(3)-fSpr(9))-fSpr(8)+fSpr(12)/elemActHeight; 
-		intEq(3) = ((1+WdtFac)/2)*(fSpr(0)-fSpr(6))+((1-WdtFac)/2)*(fSpr(1)-fSpr(7))-fSpr(11)-fSpr(12)/elemActWidth; 
 
 		s = duInt^intEq;
 
@@ -1238,53 +1176,53 @@ BeamColumnJoint2d::Print(OPS_Stream &s, int flag)
 }
 
 Response*
-BeamColumnJoint2d::setResponse(const char **argv, int argc, OPS_Stream &output)
+BeamColumnJoint2d::setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &output)
 {
   // we will compare argv[0] to determine the type of response required
   
   if (strcmp(argv[0],"node1BarSlipL") == 0 || strcmp(argv[0],"node1BarslipL") ==0 || strcmp(argv[0],"Node1BarSlipL") == 0)
-    return MaterialPtr[0]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[0]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node1BarSlipR") == 0 || strcmp(argv[0],"node1BarslipR") ==0 || strcmp(argv[0],"Node1BarSlipR") == 0)
-    return MaterialPtr[1]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[1]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node1InterfaceShear") == 0 || strcmp(argv[0],"node1Interfaceshear") ==0 || strcmp(argv[0],"Node1InterfaceShear") ==0 )
-    return MaterialPtr[2]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[2]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node2BarSlipB") == 0 || strcmp(argv[0],"node2BarslipB") ==0 || strcmp(argv[0],"Node2BarSlipB") == 0)
-    return MaterialPtr[3]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[3]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node2BarSlipT") == 0 || strcmp(argv[0],"node2BarslipT") ==0 || strcmp(argv[0],"Node2BarSlipT") == 0)
-    return MaterialPtr[4]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[4]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node2InterfaceShear") == 0 || strcmp(argv[0],"node2Interfaceshear") ==0 || strcmp(argv[0],"Node2InterfaceShear") ==0 )
-    return MaterialPtr[5]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[5]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node3BarSlipL") == 0 || strcmp(argv[0],"node3BarslipL") ==0 || strcmp(argv[0],"Node3BarSlipL") == 0)
-    return MaterialPtr[6]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[6]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node3BarSlipR") == 0 || strcmp(argv[0],"node3BarslipR") ==0 || strcmp(argv[0],"Node3BarSlipR") == 0)
-    return MaterialPtr[7]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[7]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node3InterfaceShear") == 0 || strcmp(argv[0],"node3Interfaceshear") ==0 || strcmp(argv[0],"Node3InterfaceShear") ==0 )
-    return MaterialPtr[8]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[8]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node4BarSlipB") == 0 || strcmp(argv[0],"node4BarslipB") ==0 || strcmp(argv[0],"Node4BarSlipB") == 0)
-    return MaterialPtr[9]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[9]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node4BarSlipT") == 0 || strcmp(argv[0],"node4BarslipT") ==0 || strcmp(argv[0],"Node4BarSlipT") == 0)
-    return MaterialPtr[10]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[10]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"node4InterfaceShear") == 0 || strcmp(argv[0],"node4Interfaceshear") ==0 || strcmp(argv[0],"Node4InterfaceShear") ==0 )
-    return MaterialPtr[11]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[11]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   else if (strcmp(argv[0],"shearpanel") == 0 || strcmp(argv[0],"shearPanel") ==0)
-    return MaterialPtr[12]->setResponse(&argv[1], argc-1, output);
+    return MaterialPtr[12]->setResponse(&argv[1], argc-1, eleInfo, output);
   
   
   else if (strcmp(argv[0],"externalDisplacement") == 0 || strcmp(argv[0],"externaldisplacement") == 0)
     return new ElementResponse(this,1,Vector(12));
-  
+    
   else if (strcmp(argv[0],"internalDisplacement") == 0 || strcmp(argv[0],"internaldisplacement") == 0)
     return new ElementResponse(this,2,Vector(4));
   

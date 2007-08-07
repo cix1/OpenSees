@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2007-04-03 22:31:00 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:05:30 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/FEsensitivity/NewmarkSensitivityIntegrator.cpp,v $
 
 
@@ -139,7 +139,7 @@ NewmarkSensitivityIntegrator::formEleResidual(FE_Element *theEle)
 		Vector Vdotdot(vectorSize);
 		int i, loc;
 
-		AnalysisModel *myModel = this->getAnalysisModel();
+		AnalysisModel *myModel = this->getAnalysisModelPtr();
 		DOF_GrpIter &theDOFs = myModel->getDOFs();
 		DOF_Group *dofPtr;
 		while ((dofPtr = theDOFs()) != 0) {
@@ -173,16 +173,8 @@ NewmarkSensitivityIntegrator::formEleResidual(FE_Element *theEle)
 
 
 		// Pre-compute the vectors involving a2, a3, etc.
-		//Vector tmp1 = V*a2 + Vdot*a3 + Vdotdot*a4;
-		Vector tmp1(vectorSize);
-		tmp1.addVector(0.0, V, a2);
-		tmp1.addVector(1.0, Vdot, a3);
-		tmp1.addVector(1.0, Vdotdot, a4);
-		//Vector tmp2 = V*a6 + Vdot*a7 + Vdotdot*a8;
-		Vector tmp2(vectorSize);
-		tmp2.addVector(0.0, V, a6);
-		tmp2.addVector(1.0, Vdot, a7);
-		tmp2.addVector(1.0, Vdotdot, a8);
+		Vector tmp1 = V*a2 + Vdot*a3 + Vdotdot*a4;
+		Vector tmp2 = V*a6 + Vdot*a7 + Vdotdot*a8;
 
 		if (massMatrixMultiplicator == 0)
 			massMatrixMultiplicator = new Vector(tmp1.Size());
@@ -267,7 +259,7 @@ NewmarkSensitivityIntegrator::formSensitivityRHS(int passedGradNumber)
 	gradNumber = passedGradNumber;
 
 	// Get pointer to the SOE
-	LinearSOE *theSOE = this->getLinearSOE();
+	LinearSOE *theSOE = this->getLinearSOEPtr();
 
 
 	// Possibly set the independent part of the RHS
@@ -276,7 +268,7 @@ NewmarkSensitivityIntegrator::formSensitivityRHS(int passedGradNumber)
 	}
 
 	// Get the analysis model
-	AnalysisModel *theModel = this->getAnalysisModel();
+	AnalysisModel *theModel = this->getAnalysisModelPtr();
 
 
 
@@ -398,60 +390,59 @@ NewmarkSensitivityIntegrator::saveSensitivity(const Vector & vNew,int gradNum,in
 	Vector Vdotdot(vectorSize);
 	int i, loc;
 
-	AnalysisModel *myModel = this->getAnalysisModel();
+	AnalysisModel *myModel = this->getAnalysisModelPtr();
 	DOF_GrpIter &theDOFs = myModel->getDOFs();
 	DOF_Group *dofPtr;
 	while ((dofPtr = theDOFs()) != 0) {
-	  
-	  const ID &id = dofPtr->getID();
-	  int idSize = id.Size();
-	  const Vector &dispSens = dofPtr->getDispSensitivity(gradNumber);	
-	  for (i=0; i < idSize; i++) {
-	    loc = id(i);
-	    if (loc >= 0) {
-	      V(loc) = dispSens(i);		
-	    }
-	  }
-	  
-	  const Vector &velSens = dofPtr->getVelSensitivity(gradNumber);
-	  for (i=0; i < idSize; i++) {
-	    loc = id(i);
-	    if (loc >= 0) {
-	      Vdot(loc) = velSens(i);
-	    }
-	  }
-	  
-	  const Vector &accelSens = dofPtr->getAccSensitivity(gradNumber);	
-	  for (i=0; i < idSize; i++) {
-	    loc = id(i);
-	    if (loc >= 0) {
-	      Vdotdot(loc) = accelSens(i);
-	    }
-	  }
+
+		const ID &id = dofPtr->getID();
+		int idSize = id.Size();
+		const Vector &dispSens = dofPtr->getDispSensitivity(gradNumber);	
+		for (i=0; i < idSize; i++) {
+			loc = id(i);
+			if (loc >= 0) {
+				V(loc) = dispSens(i);		
+			}
+		}
+
+		const Vector &velSens = dofPtr->getVelSensitivity(gradNumber);
+		for (i=0; i < idSize; i++) {
+			loc = id(i);
+			if (loc >= 0) {
+				Vdot(loc) = velSens(i);
+			}
+		}
+
+		const Vector &accelSens = dofPtr->getAccSensitivity(gradNumber);	
+		for (i=0; i < idSize; i++) {
+			loc = id(i);
+			if (loc >= 0) {
+				Vdotdot(loc) = accelSens(i);
+			}
+		}
 	}
 
 
 	// Compute new acceleration and velocity vectors:
-	Vector vdotNew(vectorSize);
-	Vector vdotdotNew(vectorSize);
-	//(*vdotdotNewPtr) = vNew*a1 + V*a2 + Vdot*a3 + Vdotdot*a4;
-	vdotdotNew.addVector(0.0, vNew, a1);
-	vdotdotNew.addVector(1.0, V, a2);
-	vdotdotNew.addVector(1.0, Vdot, a3);
-	vdotdotNew.addVector(1.0, Vdotdot, a4);
-	//(*vdotNewPtr) = vNew*a5 + V*a6 + Vdot*a7 + Vdotdot*a8;
-	vdotNew.addVector(0.0, vNew, a5);
-	vdotNew.addVector(1.0, V, a6);
-	vdotNew.addVector(1.0, Vdot, a7);
-	vdotNew.addVector(1.0, Vdotdot, a8);
+	Vector *vNewPtr = new Vector(vectorSize);
+	Vector *vdotNewPtr = new Vector(vectorSize);
+	Vector *vdotdotNewPtr = new Vector(vectorSize);
+	(*vdotdotNewPtr) = vNew*a1 + V*a2 + Vdot*a3 + Vdotdot*a4;
+	(*vdotNewPtr) = vNew*a5 + V*a6 + Vdot*a7 + Vdotdot*a8;
+	(*vNewPtr) = vNew;
+
 
 	// Now we can save vNew, vdotNew and vdotdotNew
-	DOF_GrpIter &theDOFGrps = myModel->getDOFs();
-	DOF_Group 	*dofPtr1;
-	while ( (dofPtr1 = theDOFGrps() ) != 0)  {
-	  dofPtr1->saveSensitivity(vNew,vdotNew,vdotdotNew,gradNum,numGrads);
+    DOF_GrpIter &theDOFGrps = myModel->getDOFs();
+    DOF_Group 	*dofPtr1;
+    while ( (dofPtr1 = theDOFGrps() ) != 0)  {
+		dofPtr1->saveSensitivity(vNewPtr,vdotNewPtr,vdotdotNewPtr,gradNum,numGrads);
 	}
-	
+
+	delete vNewPtr;
+	delete vdotNewPtr;
+	delete vdotdotNewPtr;
+
 	return 0;
 }
 
@@ -462,7 +453,7 @@ NewmarkSensitivityIntegrator::commitSensitivity(int gradNum, int numGrads)
 {
 
 	// Loop through the FE_Elements and set unconditional sensitivities
-  AnalysisModel *theAnalysisModel = this->getAnalysisModel();
+	AnalysisModel *theAnalysisModel = this->getAnalysisModelPtr();
     FE_Element *elePtr;
     FE_EleIter &theEles = theAnalysisModel->getFEs();    
     while((elePtr = theEles()) != 0) {

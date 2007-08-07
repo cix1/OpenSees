@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.6 $
+// $Date: 2003-03-04 00:44:35 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/ShiftedRayleighRV.cpp,v $
 
 
@@ -41,11 +41,13 @@ ShiftedRayleighRV::ShiftedRayleighRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh)
 {
+	tag = passedTag;
 	double pi = 3.14159265358979;
 	u = 2.0 * passedStdv / sqrt(3.0*pi+4.0);
 	x0 = passedMean + passedStdv*sqrt(pi) / sqrt(3.0*pi+4.0);
+	startValue = passedStartValue;
 }
 ShiftedRayleighRV::ShiftedRayleighRV(int passedTag, 
 		 double passedParameter1,
@@ -53,19 +55,23 @@ ShiftedRayleighRV::ShiftedRayleighRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh)
 {
+	tag = passedTag ;
 	u = passedParameter1;
 	x0 = passedParameter2;
+	startValue = passedStartValue;
 }
 ShiftedRayleighRV::ShiftedRayleighRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh)
 {
+	tag = passedTag;
 	double pi = 3.14159265358979;
 	u = 2.0 * passedStdv / sqrt(3.0*pi+4.0);
 	x0 = passedMean + passedStdv*sqrt(pi) / sqrt(3.0*pi+4.0);
+	startValue = getMean();
 }
 ShiftedRayleighRV::ShiftedRayleighRV(int passedTag, 
 		 double passedParameter1,
@@ -74,9 +80,10 @@ ShiftedRayleighRV::ShiftedRayleighRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_shiftedrayleigh)
 {
+	tag = passedTag ;
 	u = passedParameter1;
 	x0 = passedParameter2;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -150,14 +157,14 @@ ShiftedRayleighRV::getStdv()
 }
 
 
-double
-ShiftedRayleighRV::getParameter1()
+double 
+ShiftedRayleighRV::getStartValue()
 {
-  return u;
+	return startValue;
 }
 
-double
-ShiftedRayleighRV::getParameter2()
-{
-  return x0;
-}
+
+double ShiftedRayleighRV::getParameter1()  {return u;}
+double ShiftedRayleighRV::getParameter2()  {return x0;}
+double ShiftedRayleighRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double ShiftedRayleighRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}

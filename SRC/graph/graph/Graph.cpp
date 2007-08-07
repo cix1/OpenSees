@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-01-09 19:20:18 $
+// $Revision: 1.7 $
+// $Date: 2006-05-26 18:23:16 $
 // $Source: /usr/local/cvs/OpenSees/SRC/graph/graph/Graph.cpp,v $
                                                                         
                                                                         
@@ -336,7 +336,6 @@ Graph::sendSelf(int commitTag, Channel &theChannel)
   static ID idData(2);
   idData(0) = numEdge;
   idData(1) = numVertex;
-
   if (theChannel.sendID(0, commitTag, idData) < 0) {
     opserr << "Graph::sendSelf() - failed to send the id\n";
     return -3;
@@ -369,19 +368,17 @@ Graph::sendSelf(int commitTag, Channel &theChannel)
 
       }  
 
-      ID verticesData(vertexData, 5*numVertex + 2*numEdge, true);
+      ID verticesData(vertexData, adjacencyLocation, true);
       if (theChannel.sendID(0, commitTag, verticesData) < 0) {
 	opserr << "Graph::sendSelf() - failed to send the id\n";
 	return -3;
       }
-
       if (theChannel.sendVector(0, commitTag, vertexWeights) < 0) {
 	opserr << "Graph::sendSelf() - failed to send the id\n";
 	return -3;
       }
     }
   }
-
   /* ************ OLD --- SENDING IND VERTICES *********************
   VertexIter &theVertices = this->getVertices();
   Vertex *vertexPtr;
@@ -430,12 +427,12 @@ Graph::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
     if (vertexData != 0) {
       ID verticesData(vertexData, 5*numVertex + 2 * numEdge, true);
       if (theChannel.recvID(0, commitTag, verticesData) < 0) {
-	opserr << "Graph::recvSelf() - failed to receive the id\n";
+	opserr << "Graph::sendSelf() - failed to send the id\n";
 	return -3;
       }
       Vector vertexWeights(numVertex);
       if (theChannel.recvVector(0, commitTag, vertexWeights) < 0) {
-	opserr << "Graph::recvSelf() - failed to receive the weights\n";
+	opserr << "Graph::sendSelf() - failed to send the id\n";
 	return -3;
       }
       
@@ -482,6 +479,6 @@ Graph::recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
     this->addVertex(theVertex, false);
   }
   ****************************************************************** */
-
   return 0;
+
 }

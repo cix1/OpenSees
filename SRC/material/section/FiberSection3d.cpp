@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.24 $
-// $Date: 2007-02-02 01:18:13 $
+// $Revision: 1.22 $
+// $Date: 2006-08-07 22:14:37 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/FiberSection3d.cpp,v $
                                                                         
 // Written: fmk
@@ -724,7 +724,7 @@ FiberSection3d::Print(OPS_Stream &s, int flag)
 }
 
 Response*
-FiberSection3d::setResponse(const char **argv, int argc, OPS_Stream &output)
+FiberSection3d::setResponse(const char **argv, int argc, Information &sectInfo, OPS_Stream &output)
 {
 
   const ID &type = this->getType();
@@ -934,7 +934,7 @@ FiberSection3d::setResponse(const char **argv, int argc, OPS_Stream &output)
 	output.attr("zLoc",matData[2*key+1]);
 	output.attr("area",matData[2*key+2]);
 	
-	theResponse =  theMaterials[key]->setResponse(&argv[passarg], argc-passarg, output);
+	theResponse =  theMaterials[key]->setResponse(&argv[passarg], argc-passarg, sectInfo, output);
 	
 	output.endTag();
       }
@@ -955,26 +955,64 @@ FiberSection3d::getResponse(int responseID, Information &sectInfo)
 }
 
 int
-FiberSection3d::setParameter(const char **argv, int argc, Parameter &param)
+FiberSection3d::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 3)
-    return -1;
+	// Initial declarations
+	int ok = -1;
 
-  // A material parameter
-  if (strstr(argv[0],"material") != 0) {
+	// A material parameter
+	if (strcmp(argv[0],"material") == 0) {
 
-    // Get the tag of the material
-    int paramMatTag = atoi(argv[1]);
+		// Get the tag of the material
+		int paramMatTag = atoi(argv[1]);
 
-    // Loop over fibers to find the right material(s)
-    int ok = 0;
-    for (int i = 0; i < numFibers; i++)
-      if (paramMatTag == theMaterials[i]->getTag())
-	ok += theMaterials[i]->setParameter(&argv[2], argc-2, param);
+		// Loop over fibers to find the right material(s)
+		for (int i=0; i<numFibers; i++) {
+			if (paramMatTag == theMaterials[i]->getTag()) {
+				ok = theMaterials[i]->setParameter(&argv[2], argc-2, info);
+			}
+		}
+		if (ok<0) {
+			opserr << "FiberSection3d::setParameter() - could not set parameter. " << endln;
+			return -1;
+		}
+		else {
+			return ok + 100;
+		}
+	} 
+	else
+		return -1;
+}
 
-    return ok;
-  }
+int
+FiberSection3d::updateParameter (int parameterID, Information &info)
+{
+	int ok = -1;
 
-  else
-    return -1;
+	switch (parameterID) {
+	case 1:
+		return -1;
+	default:
+		if (parameterID >= 100) {
+			ID *paramIDPtr;
+			paramIDPtr = info.theID;
+			ID paramID = (*paramIDPtr);
+			int paramMatrTag = paramID(1);
+
+			for (int i=0; i<numFibers; i++) {
+				if (paramMatrTag == theMaterials[i]->getTag()) {
+					ok =theMaterials[i]->updateParameter(parameterID-100, info);
+				}
+			}
+			if (ok < 0) {
+				opserr << "FiberSection3d::updateParameter() - could not update parameter. " << endln;
+				return ok;
+			}
+			else {
+				return ok;
+			}
+		}
+		else
+			return -1;
+	}
 }

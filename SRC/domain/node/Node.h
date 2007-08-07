@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-01-10 22:11:11 $
+// $Revision: 1.9 $
+// $Date: 2005-11-23 22:48:50 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/node/Node.h,v $
                                                                         
                                                                         
@@ -39,8 +39,6 @@
 // What: "@(#) Node.h, revA"
 
 #include <DomainComponent.h>
-
-
 class Element;
 class Vector;
 class Matrix;
@@ -134,22 +132,18 @@ class Node : public DomainComponent
     Matrix getMassSensitivity(void);
     virtual const Matrix &getDampSensitivity(void);
     int    getCrdsSensitivity(void);
-    int	   saveDispSensitivity(const Vector &v, int gradNum, int numGrads);
-    int	   saveVelSensitivity(const Vector &vdot, int gradNum, int numGrads);
-    int	   saveAccelSensitivity(const Vector &vdot, int gradNum, int numGrads);
+    int	   saveSensitivity(Vector *v, Vector *vdot, Vector *vdotdot, int gradNum, int numGrads);
     double getDispSensitivity(int dof, int gradNum);
     double getVelSensitivity(int dof, int gradNum);
     double getAccSensitivity(int dof, int gradNum);
-    int setParameter(const char **argv, int argc, Parameter &param);
+    int    setParameter(const char **argv, int argc, Information &info);
     int    updateParameter(int parameterID, Information &info);
     int    activateParameter(int parameterID);
-
-    // AddingSensitivity:END ///////////////////////////////////////////
 
     virtual const Vector &getReaction();
     virtual int   addReactionForce(const Vector &, double factor);
     virtual int   resetReactionForce(bool inclInertia);
-    virtual const Vector *getResponse(NodeResponseType);
+    // AddingSensitivity:END ///////////////////////////////////////////
     
   private:
     // priavte methods used to create the Vector objects 

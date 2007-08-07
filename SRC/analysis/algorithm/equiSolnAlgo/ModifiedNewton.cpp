@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-04-02 23:41:13 $
+// $Revision: 1.7 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/ModifiedNewton.cpp,v $
                                                                         
                                                                         
@@ -51,7 +51,7 @@
 // Constructor
 ModifiedNewton::ModifiedNewton(int theTangentToUse)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_ModifiedNewton),
- tangent(theTangentToUse)
+ theTest(0), tangent(theTangentToUse)
 {
   
 }
@@ -59,7 +59,7 @@ ModifiedNewton::ModifiedNewton(int theTangentToUse)
 
 ModifiedNewton::ModifiedNewton(ConvergenceTest &theT, int theTangentToUse)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_ModifiedNewton),
- tangent(theTangentToUse)
+ theTest(&theT), tangent(theTangentToUse)
 {
 
 }
@@ -70,6 +70,12 @@ ModifiedNewton::~ModifiedNewton()
 
 }
 
+int
+ModifiedNewton::setConvergenceTest(ConvergenceTest *newTest)
+{
+    theTest = newTest;
+    return 0;
+}
 
 int 
 ModifiedNewton::solveCurrentStep(void)
@@ -152,6 +158,12 @@ ModifiedNewton::solveCurrentStep(void)
     }
 
     return result;
+}
+
+ConvergenceTest *
+ModifiedNewton::getConvergenceTest(void)
+{
+  return theTest;
 }
 
 int

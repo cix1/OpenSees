@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.95 $
-// $Date: 2007-07-19 21:19:08 $
+// $Revision: 1.79 $
+// $Date: 2006-09-01 00:49:09 $
 // $Source: /usr/local/cvs/OpenSees/SRC/tcl/commands.cpp,v $
                                                                         
                                                                         
@@ -41,8 +41,6 @@ EXTERN int      Tcl_SetObjCmd _ANSI_ARGS_((ClientData clientData,
 
 #include <OPS_Globals.h>
 #include <SimulationInformation.h>
-#include <Matrix.h>
-
 extern SimulationInformation simulationInfo;
 
 // the following is a little kludgy but it works!
@@ -69,7 +67,10 @@ OPS_Stream *opserrPtr = &sserr;
 
 #include <packages.h>
 
-#include <FEM_ObjectBrokerAllClasses.h>
+#include <FEM_ObjectBroker.h>
+#include <RigidRod.h>
+#include <RigidBeam.h>
+#include <RigidDiaphragm.h>
 
 #include <Timer.h>
 #include <ModelBuilder.h>
@@ -275,7 +276,7 @@ ModelBuilder *theBuilder =0;
 #include <ShedHeaviest.h>
 #include <DomainPartitioner.h>
 #include <GraphPartitioner.h>
-#include <FEM_ObjectBrokerAllClasses.h>
+#include <FEM_ObjectBroker.h>
 #include <Subdomain.h>
 #include <SubdomainIter.h>
 #include <MachineBroker.h>
@@ -311,25 +312,6 @@ FEM_ObjectBroker  *OPS_OBJECT_BROKER;
 MachineBroker     *OPS_MACHINE;
 Channel          **OPS_theChannels = 0;
 
-#elif _PARALLEL_INTERPRETERS
-
-// parallel analysis
-#include <ParallelNumberer.h>
-#include <DistributedDisplacementControl.h>
-
-//  parallel soe & solvers
-#include <DistributedBandSPDLinSOE.h>
-#include <DistributedSparseGenColLinSOE.h>
-#include <DistributedSparseGenRowLinSOE.h>
-#include <DistributedBandGenLinSOE.h>
-#include <DistributedDiagonalSOE.h>
-#include <DistributedDiagonalSolver.h>
-#define MPIPP_H
-#include <DistributedSuperLU.h>
-#include <DistributedProfileSPDLinSOE.h>
-
-Domain theDomain;
-
 #else
 
 Domain theDomain;
@@ -340,10 +322,6 @@ Domain theDomain;
 #ifdef _PARALLEL_INTERPRETERS
 #include <MachineBroker.h>
 extern MachineBroker *theMachineBroker;
-extern Channel **theChannels;
-extern int numChannels;
-extern int rank;
-extern int np;
 #endif
 
 
@@ -351,6 +329,7 @@ extern int np;
 #include <MachineBroker.h>
 extern MachineBroker *theMachineBroker;
 #endif
+
 
 
 static AnalysisModel *theAnalysisModel =0;
@@ -382,7 +361,7 @@ static int resDataSize = 0;
 static Timer *theTimer = 0;
 
 FE_Datastore *theDatabase  =0;
-FEM_ObjectBrokerAllClasses theBroker;
+FEM_ObjectBroker theBroker;
 
 // init the global variabled defined in OPS_Globals.h
 double        ops_Dt = 1.0;
@@ -412,59 +391,12 @@ extern int OpenSeesExit(ClientData clientData, Tcl_Interp *interp, int argc, TCL
 
 extern int myCommands(Tcl_Interp *interp);
 
-extern "C" int Tcl_InterpObjCmd(ClientData clientData,  Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[]);
-
-int Tcl_InterpOpenSeesObjCmd(ClientData clientData,  Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
-{
-   int index;
-   static TCL_Char *options[] = {
-     "alias",	"aliases",	"create",	"delete", 
-     "eval",		"exists",	"expose",	"hide", 
-     "hidden",	"issafe",	"invokehidden",	"marktrusted", 
-     "recursionlimit",		"slaves",	"share",
-     "target",	"transfer",
-     NULL
-    };
-   enum option {
-     OPT_ALIAS,	OPT_ALIASES,	OPT_CREATE,	OPT_DELETE,
-     OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,	OPT_HIDE,
-     OPT_HIDDEN,	OPT_ISSAFE,	OPT_INVOKEHID,	OPT_MARKTRUSTED,
-     OPT_RECLIMIT,			OPT_SLAVES,	OPT_SHARE,
-     OPT_TARGET,	OPT_TRANSFER
-   };
-
-  int ok = Tcl_InterpObjCmd(clientData, interp, objc, objv);
-  if (ok != TCL_OK) 
-    return ok;
-
-  if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0, &index) != TCL_OK) {
-    return TCL_ERROR;
-  }
-  
-  switch ((enum option) index) {
-  case OPT_CREATE: {
-    TCL_Char *theInterpreterName = Tcl_GetStringResult(interp);
-    Tcl_Interp *slaveInterp = Tcl_GetSlave(interp, theInterpreterName);
-    ok = g3AppInit(slaveInterp);
-    return ok;
-    break;
-  }
-  default:
-    return ok;
-  }
-
-  return ok;
-}
-
-
 int g3AppInit(Tcl_Interp *interp) {
-
 
 #ifndef _LINUX  
     opserr.setFloatField(SCIENTIFIC);
     opserr.setFloatField(FIXEDD);
 #endif
-    Tcl_CreateObjCommand(interp, "interp", Tcl_InterpOpenSeesObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "pset", &OPS_SetObjCmd,
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL); 
     Tcl_CreateCommand(interp, "source", &OPS_SourceCmd,
@@ -509,25 +441,19 @@ int g3AppInit(Tcl_Interp *interp) {
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     Tcl_CreateCommand(interp, "database", &addDatabase, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+    Tcl_CreateCommand(interp, "rigidLink", &rigidLink, 
+		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);                
+    Tcl_CreateCommand(interp, "rigidDiaphragm", &rigidDiaphragm, 
+		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);   
     Tcl_CreateCommand(interp, "eigen", &eigenAnalysis, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
     Tcl_CreateCommand(interp, "video", &videoPlayer, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
     Tcl_CreateCommand(interp, "remove", &removeObject, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
-    Tcl_CreateCommand(interp, "eleForce", &eleForce, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
     Tcl_CreateCommand(interp, "nodeDisp", &nodeDisp, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
-    Tcl_CreateCommand(interp, "nodeEigenvector", &nodeEigenvector, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
     Tcl_CreateCommand(interp, "nodeVel", &nodeVel, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
-    Tcl_CreateCommand(interp, "nodeAccel", &nodeAccel, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
-    Tcl_CreateCommand(interp, "nodeResponse", &nodeResponse, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
-    Tcl_CreateCommand(interp, "reactions", &calculateNodalReactions, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
     Tcl_CreateCommand(interp, "nodeCoord", &nodeCoord, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);       
@@ -544,8 +470,6 @@ int g3AppInit(Tcl_Interp *interp) {
     Tcl_CreateCommand(interp, "logFile", &logFile, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     Tcl_CreateCommand(interp, "exit", &OpenSeesExit, 
-		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    Tcl_CreateCommand(interp, "quit", &OpenSeesExit, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     Tcl_CreateCommand(interp, "getNP", &getNP, 
 		      (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
@@ -616,7 +540,7 @@ OPS_SourceCmd(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **ar
 {
   int ok = TCL_OK;
   if (argc > 1) {
-    simulationInfo.addInputFile(argv[1]);
+    simulationInfo.addReadFile(argv[1]);
 
     ok = Tcl_EvalFile(interp, argv[1]);
   }
@@ -766,9 +690,6 @@ sensitivityIntegrator(ClientData clientData, Tcl_Interp *interp, int argc, TCL_C
 int 
 wipeModel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
-  wipeAnalysis(clientData, interp, argc, argv);
-
-  /*
   // to build the model make sure the ModelBuilder has been constructed
   // and that the model has not already been constructed
   if (theBuilder != 0) {
@@ -786,7 +707,7 @@ wipeModel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
       theTransientAnalysis->clearAll();
       delete theTransientAnalysis;  
   }
-  */
+
 
   // NOTE : DON'T do the above on theVariableTimeStepAnalysis
   // as it and theTansientAnalysis are one in the same
@@ -843,6 +764,7 @@ wipeModel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 int 
 wipeAnalysis(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
+
 #ifdef _PARALLEL_PROCESSING
   if (OPS_PARTITIONED == true && OPS_NUM_SUBDOMAINS > 1) {
     SubdomainIter &theSubdomains = theDomain.getSubdomains();
@@ -1010,6 +932,7 @@ partitionModel(void)
   // create some subdomains
   for (int i=1; i<=OPS_NUM_SUBDOMAINS; i++) {
     if (i != OPS_MAIN_DOMAIN_PARTITION_ID) {
+      opserr << "Creating SUBDOMAIN: " << i << endln;
       ShadowSubdomain *theSubdomain = new ShadowSubdomain(i, *OPS_MACHINE, *OPS_OBJECT_BROKER);
       theDomain.addSubdomain(theSubdomain);
       OPS_theChannels[i-1] = theSubdomain->getChannelPtr();
@@ -1026,7 +949,7 @@ partitionModel(void)
   }
 
   theDomain.partition(OPS_NUM_SUBDOMAINS, OPS_USING_MAIN_DOMAIN, OPS_MAIN_DOMAIN_PARTITION_ID);
-
+  
   OPS_PARTITIONED = true;
   
   DomainDecompositionAnalysis *theSubAnalysis;
@@ -1060,11 +983,13 @@ partitionModel(void)
     theSub->setDomainDecompAnalysis(*theSubAnalysis);
     //  delete theSubAnalysis;
   }
-
   return result;
 }
 
 #endif
+
+
+
 
 
 
@@ -1187,7 +1112,6 @@ printModel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 	   (strcmp(argv[1],"-integrator") == 0)) 
     return printIntegrator(clientData, interp, argc, argv, 3, opserr);  
   
-
   // if 'print algorithm flag' print out the algorithm
   else if ((strcmp(argv[1],"algorithm") == 0) || 
 	   (strcmp(argv[1],"-algorithm") == 0))
@@ -1300,23 +1224,18 @@ printNode(ClientData clientData, Tcl_Interp *interp, int argc,
     return TCL_OK;
   } else { 
     // otherwise print out the specified nodes i j k .. with flag
-    int numNodes = argc-nodeArg +1;
-    ID *theNodes = new ID(numNodes);
-    for (int i= 0; i<numNodes; i++) {
+    for (int i= nodeArg-1; i<argc; i++) {
       int nodeTag;
-      if (Tcl_GetInt(interp, argv[i+nodeArg-1], &nodeTag) != TCL_OK) {
+      if (Tcl_GetInt(interp, argv[i], &nodeTag) != TCL_OK) {
 	opserr << "WARNING print node failed to get integer: " << argv[i] << endln;
 	return TCL_ERROR;
       }
-      (*theNodes)(i) = nodeTag;
+      Node *theNode = theDomain.getNode(nodeTag);
+      if (theNode != 0)
+	theNode->Print(output,flag);
     }
-
-    theDomain.Print(opserr, theNodes, 0, flag);
-    delete theNodes;
-  }    
-
-  return TCL_OK;
-
+    return TCL_OK;
+  }
 }
 
 
@@ -1364,24 +1283,19 @@ printElement(ClientData clientData, Tcl_Interp *interp, int argc,
       theElement->Print(output, flag);
     return TCL_OK;
   } else { 
-
-    // otherwise print out the specified nodes i j k .. with flag
-    int numEle = argc-eleArg+1;
-    ID *theEle = new ID(numEle);
-    for (int i= 0; i<numEle; i++) {
-      int eleTag;
-      if (Tcl_GetInt(interp, argv[i+eleArg-1], &eleTag) != TCL_OK) {
+    // otherwise print out the specified Elements i j k .. with flag
+    for (int i= eleArg-1; i<argc; i++) {
+      int ElementTag;
+      if (Tcl_GetInt(interp, argv[i], &ElementTag) != TCL_OK) {
 	opserr << "WARNING print ele failed to get integer: " << argv[i] << endln;
 	return TCL_ERROR;
       }
-      (*theEle)(i) = eleTag;
+      Element *theElement = theDomain.getElement(ElementTag);
+      if (theElement != 0)
+	theElement->Print(output,flag);
     }
-
-    theDomain.Print(opserr, 0, theEle, flag);
-    delete theEle;
+    return TCL_OK;
   }
-
-  return TCL_OK;
 }
 
 
@@ -1504,11 +1418,7 @@ specifyAnalysis(ClientData clientData, Tcl_Interp *interp, int argc,
 	    opserr << " ProfileSPDLinSOE default will be used\n";
 	    ProfileSPDLinSolver *theSolver;
 	    theSolver = new ProfileSPDLinDirectSolver(); 	
-#ifdef _PARALLEL_PROCESSING
-	    theSOE = new DistributedProfileSPDLinSOE(*theSolver);
-#else
 	    theSOE = new ProfileSPDLinSOE(*theSolver);      
-#endif
 	}
     
 	theStaticAnalysis = new StaticAnalysis(theDomain,
@@ -1564,11 +1474,7 @@ specifyAnalysis(ClientData clientData, Tcl_Interp *interp, int argc,
 	    opserr << " ProfileSPDLinSOE default will be used\n";
 	    ProfileSPDLinSolver *theSolver;
 	    theSolver = new ProfileSPDLinDirectSolver(); 	
-#ifdef _PARALLEL_PROCESSING
-	    theSOE = new DistributedProfileSPDLinSOE(*theSolver);
-#else
 	    theSOE = new ProfileSPDLinSOE(*theSolver);      
-#endif
 	}
     
 	theTransientAnalysis = new DirectIntegrationAnalysis(theDomain,
@@ -1630,11 +1536,7 @@ specifyAnalysis(ClientData clientData, Tcl_Interp *interp, int argc,
 	    opserr << " ProfileSPDLinSOE default will be used\n";
 	    ProfileSPDLinSolver *theSolver;
 	    theSolver = new ProfileSPDLinDirectSolver(); 	
-#ifdef _PARALLEL_PROCESSING
-	    theSOE = new DistributedProfileSPDLinSOE(*theSolver);
-#else
 	    theSOE = new ProfileSPDLinSOE(*theSolver);      
-#endif
 	}
     
 	theVariableTimeStepTransientAnalysis = new VariableTimeStepDirectIntegrationAnalysis
@@ -1824,17 +1726,6 @@ specifySOE(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
     theSOE = new ProfileSPDLinSOE(*theSolver);      
 #endif
   }
-
-#ifdef _PARALLEL_INTERPRETERS
-  else if (strcmp(argv[1],"ParallelProfileSPD") == 0) {
-    ProfileSPDLinSolver *theSolver = new ProfileSPDLinDirectSolver(); 	
-    DistributedProfileSPDLinSOE *theParallelSOE = new DistributedProfileSPDLinSOE(*theSolver);
-    theSOE = theParallelSOE;
-    theParallelSOE->setProcessID(rank);
-    theParallelSOE->setChannels(numChannels, theChannels);
-  }
-#endif
-
 
   // SPARSE GENERAL SOE * SOLVER
   else if ((strcmp(argv[1],"SparseGeneral") == 0) || (strcmp(argv[1],"SuperLU") == 0) ||
@@ -2096,6 +1987,16 @@ specifySOE(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
       theStaticAnalysis->setLinearSOE(*theSOE);
     if (theTransientAnalysis != 0)
       theTransientAnalysis->setLinearSOE(*theSOE);
+    
+    return TCL_OK;
+  }
+
+
+  // if the analysis exists - we want to change the SOE
+  if (theStaticAnalysis != 0)
+    theStaticAnalysis->setLinearSOE(*theSOE);
+  else if (theTransientAnalysis != 0)
+    theTransientAnalysis->setLinearSOE(*theSOE);  
 
 #ifdef _PARALLEL_PROCESSING
     if (theStaticAnalysis != 0 || theTransientAnalysis != 0) {
@@ -2106,9 +2007,6 @@ specifySOE(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
       }
     }
 #endif
-    
-    return TCL_OK;
-  }
 
   return TCL_ERROR;
 }
@@ -2128,6 +2026,7 @@ specifyNumberer(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **
   }    
 
 #ifdef _PARALLEL_PROCESSING
+
   // check argv[1] for type of Numberer and create the object
   if (strcmp(argv[1],"Plain") == 0) {
     theNumberer = new ParallelNumberer();       
@@ -2147,26 +2046,7 @@ specifyNumberer(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **
   } else if (strcmp(argv[1],"RCM") == 0) {
     RCM *theRCM = new RCM(false);	
     theNumberer = new DOF_Numberer(*theRCM);    	
-  } 
-
-#ifdef _PARALLEL_INTERPRETERS
-
-  else if (strcmp(argv[1],"ParallelPlain") == 0) {
-    ParallelNumberer *theParallelNumberer = new ParallelNumberer;
-    theNumberer = theParallelNumberer;       
-    theParallelNumberer->setProcessID(rank);
-    theParallelNumberer->setChannels(numChannels, theChannels);
-  } else if (strcmp(argv[1],"ParallelRCM") == 0) {
-    RCM *theRCM = new RCM(false);	
-    ParallelNumberer *theParallelNumberer = new ParallelNumberer(*theRCM);    	
-    theNumberer = theParallelNumberer;       
-    theParallelNumberer->setProcessID(rank);
-    theParallelNumberer->setChannels(numChannels, theChannels);
-  }   
-
-#endif
-
-  else {
+  } else {
     opserr << "WARNING No Numberer type exists (Plain, RCM only) \n";
     return TCL_ERROR;
   }    
@@ -2809,12 +2689,6 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
 	numIter = 1;
       }
 
-
-#ifdef _PARALLEL_PROCESSING
-
-      theStaticIntegrator = new DistributedDisplacementControl(node,dof-1,increment,
-							       numIter, minIncr, maxIncr);
-#else
       Node *theNode = theDomain.getNode(node);
       if (theNode == 0) {
 	opserr << "WARNING integrator DisplacementControl node dof dU : Node does not exist\n";
@@ -2822,6 +2696,10 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
       }
 
 
+#ifdef _PARALLEL_PROCESSING
+      theStaticIntegrator = new DistributedDisplacementControl(node,dof-1,increment,
+							       numIter, minIncr, maxIncr);
+#else
       int numDOF = theNode->getNumberDOF();
       if (dof <= 0 || dof > numDOF) {
 	opserr << "WARNING integrator DisplacementControl node dof dU : invalid dof given\n";
@@ -2925,10 +2803,9 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
 
   else if (strcmp(argv[1],"NewmarkHybridSimulation") == 0) {
       double beta, gamma;
-      int argi = 4, polyOrder = 1;
       double alphaM, betaK, betaKi, betaKc;
-      if (argc < 4 || argc > 10) {
-	opserr << "WARNING integrator NewmarkHybridSimulation gamma beta <alphaM betaK betaKi betaKc> <-polyOrder O>\n";
+      if (argc != 4 && argc != 8) {
+	opserr << "WARNING integrator NewmarkHybridSimulation gamma beta <alphaM betaK betaKi betaKc>\n";
 	return TCL_ERROR;
       }    
       if (Tcl_GetDouble(interp, argv[2], &gamma) != TCL_OK) {
@@ -2939,40 +2816,32 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
 	  opserr << "WARNING integrator NewmarkHybridSimulation gamma beta - undefined beta\n";
 	  return TCL_ERROR;	
       }
-      for (int i=argi; i<argc; i++) {
-      if (strcmp(argv[i],"-polyOrder") == 0) {
-      argc -= 2;
-      if (Tcl_GetInt(interp, argv[i+1], &polyOrder) != TCL_OK) {
-	  opserr << "WARNING integrator NewmarkHybridSimulation gamma beta - undefined polyOrder\n";	  
-	  return TCL_ERROR;	
-      }
-      }
-      }
       if (argc == 8) {
-	  if (Tcl_GetDouble(interp, argv[argi], &alphaM) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[4], &alphaM) != TCL_OK) {
 	      opserr << "WARNING integrator NewmarkHybridSimulation gamma beta alphaM betaK betaKi betaKc - alphaM\n";	  
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaK) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[5], &betaK) != TCL_OK) {
 	      opserr << "WARNING integrator NewmarkHybridSimulation gamma beta alphaM betaK betaKi betaKc - betaK\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKi) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[6], &betaKi) != TCL_OK) {
 	      opserr << "WARNING integrator NewmarkHybridSimulation gamma beta alphaM betaK betaKi betaKc - betaKi\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKc) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[7], &betaKc) != TCL_OK) {
 	    opserr << "WARNING integrator NewmarkHybridSimulation gamma beta alphaM betaK betaKi betaKc - betaKc\n";
 	    return TCL_ERROR;	
 	  }
       }
+      if (theTest == 0) {
+        opserr << "WARNING no ConvergenceTest specified yet\n";
+        return TCL_ERROR;	  
+      }
       if (argc == 4)
-	  theTransientIntegrator = new NewmarkHybridSimulation(gamma, beta, polyOrder);       
+	  theTransientIntegrator = new NewmarkHybridSimulation(gamma, beta, *theTest);       
       else
-	  theTransientIntegrator = new NewmarkHybridSimulation(gamma, beta, polyOrder, alphaM, betaK, betaKi, betaKc);
+	  theTransientIntegrator = new NewmarkHybridSimulation(gamma, beta, *theTest, alphaM, betaK, betaKi, betaKc);
 
       // if the analysis exists - we want to change the Integrator
 	  if (theTransientAnalysis != 0)
@@ -3382,80 +3251,84 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
   
   else if (strcmp(argv[1],"HHTHybridSimulation") == 0) {
       double rhoInf, alphaI, alphaF, beta, gamma;
-      int argi = 2, polyOrder = 1;
       double alphaM, betaK, betaKi, betaKc;
-      if (argc < 3 || argc > 12) {
-	opserr << "WARNING integrator HHTHybridSimulation rhoInf <alphaM betaK betaKi betaKc> <-polyOrder O>\n";
-    opserr << "     or integrator HHTHybridSimulation alphaI alphaF beta gamma <alphaM betaK betaKi betaKc> <-polyOrder O>\n";
+      if (argc != 3 && argc != 6 && argc != 7 && argc != 10) {
+	opserr << "WARNING integrator HHTHybridSimulation rhoInf <alphaM betaK betaKi betaKc>\n";
+    opserr << "     or integrator HHTHybridSimulation alphaI alphaF beta gamma <alphaM betaK betaKi betaKc>\n";
 	return TCL_ERROR;
       }
-      for (int i=argi; i<argc; i++) {
-      if (strcmp(argv[i],"-polyOrder") == 0) {
-      argc -= 2;
-      if (Tcl_GetInt(interp, argv[i+1], &polyOrder) != TCL_OK) {
-	  opserr << "WARNING integrator HHTHybridSimulation rhoInf - undefined polyOrder\n";	  
-	  return TCL_ERROR;	
-      }
-      }
-      }
       if (argc == 3 || argc == 7) {
-      if (Tcl_GetDouble(interp, argv[argi], &rhoInf) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[2], &rhoInf) != TCL_OK) {
 	  opserr << "WARNING integrator HHTHybridSimulation rhoInf - undefined rhoInf\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
       }
-      else if (argc == 6 || argc == 10) {
-      if (Tcl_GetDouble(interp, argv[argi], &alphaI) != TCL_OK) {
+      if (argc == 6 || argc == 10) {
+      if (Tcl_GetDouble(interp, argv[2], &alphaI) != TCL_OK) {
 	  opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma - undefined alphaI\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
-      if (Tcl_GetDouble(interp, argv[argi], &alphaF) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[3], &alphaF) != TCL_OK) {
 	  opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma - undefined alphaF\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
-      if (Tcl_GetDouble(interp, argv[argi], &beta) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[4], &beta) != TCL_OK) {
 	  opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma - undefined beta\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
-      if (Tcl_GetDouble(interp, argv[argi], &gamma) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[5], &gamma) != TCL_OK) {
 	  opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma - undefined gamma\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
       }
-      if (argc == 7 || argc == 10) {
-	  if (Tcl_GetDouble(interp, argv[argi], &alphaM) != TCL_OK) {
+      if (argc == 7) {
+	  if (Tcl_GetDouble(interp, argv[3], &alphaM) != TCL_OK) {
 	      opserr << "WARNING integrator HHTHybridSimulation rhoInf alphaM betaK betaKi betaKc - alphaM\n";	  
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaK) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[4], &betaK) != TCL_OK) {
 	      opserr << "WARNING integrator HHTHybridSimulation rhoInf alphaM betaK betaKi betaKc - betaK\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKi) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[5], &betaKi) != TCL_OK) {
 	      opserr << "WARNING integrator HHTHybridSimulation rhoInf alphaM betaK betaKi betaKc - betaKi\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKc) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[6], &betaKc) != TCL_OK) {
 	    opserr << "WARNING integrator HHTHybridSimulation rhoInf alphaM betaK betaKi betaKc - betaKi\n";
 	    return TCL_ERROR;	
 	  }
+      } 
+      if (argc == 10) {
+	  if (Tcl_GetDouble(interp, argv[6], &alphaM) != TCL_OK) {
+	      opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma alphaM betaK betaKi betaKc - alphaM\n";	  
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[7], &betaK) != TCL_OK) {
+	      opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma alphaM betaK betaKi betaKc - betaK\n";
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[8], &betaKi) != TCL_OK) {
+	      opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma alphaM betaK betaKi betaKc - betaKi\n";
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[9], &betaKc) != TCL_OK) {
+	    opserr << "WARNING integrator HHTHybridSimulation alphaI alphaF beta gamma alphaM betaK betaKi betaKc - betaKc\n";
+	    return TCL_ERROR;	
+	  }
+      }      
+      if (theTest == 0) {
+        opserr << "WARNING no ConvergenceTest specified yet\n";
+        return TCL_ERROR;	  
       }
       if (argc == 3)
-	  theTransientIntegrator = new HHTHybridSimulation(rhoInf, polyOrder);       
+	  theTransientIntegrator = new HHTHybridSimulation(rhoInf, *theTest);       
       else if (argc == 6)
-      theTransientIntegrator = new HHTHybridSimulation(alphaI, alphaF, beta, gamma, polyOrder);
+      theTransientIntegrator = new HHTHybridSimulation(alphaI, alphaF, beta, gamma, *theTest);
       else if (argc == 7)
-	  theTransientIntegrator = new HHTHybridSimulation(rhoInf, polyOrder, alphaM, betaK, betaKi, betaKc);
+	  theTransientIntegrator = new HHTHybridSimulation(rhoInf, *theTest, alphaM, betaK, betaKi, betaKc);
       else if (argc == 10)
-	  theTransientIntegrator = new HHTHybridSimulation(alphaI, alphaF, beta, gamma, polyOrder, alphaM, betaK, betaKi, betaKc);
+	  theTransientIntegrator = new HHTHybridSimulation(alphaI, alphaF, beta, gamma, *theTest, alphaM, betaK, betaKi, betaKc);
 
       // if the analysis exists - we want to change the Integrator
 	  if (theTransientAnalysis != 0)
@@ -3690,67 +3563,74 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
  
   else if (strcmp(argv[1],"CollocationHybridSimulation") == 0) {
       double theta, beta, gamma;
-      int argi = 3, polyOrder = 1;
       double alphaM, betaK, betaKi, betaKc;
-      if (argc < 3 || argc > 11) {
-	opserr << "WARNING integrator CollocationHybridSimulation theta <alphaM betaK betaKi betaKc> <-polyOrder O>\n";
-	opserr << "     or integrator CollocationHybridSimulation theta beta gamma <alphaM betaK betaKi betaKc> <-polyOrder O>\n";
+      if (argc != 3 && argc != 5 && argc != 7 && argc != 9) {
+	opserr << "WARNING integrator CollocationHybridSimulation theta <alphaM betaK betaKi betaKc>\n";
+	opserr << "     or integrator CollocationHybridSimulation theta beta gamma <alphaM betaK betaKi betaKc>\n";
 	return TCL_ERROR;
       }    
       if (Tcl_GetDouble(interp, argv[2], &theta) != TCL_OK) {
 	  opserr << "WARNING integrator CollocationHybridSimulation theta - undefined theta\n";	  
 	  return TCL_ERROR;	
       }
-      for (int i=argi; i<argc; i++) {
-      if (strcmp(argv[i],"-polyOrder") == 0) {
-      argc -= 2;
-      if (Tcl_GetInt(interp, argv[i+1], &polyOrder) != TCL_OK) {
-	  opserr << "WARNING integrator CollocationHybridSimulation theta - undefined polyOrder\n";	  
-	  return TCL_ERROR;	
-      }
-      }
-      }
       if (argc == 5 || argc == 9) {
-      if (Tcl_GetDouble(interp, argv[argi], &beta) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[3], &beta) != TCL_OK) {
 	  opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma - undefined beta\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
-      if (Tcl_GetDouble(interp, argv[argi], &gamma) != TCL_OK) {
+      if (Tcl_GetDouble(interp, argv[4], &gamma) != TCL_OK) {
 	  opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma - undefined gamma\n";	  
 	  return TCL_ERROR;	
       }
-      argi++;
       }
-      if (argc == 7 || argc == 9) {
-	  if (Tcl_GetDouble(interp, argv[argi], &alphaM) != TCL_OK) {
+      if (argc == 7) {
+	  if (Tcl_GetDouble(interp, argv[3], &alphaM) != TCL_OK) {
 	      opserr << "WARNING integrator CollocationHybridSimulation theta alphaM betaK betaKi betaKc - alphaM\n";	  
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaK) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[4], &betaK) != TCL_OK) {
 	      opserr << "WARNING integrator CollocationHybridSimulation theta alphaM betaK betaKi betaKc - betaK\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKi) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[5], &betaKi) != TCL_OK) {
 	      opserr << "WARNING integrator CollocationHybridSimulation theta alphaM betaK betaKi betaKc - betaKi\n";
 	      return TCL_ERROR;	
 	  }
-      argi++;
-	  if (Tcl_GetDouble(interp, argv[argi], &betaKc) != TCL_OK) {
+	  if (Tcl_GetDouble(interp, argv[6], &betaKc) != TCL_OK) {
 	    opserr << "WARNING integrator CollocationHybridSimulation theta alphaM betaK betaKi betaKc - betaKi\n";
 	    return TCL_ERROR;	
 	  }
       } 
+      if (argc == 9) {
+	  if (Tcl_GetDouble(interp, argv[5], &alphaM) != TCL_OK) {
+	      opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma alphaM betaK betaKi betaKc - alphaM\n";	  
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[6], &betaK) != TCL_OK) {
+	      opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma alphaM betaK betaKi betaKc - betaK\n";
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[7], &betaKi) != TCL_OK) {
+	      opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma alphaM betaK betaKi betaKc - betaKi\n";
+	      return TCL_ERROR;	
+	  }
+	  if (Tcl_GetDouble(interp, argv[8], &betaKc) != TCL_OK) {
+	    opserr << "WARNING integrator CollocationHybridSimulation theta beta gamma alphaM betaK betaKi betaKc - betaKi\n";
+	    return TCL_ERROR;	
+	  }
+      } 
+      if (theTest == 0) {
+        opserr << "WARNING no ConvergenceTest specified yet\n";
+        return TCL_ERROR;	  
+      }
       if (argc == 3)
-	  theTransientIntegrator = new CollocationHybridSimulation(theta, polyOrder);       
+	  theTransientIntegrator = new CollocationHybridSimulation(theta, *theTest);       
       else if (argc == 5)
-	  theTransientIntegrator = new CollocationHybridSimulation(theta, beta, gamma, polyOrder);       
+	  theTransientIntegrator = new CollocationHybridSimulation(theta, beta, gamma, *theTest);       
       else if (argc == 7)
-	  theTransientIntegrator = new CollocationHybridSimulation(theta, polyOrder, alphaM, betaK, betaKi, betaKc);       
+	  theTransientIntegrator = new CollocationHybridSimulation(theta, *theTest, alphaM, betaK, betaKi, betaKc);       
       else if (argc == 9)
-	  theTransientIntegrator = new CollocationHybridSimulation(theta, beta, gamma, polyOrder, alphaM, betaK, betaKi, betaKc);       
+	  theTransientIntegrator = new CollocationHybridSimulation(theta, beta, gamma, *theTest, alphaM, betaK, betaKi, betaKc);       
 
       // if the analysis exists - we want to change the Integrator
 	  if (theTransientAnalysis != 0)
@@ -3921,7 +3801,7 @@ specifyIntegrator(ClientData clientData, Tcl_Interp *interp, int argc,
     }
   } else if (theTransientAnalysis != 0 && theTransientIntegrator != 0) {
     IncrementalIntegrator *theIntegrator;
-    theIntegrator = theTransientIntegrator;
+    theIntegrator = theStaticIntegrator;
     
     SubdomainIter &theSubdomains = theDomain.getSubdomains();
     Subdomain *theSub;
@@ -4019,6 +3899,79 @@ groundExcitation(ClientData clientData, Tcl_Interp *interp, int argc,
   }    
 }
 */
+
+int 
+rigidLink(ClientData clientData, Tcl_Interp *interp, int argc, 
+	  TCL_Char **argv)
+{
+  if (argc < 4) {
+      opserr << "WARNING rigidLink linkType? rNode? cNode?\n";
+      return TCL_ERROR;
+  }    
+
+  int numMPs = theDomain.getNumMPs();
+  int rNode, cNode;
+  if (Tcl_GetInt(interp, argv[2], &rNode) != TCL_OK) {
+      opserr << "WARNING rigidLink linkType? rNode? cNode? - could not read rNode \n";
+      return TCL_ERROR;	        
+  }
+  if (Tcl_GetInt(interp, argv[3], &cNode) != TCL_OK) {
+      opserr << "WARNING rigidLink linkType? rNode? cNode? - could not read CNode \n";
+      return TCL_ERROR;	        
+  }
+
+  // construct a rigid rod or beam depending on 1st arg
+  if ((strcmp(argv[1],"-bar") == 0) || (strcmp(argv[1],"bar") == 0)) {
+    RigidRod theLink(theDomain, rNode, cNode, numMPs);
+  } else if ((strcmp(argv[1],"-beam") == 0) || (strcmp(argv[1],"beam") == 0)) {
+    RigidBeam theLink(theDomain, rNode, cNode, numMPs);
+  } else {
+      opserr << "WARNING rigidLink linkType? rNode? cNode? - unrecognised link type (-bar, -beam) \n";
+      return TCL_ERROR;	        
+  }
+
+  return TCL_OK;
+}
+
+
+
+int 
+rigidDiaphragm(ClientData clientData, Tcl_Interp *interp, int argc, 
+	   TCL_Char **argv)
+{
+  if (argc < 3) {
+      opserr << "WARNING rigidLink perpDirn? rNode? <cNodes?>\n";
+      return TCL_ERROR;
+  }    
+
+  int rNode, perpDirn;
+  if (Tcl_GetInt(interp, argv[1], &perpDirn) != TCL_OK) {
+      opserr << "WARNING rigidLink perpDirn rNode cNodes - could not read perpDirn? \n";
+      return TCL_ERROR;	        
+  }
+
+  if (Tcl_GetInt(interp, argv[2], &rNode) != TCL_OK) {
+      opserr << "WARNING rigidLink perpDirn rNode cNodes - could not read rNode \n";
+      return TCL_ERROR;	        
+  }
+  
+  // read in the constrained Nodes
+  int numConstrainedNodes = argc - 3;
+  ID constrainedNodes(numConstrainedNodes);
+  for (int i=0; i<numConstrainedNodes; i++) {
+      int cNode;
+      if (Tcl_GetInt(interp, argv[3+i], &cNode) != TCL_OK) {
+	  opserr << "WARNING rigidLink perpDirn rNode cNodes - could not read a cNode\n";
+	  return TCL_ERROR;	        
+      }
+      constrainedNodes(i) = cNode;
+  }
+  int numMPs = theDomain.getNumMPs();
+  RigidDiaphragm theLink(theDomain, rNode, constrainedNodes, 
+	perpDirn-1, numMPs);
+
+  return TCL_OK;
+}
 
 
 int 
@@ -4156,6 +4109,12 @@ eigenAnalysis(ClientData clientData, Tcl_Interp *interp, int argc,
     
     return TCL_OK;
 }
+
+
+
+
+
+
 
 
 int 
@@ -4398,6 +4357,7 @@ removeObject(ClientData clientData, Tcl_Interp *interp, int argc,
 int 
 nodeDisp(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
+    
     // make sure at least one other argument to contain type of system
     if (argc < 3) {
 	opserr << "WARNING want - nodeDisp nodeTag? dof?\n";
@@ -4415,91 +4375,18 @@ nodeDisp(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 	return TCL_ERROR;	        
     }        
     
-    dof--;
-
-    const Vector *nodalResponse = theDomain.getNodeResponse(tag, Disp);
-
-    if (nodalResponse == 0 || nodalResponse->Size() < dof || dof < 0)
-      return TCL_ERROR;
-
-    double value = (*nodalResponse)(dof);
-    
-    // now we copy the value to the tcl string that is returned
-    sprintf(interp->result,"%35.20f",value);
-	
-    return TCL_OK;
-}
-
-int 
-nodeEigenvector(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-    // make sure at least one other argument to contain type of system
-    if (argc < 3) {
-	opserr << "WARNING want - nodeDisp nodeTag? dof?\n";
-	return TCL_ERROR;
-   }    
-
-    int tag, dof, eigenvector;
-
-    if (Tcl_GetInt(interp, argv[1], &tag) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read nodeTag? \n";
-	return TCL_ERROR;	        
-    }    
-    if (Tcl_GetInt(interp, argv[2], &dof) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
-    if (Tcl_GetInt(interp, argv[3], &eigenvector) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
-    
-    dof--; eigenvector--;
-
     Node *theNode = theDomain.getNode(tag);
-    const Matrix &theEigenvectors = theNode->getEigenvectors();
-
-    double value = theEigenvectors(dof, eigenvector);
+    double value = 0.0;
+    if (theNode != 0) {
+	const Vector &disp = theNode->getTrialDisp();
+	if (disp.Size() >= dof && dof > 0) {
+	    value = disp(dof-1); // -1 for OpenSees vs C indexing
+	}
+    }
     
     // now we copy the value to the tcl string that is returned
     sprintf(interp->result,"%35.20f",value);
-	
-    return TCL_OK;
-}
-
-
-
-int 
-eleForce(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-    // make sure at least one other argument to contain type of system
-    if (argc < 3) {
-	opserr << "WARNING want - nodeDisp nodeTag? dof?\n";
-	return TCL_ERROR;
-   }    
-
-    int tag, dof;
-
-    if (Tcl_GetInt(interp, argv[1], &tag) != TCL_OK) {
-	opserr << "WARNING eleForce eleTag? dof? - could not read nodeTag? \n";
-	return TCL_ERROR;	        
-    }    
-    if (Tcl_GetInt(interp, argv[2], &dof) != TCL_OK) {
-	opserr << "WARNING eleForce eleTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
     
-    dof--;
-    Element *theEle = theDomain.getElement(tag);
-    const Vector &force = theEle->getResistingForce();
-
-    if (force.Size() < dof || dof < 0)
-      return TCL_ERROR;
-
-    double value = force(dof);
-    
-    // now we copy the value to the tcl string that is returned
-    sprintf(interp->result,"%35.20f",value);
 	
     return TCL_OK;
 }
@@ -4576,130 +4463,46 @@ nodeBounds(ClientData clientData, Tcl_Interp *interp, int argc,
   return TCL_OK;
 }
 
+
+// AddingSensitivity:BEGIN ////////////////////////////////////
 int 
 nodeVel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
+    
     // make sure at least one other argument to contain type of system
     if (argc < 3) {
-	opserr << "WARNING want - nodeDisp nodeTag? dof?\n";
+	interp->result = "WARNING want - nodeVel nodeTag? dof?\n";
 	return TCL_ERROR;
    }    
 
     int tag, dof;
 
     if (Tcl_GetInt(interp, argv[1], &tag) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read nodeTag? \n";
+	opserr << "WARNING nodeDisp nodeTag? dof? - could not read nodeTag? ";
 	return TCL_ERROR;	        
     }    
     if (Tcl_GetInt(interp, argv[2], &dof) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
+	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? ";
 	return TCL_ERROR;	        
     }        
     
-    dof--;
-
-    const Vector *nodalResponse = theDomain.getNodeResponse(tag, Vel);
-    if (nodalResponse == 0 || nodalResponse->Size() < dof || dof < 0)
-      return TCL_ERROR;
-
-    double value = (*nodalResponse)(dof);
+    Node *theNode = theDomain.getNode(tag);
+    double value = 0.0;
+    if (theNode != 0) {
+	const Vector &vel = theNode->getTrialVel();
+	if (vel.Size() >= dof && dof > 0) {
+	    value = vel(dof-1); // -1 for OpenSees vs C indexing
+	}
+    }
     
     // now we copy the value to the tcl string that is returned
     sprintf(interp->result,"%35.20f",value);
+    
 	
     return TCL_OK;
 }
 
 
-int 
-nodeAccel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-    // make sure at least one other argument to contain type of system
-    if (argc < 3) {
-	opserr << "WARNING want - nodeDisp nodeTag? dof?\n";
-	return TCL_ERROR;
-   }    
-
-    int tag, dof;
-
-    if (Tcl_GetInt(interp, argv[1], &tag) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read nodeTag? \n";
-	return TCL_ERROR;	        
-    }    
-    if (Tcl_GetInt(interp, argv[2], &dof) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
-    
-    dof--;
-
-    const Vector *nodalResponse = theDomain.getNodeResponse(tag, Accel);
-    if (nodalResponse == 0 || nodalResponse->Size() < dof || dof < 0)
-      return TCL_ERROR;
-
-    double value = (*nodalResponse)(dof);
-    
-    // now we copy the value to the tcl string that is returned
-    sprintf(interp->result,"%35.20f",value);
-	
-    return TCL_OK;
-}
-
-
-int 
-nodeResponse(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-    // make sure at least one other argument to contain type of system
-    if (argc < 4) {
-	opserr << "WARNING want - nodeResponse responseID? nodeTag? dof?\n";
-	return TCL_ERROR;
-   }    
-
-    int tag, dof, responseID;
-
-    if (Tcl_GetInt(interp, argv[1], &tag) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read nodeTag? \n";
-	return TCL_ERROR;	        
-    }    
-    if (Tcl_GetInt(interp, argv[2], &dof) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
-    if (Tcl_GetInt(interp, argv[3], &responseID) != TCL_OK) {
-	opserr << "WARNING nodeDisp nodeTag? dof? - could not read dof? \n";
-	return TCL_ERROR;	        
-    }        
-    
-    dof--;
-
-    const Vector *nodalResponse = theDomain.getNodeResponse(tag, (NodeResponseType)responseID);
-    if (nodalResponse == 0 || nodalResponse->Size() < dof || dof < 0)
-      return TCL_ERROR;
-
-    double value = (*nodalResponse)(dof);
-    
-    // now we copy the value to the tcl string that is returned
-    sprintf(interp->result,"%35.20f",value);
-	
-    return TCL_OK;
-}
-
-int 
-calculateNodalReactions(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-    // make sure at least one other argument to contain type of system
-  bool incInertia = false;
-  if (argc == 2) 
-    if ((strcmp(argv[1],"-incIneria") == 0) || strcmp(argv[1],"-incIneria") == 0)
-      incInertia = true;
-  
-
-  theDomain.calculateNodalReactions(incInertia);
-  return TCL_OK;
-}
-
-
-// AddingSensitivity:BEGIN ////////////////////////////////////
 int 
 sensNodeDisp(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
@@ -4772,9 +4575,22 @@ sensNodeVel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv
 int 
 computeGradients(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
 {
+	// Comment to the developer:
+	// This Tcl command is meant to be called only for
+	// path-independent problems.  In such cases the 
+	// gradients can be computed AFTER the complete
+	// structural analysis is completed.
+	// No error messages is returned if the user tries to invoke this command
+	// during a path-dependent analysis.  The reason is that the reliability
+	// analysis will call this method BOTH for path dependent and independent problems. 
+
 #ifdef _RELIABILITY
-  if (theSensitivityAlgorithm != 0)
-    theSensitivityAlgorithm->computeSensitivities();
+	if (theSensitivityAlgorithm->shouldComputeAtEachStep()) {
+	}
+	else {
+
+		theSensitivityAlgorithm->computeSensitivities();
+	}
 #endif
     return TCL_OK;
 }
@@ -4859,7 +4675,7 @@ logFile(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
     opserr << "WARNING logFile " << argv[1] << " failed to set the file\n";
 
   
-  simulationInfo.addOutputFile(argv[1]);
+  simulationInfo.addWriteFile(argv[1]);
 
   return TCL_OK;
 }

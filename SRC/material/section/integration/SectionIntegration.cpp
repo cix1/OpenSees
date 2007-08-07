@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-01-25 19:53:17 $
+// $Revision: 1.1 $
+// $Date: 2006-08-11 18:32:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/integration/SectionIntegration.cpp,v $
 
 #include <SectionIntegration.h>
@@ -37,20 +37,15 @@ SectionIntegration::~SectionIntegration()
 }
 
 void
-SectionIntegration::getLocationsDeriv(int nFibers, double *dyidh, double *dzidh)
+SectionIntegration::getLocationsDeriv(int nFibers, double *dptsdh)
 {
   for (int i = 0; i < nFibers; i++)
-    dyidh[i] = 0.0;
-
-  if (dyidh != 0) {
-    for (int i = 0; i < nFibers; i++)
-      dzidh[i] = 0.0;
-  }
+    dptsdh[i] = 0.0;
 }
 
 void
-SectionIntegration::getWeightsDeriv(int nFibers, double *dwtdh)
+SectionIntegration::getWeightsDeriv(int nFibers, double *dwtsdh)
 {
   for (int i = 0; i < nFibers; i++)
-    dwtdh[i] = 0.0;
+    dwtsdh[i] = 0.0;
 }

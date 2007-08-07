@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2007-05-04 23:41:56 $
+// $Revision: 1.3 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/Broyden.h,v $
                                                                         
 #ifndef Broyden_h
@@ -48,17 +48,14 @@ class Broyden: public EquiSolnAlgo
   public:
 
     Broyden(int tangent = CURRENT_TANGENT, int n = 10 );    
+
     Broyden(ConvergenceTest &theTest, int tangent = CURRENT_TANGENT, int n = 10 );
 
     ~Broyden();
 
     int solveCurrentStep(void);    
 
-    void setLinks(AnalysisModel &theModel, 
-		  IncrementalIntegrator &theIntegrator,
-		  LinearSOE &theSOE,
-		  ConvergenceTest *theTest);
-
+    
     int setConvergenceTest(ConvergenceTest *theNewTest);
     ConvergenceTest *getConvergenceTest(void);     
     
@@ -71,6 +68,11 @@ class Broyden: public EquiSolnAlgo
   protected:
     
   private:
+
+    ConvergenceTest *theTest;
+
+    ConvergenceTest *localTest ;
+
     int tangent ;
 
     int numberLoops ; //number of Broyden iterations
@@ -90,8 +92,6 @@ class Broyden: public EquiSolnAlgo
                         LinearSOE *theSOE,
 			Vector &du, 
 			int count ) ;
-
-    ConvergenceTest *localTest;
   
 };
 

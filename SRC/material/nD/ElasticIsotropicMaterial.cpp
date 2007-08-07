@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.22 $                                                              
-// $Date: 2007-02-02 01:20:37 $                                                                  
+// $Revision: 1.20 $                                                              
+// $Date: 2006-08-11 21:20:20 $                                                                  
 // $Source: /usr/local/cvs/OpenSees/SRC/material/nD/ElasticIsotropicMaterial.cpp,v $                                                                
                                                                         
                                                                         
@@ -47,8 +47,6 @@
 
 #include <Tensor.h>
 #include <Channel.h>
-#include <Information.h>
-#include <Parameter.h>
 
 #include <OPS_Globals.h>
 
@@ -114,15 +112,15 @@ ElasticIsotropicMaterial::getCopy (const char *type)
 ///////////////////////////////
     else if (strcmp(type,"ThreeDimensional") == 0 || 
 	     strcmp(type,"3D") == 0)
-      {
+    {
 	ElasticIsotropic3D *theModel;
 	theModel = new ElasticIsotropic3D (this->getTag(), E, v, rho);
-	// DOES NOT COPY sigma, D, and epsilon ...
-	// This function should only be called during element instantiation, so
-	// no state determination is performed on the material model object
-	// prior to copying the material model (calling this function)
+		// DOES NOT COPY sigma, D, and epsilon ...
+		// This function should only be called during element instantiation, so
+		// no state determination is performed on the material model object
+		// prior to copying the material model (calling this function)
 	return theModel;
-      }
+    }
 ///////////////////////////////
     else if (strcmp(type,"PlateFiber") == 0)
     {
@@ -145,9 +143,15 @@ ElasticIsotropicMaterial::getCopy (const char *type)
 	return theModel;
     }
 
+
     // Handle other cases
     else
-      return NDMaterial::getCopy(type);
+    {
+      opserr << "ElasticIsotropicMaterial::getModel failed to get model: " << type << endln;
+      exit(-1);
+    }
+    
+    return 0;
 }
 
 int
@@ -196,7 +200,12 @@ ElasticIsotropicMaterial::getTangent (void)
 const Matrix&
 ElasticIsotropicMaterial::getInitialTangent (void)
 {
-  return this->getTangent();
+  opserr << "ElasticIsotropicMaterial::getInitialTangent -- subclass responsibility\n";
+  exit(-1);
+
+  // Just to make it compile
+  Matrix *ret = new Matrix();
+  return *ret;
 }
 
 const Vector&
@@ -401,40 +410,14 @@ ElasticIsotropicMaterial::Print (OPS_Stream &s, int flag)
 	return;
 }
 
-int
-ElasticIsotropicMaterial::setParameter(const char **argv, int argc,
-				      Parameter &param)
+int 
+ElasticIsotropicMaterial::setParameter(char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
-
-  if (strcmp(argv[0],"E") == 0)
-    return param.addObject(1, this);
-
-  else if (strcmp(argv[0],"nu") == 0 || strcmp(argv[0],"v") == 0)
-    return param.addObject(2, this);
-
-  else if (strcmp(argv[0],"rho") == 0)
-    return param.addObject(3, this);
-
-  else
-    return 0;
+  return -1;
 }
 
 int 
 ElasticIsotropicMaterial::updateParameter(int parameterID, Information &info)
 { 
-  switch(parameterID) {
-  case 1:
-    E = info.theDouble;
-    return 0;
-  case 2:
-    v = info.theDouble;
-    return 0;
-  case 3:
-    rho = info.theDouble;
-    return 0;
-  default:
-    return -1;
-  }
+  return -1;
 }

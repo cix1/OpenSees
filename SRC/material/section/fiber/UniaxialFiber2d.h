@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-02-02 01:18:42 $
+// $Revision: 1.7 $
+// $Date: 2006-08-04 18:32:01 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/fiber/UniaxialFiber2d.h,v $
                                                                         
                                                                         
@@ -45,7 +45,6 @@
 #include <Matrix.h>
 
 class UniaxialMaterial;
-class Parameter;
 
 class UniaxialFiber2d : public Fiber
 {
@@ -71,20 +70,12 @@ class UniaxialFiber2d : public Fiber
     int recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker);
     void Print(OPS_Stream &s, int flag =0);
     
-    Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse(const char **argv, int argc, Information &info, OPS_Stream &s);
     int getResponse(int responseID, Information &info);
 	
     void getFiberLocation(double &y, double &z);
     UniaxialMaterial *getMaterial(void) {return theMaterial;};
     double getArea(void) {return area;};
-
-    int setParameter(const char **argv, int argc, Parameter &param);
-    int updateParameter(int parameterID, Information &info);
-    int activateParameter(int parameterID);
-
-    const Vector &getFiberSensitivity(int gradNumber, bool cond);
-    int commitSensitivity(const Vector &dedh, int gradNumber,
-			  int numGrads);
 
   protected:
     

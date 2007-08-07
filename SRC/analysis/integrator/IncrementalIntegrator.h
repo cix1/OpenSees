@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-04-02 23:42:26 $
+// $Revision: 1.7 $
+// $Date: 2003-03-06 20:32:01 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/IncrementalIntegrator.h,v $
                                                                         
                                                                         
@@ -47,7 +47,6 @@
 
 class LinearSOE;
 class AnalysisModel;
-class ConvergenceTest;
 class FE_Element;
 class DOF_Group;
 class Vector;
@@ -56,8 +55,7 @@ class Vector;
 #define INITIAL_TANGENT 1
 #define CURRENT_SECANT  2
 #define INITIAL_THEN_CURRENT_TANGENT  3
-#define NO_TANGENT  4
-#define SECOND_TANGENT 5
+
 
 class IncrementalIntegrator : public Integrator
 {
@@ -66,8 +64,7 @@ class IncrementalIntegrator : public Integrator
     virtual ~IncrementalIntegrator();
 
     virtual void setLinks(AnalysisModel &theModel,
-			  LinearSOE &theSOE,
-			  ConvergenceTest *theTest);
+			  LinearSOE &theSOE);
 
     // methods to set up the system of equations
     virtual int  formTangent(int statusFlag = CURRENT_TANGENT);    
@@ -94,10 +91,8 @@ class IncrementalIntegrator : public Integrator
     virtual int getLastResponse(Vector &result, const ID &id);
     
   protected:
-    LinearSOE *getLinearSOE(void) const;
-    AnalysisModel *getAnalysisModel(void) const;
-    ConvergenceTest *getConvergenceTest(void) const;
-
+    LinearSOE *getLinearSOEPtr(void) const;
+    AnalysisModel *getAnalysisModelPtr(void) const;
     virtual int  formNodalUnbalance(void);        
     virtual int  formElementResidual(void);            
     int statusFlag;
@@ -105,7 +100,6 @@ class IncrementalIntegrator : public Integrator
   private:
     LinearSOE *theSOE;
     AnalysisModel *theAnalysisModel;
-    ConvergenceTest *theTest;
 };
 
 #endif

@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2006-12-13 14:21:17 $
+// $Revision: 1.5 $
+// $Date: 2003-10-27 23:04:38 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/components/ReliabilityDomain.h,v $
 
 
@@ -44,11 +44,6 @@
 #include <Spectrum.h>
 
 class TaggedObjectStorage;
-
-class RandomVariableIter;
-class RandomVariablePositionerIter;
-class ParameterPositionerIter;
-class LimitStateFunctionIter;
 
 class ReliabilityDomain
 {
@@ -93,17 +88,9 @@ public:
 
 	// Member functions to remove single components from the domain
 	int removeRandomVariablePositioner(int tag);
-	int removeParameterPositioner(int tag);
 	int removeRandomVariable(int tag);
 	int removeCorrelationCoefficient(int tag);
 	int removePerformanceFunction(int tag);
-
-	int removeAllParameterPositioners(void);
-
-	RandomVariableIter &getRandomVariables(void);
-	RandomVariablePositionerIter &getRandomVariablePositioners(void);
-	ParameterPositionerIter &getParameterPositioners(void);
-	LimitStateFunctionIter &getLimitStateFunctions(void);
 
 protected:
 
@@ -118,10 +105,6 @@ private:
 	TaggedObjectStorage *theSpectraPtr;
 	int tagOfActiveLimitStateFunction;
 
-	RandomVariableIter *theRVIter;
-	RandomVariablePositionerIter *theRVPosIter;
-	ParameterPositionerIter *theParamPosIter;
-	LimitStateFunctionIter *theLSFIter;
 };
 
 #endif

@@ -18,45 +18,9 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.27 $
-// $Date: 2007-06-09 17:16:04 $
+// $Revision: 1.20 $
+// $Date: 2006-08-04 18:43:52 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/forceBeamColumn/ForceBeamColumn3d.cpp,v $
-
-/*
- * References
- *
-
-State Determination Algorithm
----
-Neuenhofer, A. and F. C. Filippou (1997). "Evaluation of Nonlinear Frame Finite
-Element Models." Journal of Structural Engineering, 123(7):958-966.
-
-Spacone, E., V. Ciampi, and F. C. Filippou (1996). "Mixed Formulation of
-Nonlinear Beam Finite Element." Computers and Structures, 58(1):71-83.
-
-
-Plastic Hinge Integration
----
-Scott, M. H. and G. L. Fenves (2006). "Plastic Hinge Integration Methods for
-Force-Based Beam-Column Elements." Journal of Structural Engineering,
-132(2):244-252.
-
-
-Analytical Response Sensitivity (DDM)
----
-Scott, M. H., P. Franchin, G. L. Fenves, and F. C. Filippou (2004).
-"Response Sensitivity for Nonlinear Beam-Column Elements."
-Journal of Structural Engineering, 130(9):1281-1288.
-
-
-Software Design
----
-Scott, M. H., G. L. Fenves, F. T. McKenna, and F. C. Filippou (2007).
-"Software Patterns for Nonlinear Beam-Column Models."
-Journal of Structural Engineering, Approved for publication, February 2007.
-
- *
- */
 
 #include <math.h>
 #include <stdlib.h>
@@ -64,7 +28,6 @@ Journal of Structural Engineering, Approved for publication, February 2007.
 #include <float.h>
 
 #include <Information.h>
-#include <Parameter.h>
 #include <ForceBeamColumn3d.h>
 #include <MatrixUtil.h>
 #include <Domain.h>
@@ -1323,7 +1286,7 @@ ForceBeamColumn3d::getInitialStiff(void)
        secDefSize   += size;
     }
 
-    Vector dData(1+1+NEBD+NEBD*NEBD+secDefSize + 4); 
+    Vector dData(1+1+NEBD+NEBD*NEBD+secDefSize); 
     loc = 0;
 
     // place double variables into Vector
@@ -1348,12 +1311,6 @@ ForceBeamColumn3d::getInitialStiff(void)
        for (i=0; i<sections[k]->getOrder(); i++)
 	  dData(loc++) = (vscommit[k])(i);
 
-    // send damping coefficients
-    dData(loc++) = alphaM;
-    dData(loc++) = betaK;
-    dData(loc++) = betaK0;
-    dData(loc++) = betaKc;
-    
     if (theChannel.sendVector(dbTag, commitTag, dData) < 0) {
        opserr << "ForceBeamColumn3d::sendSelf() - failed to send Vector data\n";
 
@@ -1589,7 +1546,7 @@ ForceBeamColumn3d::getInitialStiff(void)
        secDefSize   += size;
     }
 
-    Vector dData(1+1+NEBD+NEBD*NEBD+secDefSize+4);   
+    Vector dData(1+1+NEBD+NEBD*NEBD+secDefSize);   
 
     if (theChannel.recvVector(dbTag, commitTag, dData) < 0)  {
       opserr << "ForceBeamColumn3d::sendSelf() - failed to send Vector data\n";
@@ -1627,12 +1584,6 @@ ForceBeamColumn3d::getInitialStiff(void)
 	(vscommit[k])(i) = dData(loc++);
     }
 
-    // set damping coefficients
-    alphaM = dData(loc++);
-    betaK = dData(loc++);
-    betaK0 = dData(loc++);
-    betaKc = dData(loc++);
-    
     initialFlag = 2;  
 
     return 0;
@@ -1803,11 +1754,11 @@ ForceBeamColumn3d::getInitialStiff(void)
 		 sectionKey2 = j;
 	 }
 	 if (sectionKey1 == 0) {
-	   opserr << "FATAL ForceBeamColumn3d::compSectionResponse - section does not provide Mz response\n";
+	   opserr << "FATAL NLBeamColumn3d::compSectionResponse - section does not provide Mz response\n";
 	   exit(-1);
 	 }
 	 if (sectionKey2 == 0) {
-	   opserr << "FATAL ForceBeamColumn3d::compSectionResponse - section does not provide My response\n";
+	   opserr << "FATAL NLBeamColumn3d::compSectionResponse - section does not provide My response\n";
 	   exit(-1);
 	 }
 
@@ -1870,6 +1821,7 @@ ForceBeamColumn3d::getInitialStiff(void)
     else if (flag < -1) {
       int eleTag = this->getTag();
       int counter = (flag +1) * -1;
+      int i;
       double P  = Secommit(0);
       double MZ1 = Secommit(1);
       double MZ2 = Secommit(2);
@@ -1957,7 +1909,7 @@ ForceBeamColumn3d::getInitialStiff(void)
 	 displs = new Vector [numSections];
 
 	 if (!coords) {
-	   opserr << "ForceBeamColumn3d::Print() -- failed to allocate coords array";   
+	   opserr << "NLBeamColumn3d::Print() -- failed to allocate coords array";   
 	   exit(-1);
 	 }
 
@@ -1966,7 +1918,7 @@ ForceBeamColumn3d::getInitialStiff(void)
 	   coords[i] = Vector(NDM);
 
 	 if (!displs) {
-	   opserr << "ForceBeamColumn3d::Print() -- failed to allocate coords array";   
+	   opserr << "NLBeamColumn3d::Print() -- failed to allocate coords array";   
 	   exit(-1);
 	 }
 
@@ -2064,7 +2016,7 @@ ForceBeamColumn3d::getInitialStiff(void)
   }
 
   Response*
-  ForceBeamColumn3d::setResponse(const char **argv, int argc, OPS_Stream &output)
+  ForceBeamColumn3d::setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &output)
   {
 
     Response *theResponse = 0;
@@ -2163,7 +2115,7 @@ ForceBeamColumn3d::getInitialStiff(void)
 	output.tag("GaussPointOutput");
 	output.attr("number",sectionNum);
 	output.attr("eta",2.0*xi[sectionNum-1]-1.0);
-	theResponse =  sections[sectionNum-1]->setResponse(&argv[2], argc-2, output);
+	theResponse =  sections[sectionNum-1]->setResponse(&argv[2], argc-2, eleInformation, output);
 	
 	output.endTag();
       }
@@ -2337,40 +2289,67 @@ ForceBeamColumn3d::getResponse(int responseID, Information &eleInfo)
 }
 
 int
-ForceBeamColumn3d::setParameter(const char **argv, int argc, Parameter &param)
+ForceBeamColumn3d::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
+  //
+  // From the parameterID value it should be possible to extract
+  // information about:
+  //  1) Which parameter is in question. The parameter could
+  //     be at element, section, or material level. 
+  //  2) Which section and material number (tag) it belongs to. 
+  //
+  // To accomplish this the parameterID is given the following value:
+  //     parameterID = type + 1000*matrTag + 100000*sectionTag
+  // ...where 'type' is an integer in the range (1-99) and added 100
+  // for each level (from material to section to element). 
+  //
+  // Example:
+  //    If 'E0' (case 2) is random in material #3 of section #5
+  //    the value of the parameterID at this (element) level would be:
+  //    parameterID = 2 + 1000*3 + 100000*5 = 503002
+  //    As seen, all given information can be extracted from this number. 
+  //
+  
+  // Initial declarations
+  int parameterID;
 
   // If the parameter belongs to the element itself
-  if (strcmp(argv[0],"rho") == 0)
-    return param.addObject(1, this);
+  if (strcmp(argv[0],"rho") == 0) {
+    info.theType = DoubleType;
+    return 1;
+  }
   
-  // If the parameter belongs to a section or lower
-  if (strstr(argv[0],"section") != 0) {
+  // If the parameter is belonging to a section or lower
+  else if (strcmp(argv[0],"section") == 0) {
     
-    if (argc < 3)
+    // For now, no parameters of the section itself:
+    if (argc<5) {
+      opserr << "For now: cannot handle parameters of the section itself." << endln;
       return -1;
+    }
     
     // Get section and material tag numbers from user input
     int paramSectionTag = atoi(argv[1]);
     
     // Find the right section and call its setParameter method
-    int ok = 0;
-    for (int i = 0; i < numSections; i++)
-      if (paramSectionTag == sections[i]->getTag())
-	ok += sections[i]->setParameter(&argv[2], argc-2, param);
-
-    return ok;
+    for (int i=0; i<numSections; i++) {
+      if (paramSectionTag == sections[i]->getTag()) {
+	parameterID = sections[i]->setParameter(&argv[2], argc-2, info);
+      }
+    }
+    
+    // Check if the parameterID is valid
+    if (parameterID < 0) {
+      opserr << "ForceBeamColumn3d::setParameter() - could not set parameter. " << endln;
+      return -1;
+    }
+    else {
+      // Return the parameterID value (according to the above comments)
+      return parameterID;
+    }
   }
   
-  else if (strstr(argv[0],"integration") != 0) {
-    
-    if (argc < 2)
-      return -1;
-
-    return beamIntegr->setParameter(&argv[1], argc-1, param);
-  }
+  // Otherwise parameter is unknown for this class
   else {
     return -1;
   }
@@ -2382,9 +2361,6 @@ ForceBeamColumn3d::updateParameter (int parameterID, Information &info)
   // If the parameterID value is not equal to 1 it belongs 
   // to section or material further down in the hierarchy. 
   
-  return 0;
-
-  /*
   if (parameterID == 1) {
     
     this->rho = info.theDouble;
@@ -2414,8 +2390,7 @@ ForceBeamColumn3d::updateParameter (int parameterID, Information &info)
   else {
     opserr << "ForceBeamColumn3d::updateParameter() - could not update parameter. " << endln;
     return -1;
-  }      
-  */ 
+  }       
 }
 
 void

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.19 $
-// $Date: 2006-12-01 18:11:23 $
+// $Revision: 1.17 $
+// $Date: 2006-02-08 20:20:00 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/fe_ele/transformation/TransformationFE.cpp,v $
                                                                         
 // Written: fmk 
@@ -344,8 +344,7 @@ TransformationFE::getTangent(Integrator *theNewIntegrator)
 		noColsTransformed = Tj->noCols();
 		// CHECK SIZE OF BUFFFER
 		localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-		//localTtKT = (*Ti) ^ localK * (*Tj);
-		localTtKT.addMatrixTripleProduct(0.0, *Ti, localK, *Tj, 1.0);
+		localTtKT = (*Ti) ^ localK * (*Tj);
 	    } else if (Ti == 0 && Tj != 0) {
 		noRowsTransformed = numDOFi;
 		noColsTransformed = Tj->noCols();
@@ -356,9 +355,9 @@ TransformationFE::getTangent(Integrator *theNewIntegrator)
 	    } else if (Ti != 0 && Tj == 0) {
 		noRowsTransformed = Ti->noCols();
 		noColsTransformed = numDOFj;
+		// CHECK SIZE OF BUFFFER
 		localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-		//localTtKT = (*Ti) ^ localK;
-		localTtKT.addMatrixTransposeProduct(0.0, *Ti, localK, 1.0);
+		localTtKT = (*Ti) ^ localK;
 	    } else {
 		noRowsTransformed = numDOFi;
 		noColsTransformed = numDOFj;
@@ -510,8 +509,7 @@ TransformationFE::getK_Force(const Vector &accel, double fact)
 	noColsTransformed = Tj->noCols();
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK * (*Tj);
-	localTtKT.addMatrixTripleProduct(0.0, *Ti, localK, *Tj, 1.0);
+	localTtKT = (*Ti) ^ localK * (*Tj);
       } else if (Ti == 0 && Tj != 0) {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = Tj->noCols();
@@ -524,8 +522,7 @@ TransformationFE::getK_Force(const Vector &accel, double fact)
 	noColsTransformed = numDOFj;
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK;
-	localTtKT.addMatrixTransposeProduct(0.0, *Ti, localK, 1.0);
+	localTtKT = (*Ti) ^ localK;
       } else {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = numDOFj;
@@ -625,8 +622,7 @@ TransformationFE::getKi_Force(const Vector &accel, double fact)
 	noColsTransformed = Tj->noCols();
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK * (*Tj);
-	localTtKT.addMatrixTripleProduct(0.0, *Ti, localK, *Tj, 1.0);
+	localTtKT = (*Ti) ^ localK * (*Tj);
       } else if (Ti == 0 && Tj != 0) {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = Tj->noCols();
@@ -639,8 +635,7 @@ TransformationFE::getKi_Force(const Vector &accel, double fact)
 	noColsTransformed = numDOFj;
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK;
-	localTtKT.addMatrixTransposeProduct(0.0, *Ti, localK, 1.0);
+	localTtKT = (*Ti) ^ localK;
       } else {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = numDOFj;
@@ -739,8 +734,7 @@ TransformationFE::getM_Force(const Vector &accel, double fact)
 	noColsTransformed = Tj->noCols();
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK * (*Tj);
-	localTtKT.addMatrixTripleProduct(0.0, *Ti, localK, *Tj, 1.0);
+	localTtKT = (*Ti) ^ localK * (*Tj);
       } else if (Ti == 0 && Tj != 0) {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = Tj->noCols();
@@ -753,8 +747,7 @@ TransformationFE::getM_Force(const Vector &accel, double fact)
 	noColsTransformed = numDOFj;
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK;
-	localTtKT.addMatrixTransposeProduct(0.0, *Ti, localK, 1.0);
+	localTtKT = (*Ti) ^ localK;
       } else {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = numDOFj;
@@ -853,8 +846,7 @@ TransformationFE::getC_Force(const Vector &accel, double fact)
 	noColsTransformed = Tj->noCols();
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK * (*Tj);
-	localTtKT.addMatrixTripleProduct(0.0, *Ti, localK, *Tj, 1.0);
+	localTtKT = (*Ti) ^ localK * (*Tj);
       } else if (Ti == 0 && Tj != 0) {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = Tj->noCols();
@@ -867,8 +859,7 @@ TransformationFE::getC_Force(const Vector &accel, double fact)
 	noColsTransformed = numDOFj;
 	// CHECK SIZE OF BUFFFER
 	localTtKT.setData(dataBuffer, noRowsTransformed, noColsTransformed);
-	//localTtKT = (*Ti) ^ localK;
-	localTtKT.addMatrixTransposeProduct(0.0, *Ti, localK, 1.0);
+	localTtKT = (*Ti) ^ localK;
       } else {
 	noRowsTransformed = numDOFi;
 	noColsTransformed = numDOFj;

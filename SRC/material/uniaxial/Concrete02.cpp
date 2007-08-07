@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.3 $
-// $Date: 2007-06-08 00:38:39 $
+// $Revision: 1.1 $
+// $Date: 2006-03-03 18:52:40 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/Concrete02.cpp,v $
                                                                       
 // Written: fmk
@@ -41,7 +41,6 @@
 #include <OPS_Globals.h>
 #include <float.h>
 #include <Channel.h>
-#include <Information.h>
 
 Concrete02::Concrete02(int tag, double _fc, double _epsc0, double _fcu,
 		       double _epscu, double _rat, double _ft, double _Ets):
@@ -274,7 +273,7 @@ Concrete02::recvSelf(int commitTag, Channel &theChannel,
 
   static Vector data(13);
 
-  if (theChannel.recvVector(this->getDbTag(), commitTag, data) < 0) {
+  if (theChannel.sendVector(this->getDbTag(), commitTag, data) < 0) {
     opserr << "Concrete02::recvSelf() - failed to recvSelf\n";
     return -1;
   }
@@ -384,14 +383,4 @@ Concrete02::Compr_Envlp (double epsc, double &sigc, double &Ect)
     }
   }
   return;
-}
-
-int
-Concrete02::getVariable(const char *varName, Information &theInfo)
-{
-  if (strcmp(varName,"ec") == 0) {
-    theInfo.theDouble = epsc0;
-    return 0;
-  } else
-    return -1;
 }

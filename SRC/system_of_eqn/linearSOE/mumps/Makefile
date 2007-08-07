@@ -4,68 +4,39 @@ include ../../../../Makefile.def
 
 PROGRAM         = test
 
-OBJS = 
-
-ifdef MUMPS
-
 OBJS       = MumpsSOE.o \
-	MumpsSolver.o mumps.o
+	MumpsSolver.o 
 
 ifeq ($(PROGRAMMING_MODE), PARALLEL)
 
 OBJS       = MumpsSOE.o \
 	MumpsSolver.o \
 	MumpsParallelSOE.o \
-	MumpsParallelSolver.o mumps.o
+	MumpsParallelSolver.o 
 
 endif
-
-ifeq ($(PROGRAMMING_MODE), PARALLEL_INTERPRETERS)
-
-OBJS       = MumpsSOE.o \
-	MumpsSolver.o \
-	MumpsParallelSOE.o \
-	MumpsParallelSolver.o mumps.o
-
-endif
-endif
-
-
-
-GRAPHIC_LIBS_TCL = $(FE)/tcl/TclFeViewer.o \
-	$(FE)/renderer/PlainMap.o 
 
 all:         $(OBJS)
 
-test: $(OBJS) example.o
+test: example.cpp $(OBJS)
 	@$(CC) $(CFLAGS) $(INCLUDES) -c example.cpp
-	@$(LINKER) $(LINKFLAGS) example.o  \
+	@$(LINKER) $(LINKFLAGS) example.o $(OBJS) \
+	-L$(HOME)/MUMPS_4.6/lib \
+	-ldmumps -lpord  -lessl -lpesslsmp -lblacssmp \
+	$(HPM_LIB) \
 	$(FE)/actor/channel/MPI_Channel.o \
 	$(FE_LIBRARY) $(MACHINE_LINKLIBS) $(PARALLEL_LIB) \
-	$(MACHINE_NUMERICAL_LIBS) $(TCL_LIBRARY) $(GRAPHIC_LIBS_TCL) \
-	$(MACHINE_SPECIFIC_LIBS) -o test
+	$(MACHINE_NUMERICAL_LIBS) $(TCL_LIBRARY) \
+	$(MACHINE_SPECIFIC_LIBS) -o $(PROGRAM)
 
-test1: 
-	@$(CC) $(CFLAGS) $(INCLUDES) -I$(HOME)/MUMPS_4.6.4/include -c c_example.c   
-	@$(LINKER) $(LINKFLAGS) c_example.o  mumps.o \
-	-L$(HOME)/MUMPS_4.6.4/lib \
+test1: c_example.c
+	@$(CC) $(CFLAGS) $(INCLUDES) -c c_example.c   
+	@$(LINKER) $(LINKFLAGS) c_example.o  \
+	-L$(HOME)/MUMPS_4.6/lib \
 	-ldmumps -lpord  -lessl -lpesslsmp -lblacssmp \
 	$(HPM_LIB) \
 	-lm \
-	$(MACHINE_SPECIFIC_LIBS) -o test1
-
-test2: c_example1.o
-	@$(LINKER) $(LINKFLAGS) c_example1.o  mumps.o \
-	-L$(HOME)/MUMPS_4.6.4/lib \
-	-ldmumps -lpord  -lessl -lpesslsmp -lblacssmp \
-	$(HPM_LIB) \
-	$(FE)/actor/channel/MPI_Channel.o \
-	$(FE_LIBRARY) $(MACHINE_LINKLIBS) $(PARALLEL_LIB) \
-	$(MACHINE_NUMERICAL_LIBS) $(TCL_LIBRARY) $(GRAPHIC_LIBS_TCL) \
-	$(MACHINE_SPECIFIC_LIBS) -o test2
-
-#	-lm \
-#	$(MACHINE_SPECIFIC_LIBS) -o test2
+	$(MACHINE_SPECIFIC_LIBS) -o $(PROGRAM)
 
 # Miscellaneous
 tidy:	

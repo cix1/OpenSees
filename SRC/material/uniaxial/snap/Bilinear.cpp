@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.3 $
-// $Date: 2007-02-02 01:19:30 $
+// $Revision: 1.1 $
+// $Date: 2004-09-01 03:53:13 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/snap/Bilinear.cpp,v $
 //
 //
@@ -34,11 +34,10 @@
 //////////////////////////////////////////////////////////////////////
 
 #include <Bilinear.h>
-#include <Channel.h>
-#include <Parameter.h>
-
 #include <stdlib.h>
+#include <Channel.h>
 #include <math.h>
+
 #include <string.h>
 
 #define DEBG 0
@@ -543,7 +542,7 @@ int Bilinear::setTrialStrain( double d, double strainRate)
 }
 
 
-Response* Bilinear::setResponse(const char **argv, int argc)
+Response* Bilinear::setResponse(const char **argv, int argc, Information &matInfo)
 {
 	if ( argv == NULL || argc == 0 ) {
 		opserr << "Error: Bilinear::setResponse  : No argument specified\n" << "\a";
@@ -714,42 +713,51 @@ void Bilinear::envelNegCap( double ekelstk, double fy, double ekhard, double dca
 
 
 int
-Bilinear::setParameter(const char **argv, int argc, Parameter &param)
+Bilinear::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return 0;
-  
-  if (strcmp(argv[0],"elstk") == 0) 
-    return param.addObject(1, this);
-  
-  if (strcmp(argv[0],"fyieldPos") == 0) 
-    return param.addObject(2, this);
-  
-  if (strcmp(argv[0],"fyieldNeg") == 0) 
-    return param.addObject(3, this);
-  
-  if (strcmp(argv[0],"alfa") == 0) 
-    return param.addObject(4, this);
-  
-  if (strcmp(argv[0],"alfaCap") == 0) 
-    return param.addObject(5, this);
-  
-  if (strcmp(argv[0],"capDispPos") == 0) 
-    return param.addObject(6, this);
-  
-  if (strcmp(argv[0],"capDispNeg") == 0) 
-    return param.addObject(7, this);
-  
-  if (strcmp(argv[0],"Resfac") == 0) 
-    return param.addObject(8, this);
-  
-  if (strcmp(argv[0],"flagCapenv") == 0) 
-    return param.addObject(9, this);
-  
-  else
-    opserr << "WARNING: Could not set parameter in BoucWenMaterial. " << endln;
-  
-  return 0;
+	if (argc < 1)
+		return -1;
+
+	if (strcmp(argv[0],"elstk") == 0) {
+		info.theType = DoubleType;
+		return 1;
+	}
+	if (strcmp(argv[0],"fyieldPos") == 0) {
+		info.theType = DoubleType;
+		return 2;
+	}
+	if (strcmp(argv[0],"fyieldNeg") == 0) {
+		info.theType = DoubleType;
+		return 3;
+	}
+	if (strcmp(argv[0],"alfa") == 0) {
+		info.theType = DoubleType;
+		return 4;
+	}
+	if (strcmp(argv[0],"alfaCap") == 0) {
+		info.theType = DoubleType;
+		return 5;
+	}
+	if (strcmp(argv[0],"capDispPos") == 0) {
+		info.theType = DoubleType;
+		return 6;
+	}
+	if (strcmp(argv[0],"capDispNeg") == 0) {
+		info.theType = DoubleType;
+		return 7;
+	}
+	if (strcmp(argv[0],"Resfac") == 0) {
+		info.theType = DoubleType;
+		return 8;
+	}
+	if (strcmp(argv[0],"flagCapenv") == 0) {
+		info.theType = IntType;
+		return 9;
+	}
+	else
+		opserr << "WARNING: Could not set parameter in BoucWenMaterial. " << endln;
+                
+	return -1;
 }
 
 

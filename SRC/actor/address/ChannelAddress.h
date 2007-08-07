@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.2 $
-// $Date: 2006-10-02 22:36:58 $
+// $Revision: 1.1.1.1 $
+// $Date: 2000-09-15 08:23:15 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/address/ChannelAddress.h,v $
                                                                         
                                                                         
@@ -36,11 +36,10 @@
 #ifndef ChannelAddress_h
 #define ChannelAddress_h
 
-#define SOCKET_TYPE 1
-
 #ifdef _UNIX
 // #include "Socket.h"
 
+#define SOCKET_TYPE 1
 #define MPI_TYPE    2
 
 #endif

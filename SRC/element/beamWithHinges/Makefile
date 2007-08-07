@@ -2,6 +2,8 @@ include ../../../Makefile.def
 
 OBJS       = TclBeamWithHingesBuilder.o
 
+#BeamWithHinges2d.o BeamWithHinges3d.o 
+
 all:         $(OBJS)
 
 # Miscellaneous

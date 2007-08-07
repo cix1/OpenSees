@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2007-02-24 01:21:08 $
+// $Revision: 1.3 $
+// $Date: 2003-10-27 23:45:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/gFunction/TclGFunEvaluator.h,v $
 
 
@@ -49,13 +49,13 @@ public:
 						TCL_Char *fileName);
 	~TclGFunEvaluator();
 
-	int		runGFunAnalysis(const Vector &x);
+	int		runGFunAnalysis(Vector x);
 	int		tokenizeSpecials(TCL_Char *theExpression);
 
 protected:
 
 private:
-	char fileName[256];
+	char *fileName;
 
 };
 

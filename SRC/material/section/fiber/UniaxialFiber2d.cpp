@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.11 $
-// $Date: 2007-02-02 01:18:42 $
+// $Revision: 1.9 $
+// $Date: 2006-08-04 18:32:01 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/fiber/UniaxialFiber2d.cpp,v $
                                                                         
                                                                         
@@ -44,7 +44,6 @@
 #include <ID.h>
 #include <SectionForceDeformation.h>
 #include <Information.h>
-#include <Parameter.h>
 #include <FiberResponse.h>
 
 Matrix UniaxialFiber2d::ks(2,2); 
@@ -318,8 +317,9 @@ void UniaxialFiber2d::Print(OPS_Stream &s, int flag)
 }
 
 Response*
-UniaxialFiber2d::setResponse(const char **argv, int argc, OPS_Stream &s)
+UniaxialFiber2d::setResponse(const char **argv, int argc, Information &info, OPS_Stream &s)
 {
+
   if (argc == 0)
     return 0;
   
@@ -327,7 +327,7 @@ UniaxialFiber2d::setResponse(const char **argv, int argc, OPS_Stream &s)
     return new FiberResponse(this, 1, Vector(2));
   
   else
-    return theMaterial->setResponse(argv, argc, s);
+    return theMaterial->setResponse(argv, argc, info, s);
 }
 
 int
@@ -348,51 +348,3 @@ UniaxialFiber2d::getFiberLocation(double &yLoc, double &zLoc)
   yLoc = -y;
   zLoc = 0.0;
 }
-
-int
-UniaxialFiber2d::setParameter(const char **argv, int argc, Parameter &param)
-{
-  if (strcmp(argv[0],"A") == 0)
-    return param.addObject(1, this);
-
-  if (strcmp(argv[0],"y") == 0)
-    return param.addObject(2, this);
-
-  else
-    return theMaterial->setParameter(argv, argc, param);
-}
-
-int
-UniaxialFiber2d::updateParameter(int parameterID, Information &info)
-{
-  switch(parameterID) {
-  case 1:
-    area = info.theDouble;
-    return 0;
-  case 2:
-    y = -info.theDouble;
-    return 0;
-  default:
-    return -1;
-  }
-}
-
-int
-UniaxialFiber2d::activateParameter(int parameterID)
-{
-  return -1;
-}
-
-const Vector&
-UniaxialFiber2d::getFiberSensitivity(int gradNumber, bool cond)
-{
-  return Fiber::getFiberSensitivity(gradNumber, cond);
-}
-
-int 
-UniaxialFiber2d::commitSensitivity(const Vector &dedh, int gradNumber,
-				   int numGrads)
-{
-  return -1;
-}
-

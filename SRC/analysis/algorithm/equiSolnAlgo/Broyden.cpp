@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-05-04 23:41:56 $
+// $Revision: 1.4 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/Broyden.cpp,v $
                                                                         
                                                                         
@@ -45,7 +45,7 @@
 // Constructor
 Broyden::Broyden(int theTangentToUse, int n )
 :EquiSolnAlgo(EquiALGORITHM_TAGS_Broyden),
- tangent(theTangentToUse), numberLoops(n) 
+ theTest(0), tangent(theTangentToUse), numberLoops(n) 
 {
   s  = new Vector*[numberLoops+3] ;
 
@@ -69,9 +69,10 @@ Broyden::Broyden(int theTangentToUse, int n )
 //Constructor
 Broyden::Broyden(ConvergenceTest &theT, int theTangentToUse, int n)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_Broyden),
- tangent(theTangentToUse), numberLoops(n) 
+ theTest(&theT), tangent(theTangentToUse), numberLoops(n) 
 {
   s  = new Vector*[numberLoops+3] ;
+
   z  = new Vector*[numberLoops+3] ;
 
   residOld = 0 ;
@@ -83,8 +84,9 @@ Broyden::Broyden(ConvergenceTest &theT, int theTangentToUse, int n)
     s[i] = 0 ;
     z[i] = 0 ;
   }
+  
+  localTest = theTest->getCopy( this->numberLoops ) ;
 
-  localTest= 0;
 }
 
 // Destructor
@@ -118,30 +120,17 @@ Broyden::~Broyden()
 
   if ( localTest != 0 )
      delete localTest ;
+
+  localTest = 0 ;
+
 }
-
-
-void 
-Broyden::setLinks(AnalysisModel &theModel, 
-		  IncrementalIntegrator &theIntegrator,
-		  LinearSOE &theSOE,
-		  ConvergenceTest *theTest)
-{
-  this->EquiSolnAlgo::setLinks(theModel, theIntegrator, theSOE, theTest);
-
-    if ( localTest != 0 )  
-      delete localTest ;
-
-    localTest = theTest->getCopy( this->numberLoops ) ;
-    if (localTest == 0) {
-      opserr << "Broyden::setTest() - could not get a copy\n";
-    } 
-}  
 
 
 int
 Broyden::setConvergenceTest(ConvergenceTest *newTest)
 {
+    theTest = newTest;
+
     if ( localTest != 0 )  
       delete localTest ;
 
@@ -418,52 +407,15 @@ Broyden::getConvergenceTest(void)
 int
 Broyden::sendSelf(int cTag, Channel &theChannel)
 {
-  static ID data(2);
-  data(0) = tangent;
-  data(1) = numberLoops;
-  if (theChannel.sendID(0, cTag, data) < 0) {
-    opserr << "Broyden::sendSelf() - failed to send data\n";
-    return -1;
-  }
-  return 0;
+  return -1;
 }
 
 int
 Broyden::recvSelf(int cTag, 
-		  Channel &theChannel, 
-		  FEM_ObjectBroker &theBroker)
+			Channel &theChannel, 
+			FEM_ObjectBroker &theBroker)
 {
-  static ID data(2);
-  if (theChannel.recvID(0, cTag, data) < 0) {
-    opserr << "Broyden::recvSelf() - failed to recv data\n";
     return -1;
-  }
-  tangent = data(0);
-
-  if (numberLoops != data(1)) {
-
-    // remove old
-    if (s != 0 && z != 0) {
-      for ( int i =0; i < numberLoops+3; i++ ) {
-	if ( s[i] != 0 ) delete s[i] ;
-	if ( z[i] != 0 ) delete z[i] ;
-      }
-      delete [] s;
-      delete [] z;
-    }
-
-    numberLoops = data(1);
-
-    // create new
-    s  = new Vector*[numberLoops+3] ;
-    z  = new Vector*[numberLoops+3] ;
-    for ( int i =0; i < numberLoops+3; i++ ) {
-      s[i] = 0 ;
-      z[i] = 0 ;
-    }
-  }
-
-  return 0;
 }
 
 

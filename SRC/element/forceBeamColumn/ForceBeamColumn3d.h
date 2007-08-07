@@ -18,45 +18,9 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.11 $
-// $Date: 2007-02-16 00:11:49 $
+// $Revision: 1.8 $
+// $Date: 2006-08-04 18:43:52 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/forceBeamColumn/ForceBeamColumn3d.h,v $
-
-/*
- * References
- *
-
-State Determination Algorithm
----
-Neuenhofer, A. and F. C. Filippou (1997). "Evaluation of Nonlinear Frame Finite
-Element Models." Journal of Structural Engineering, 123(7):958-966.
-
-Spacone, E., V. Ciampi, and F. C. Filippou (1996). "Mixed Formulation of
-Nonlinear Beam Finite Element." Computers and Structures, 58(1):71-83.
-
-
-Plastic Hinge Integration
----
-Scott, M. H. and G. L. Fenves (2006). "Plastic Hinge Integration Methods for
-Force-Based Beam-Column Elements." Journal of Structural Engineering,
-132(2):244-252.
-
-
-Analytical Response Sensitivity (DDM)
----
-Scott, M. H., P. Franchin, G. L. Fenves, and F. C. Filippou (2004).
-"Response Sensitivity for Nonlinear Beam-Column Elements."
-Journal of Structural Engineering, 130(9):1281-1288.
-
-
-Software Design
----
-Scott, M. H., G. L. Fenves, F. T. McKenna, and F. C. Filippou (2007).
-"Software Patterns for Nonlinear Beam-Column Models."
-Journal of Structural Engineering, Approved for publication, February 2007.
-
- *
- */
 
 #ifndef ForceBeamColumn3d_h
 #define ForceBeamColumn3d_h
@@ -116,10 +80,10 @@ class ForceBeamColumn3d: public Element
   friend OPS_Stream &operator<<(OPS_Stream &s, ForceBeamColumn3d &E);        
   void Print(OPS_Stream &s, int flag =0);    
   
-  Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+  Response *setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &s);
   int getResponse(int responseID, Information &eleInformation);
   
-  int setParameter(const char **argv, int argc, Parameter &param);
+  int setParameter(const char **argv, int argc, Information &info);
   int updateParameter(int parameterID, Information &info);
   
  protected:

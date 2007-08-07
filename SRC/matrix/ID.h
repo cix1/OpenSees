@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-08-03 00:17:09 $
+// $Revision: 1.10 $
+// $Date: 2005-11-23 22:37:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/matrix/ID.h,v $
                                                                         
                                                                         
@@ -63,21 +63,16 @@ class ID
     
     ID &operator=(const ID  &V);
 
-    int operator==(const ID &V) const;
-    int operator!=(const ID &V) const;
-
     int insert(int value);  // differs from using [] in that inserted in order
     int getLocation(int value) const;
     int getLocationOrdered(int value) const; // for when insert was used to add elements
     int removeValue(int value);
-    int unique(void);
 
     friend OPS_Stream &operator<<(OPS_Stream &s, const ID &V);
     //    friend istream &operator>>(istream &s, ID &V);    
 
     friend class UDP_Socket;
     friend class TCP_Socket;
-    friend class TCP_SocketSSL;
     friend class TCP_SocketNoDelay;
     friend class MPI_Channel;
     friend class MySqlDatastore;

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.25 $
-// $Date: 2007-01-10 23:12:49 $
+// $Revision: 1.21 $
+// $Date: 2006-03-22 19:05:52 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/node/Node.cpp,v $
                                                                         
                                                                         
@@ -43,7 +43,6 @@
 #include <Renderer.h>
 #include <string.h>
 #include <Information.h>
-#include <Parameter.h>
 
 // AddingSensitivity:BEGIN //////////////////////////
 #include <Domain.h>
@@ -1747,33 +1746,35 @@ Node::getCrdsSensitivity(void)
 
 
 int
-Node::setParameter(const char **argv, int argc, Parameter &param)
+Node::setParameter(const char **argv, int argc, Information &info)
 {
-  // The following parameterID map is being used:
-  // 1: nodal mass in direction 1	
-  // 2: nodal mass in direction 2
-  // 3: nodal mass in direction 3
-  // 4: coordinate in direction 1
-  // 5: coordinate in direction 2
-  // 6: coordinate in direction 3
+	// The following parameterID map is being used:
+	// 1: nodal mass in direction 1	
+	// 2: nodal mass in direction 2
+	// 3: nodal mass in direction 3
+	// 4: coordinate in direction 1
+	// 5: coordinate in direction 2
+	// 6: coordinate in direction 3
 
-  if (argc < 2)
-    return -1;
 
-  if (strstr(argv[0],"mass") != 0) {
-    int direction = atoi(argv[1]);
-    if (direction >= 1 && direction <= 3)
-      return param.addObject(direction, this);
-  }
-  else if (strstr(argv[0],"coord") != 0) {
-    int direction = atoi(argv[1]);
-    if (direction >= 1 && direction <= 3)
-      return param.addObject(direction+3, this);
-  }
-  else
-    opserr << "WARNING: Could not set parameter in Node. " << endln;
-  
-  return -1;
+
+	if (argc < 1)
+		return -1;
+
+	if (strcmp(argv[0],"-mass") == 0) {
+		info.theType = DoubleType;
+		int direction = atoi(argv[1]);
+		return direction;
+	}
+	else if (strcmp(argv[0],"-coord") == 0) {
+		info.theType = DoubleType;
+		int direction = atoi(argv[1]);
+		return (direction+3);
+	}
+	else
+	  opserr << "WARNING: Could not set parameter in Node. " << endln;
+                
+	return -1;
 }
 
 
@@ -1781,30 +1782,30 @@ Node::setParameter(const char **argv, int argc, Parameter &param)
 int
 Node::updateParameter(int pparameterID, Information &info)
 {
-  if (pparameterID >= 1 && pparameterID <= 3)
-    (*mass)(pparameterID-1,pparameterID-1) = info.theDouble;
+	if ( (pparameterID == 1) || (pparameterID == 2) || (pparameterID == 3) ) {
+		(*mass)(pparameterID-1,pparameterID-1) = info.theDouble;
+	}
+	else if ( (pparameterID == 4) || (pparameterID == 5) || (pparameterID == 6) ) {
 
-  else if (pparameterID >= 4 && pparameterID <= 6) {
+		if ( (*Crd)(pparameterID-4) != info.theDouble) {
 
-    if ( (*Crd)(pparameterID-4) != info.theDouble) {
+			// Set the new coordinate value
+			(*Crd)(pparameterID-4) = info.theDouble;
 
-      // Set the new coordinate value
-      (*Crd)(pparameterID-4) = info.theDouble;
-      
-      // Need to "setDomain" to make the change take effect. 
-      Domain *theDomain = this->getDomain();
-      ElementIter &theElements = theDomain->getElements();
-      Element *theElement;
-      while ((theElement = theElements()) != 0) {
-	theElement->setDomain(theDomain);
-      }
-    }
-    else {
-      // No change in nodal coordinate
-    }
-  }
-  
-  return -1;
+			// Need to "setDomain" to make the change take effect. 
+			Domain *theDomain = this->getDomain();
+			ElementIter &theElements = theDomain->getElements();
+			Element *theElement;
+			while ((theElement = theElements()) != 0) {
+				theElement->setDomain(theDomain);
+			}
+		}
+		else {
+			// No change in nodal coordinate
+		}
+	}
+	
+	return 0;
 }
 
 
@@ -1818,46 +1819,42 @@ Node::activateParameter(int passedParameterID)
 	return 0;
 }
 
-int 
-Node::saveDispSensitivity(const Vector &v, int gradNum, int numGrads)
-{
-  // If the sensitivity matrices are not already created:
-  if (dispSensitivity == 0) {
-    dispSensitivity = new Matrix( numberDOF, numGrads );
-  } 
 
-  for (int i=0; i<numberDOF; i++ )
-    (*dispSensitivity)(i,gradNum-1) = v(i);
-
-  return 0;
-}
 
 int 
-Node::saveVelSensitivity(const Vector &vdot, int gradNum, int numGrads)
+Node::saveSensitivity(Vector *v,Vector *vdot,Vector *vdotdot, int gradNum, int numGrads)
 {
-  // If the sensitivity matrices are not already created:
-  if (velSensitivity == 0) {
-    velSensitivity = new Matrix( numberDOF, numGrads );
-  } 
+	// Initial declarations
+	int i;
 
-  for (int i=0; i<numberDOF; i++ )
-    (*velSensitivity)(i,gradNum-1) = vdot(i);
+	// If the sensitivity matrices are not already created:
+	if (dispSensitivity == 0) {
+		dispSensitivity = new Matrix( numberDOF, numGrads );
+	}
+	if ( (vdot!=0) && (vdotdot!=0) ) {
+		if (velSensitivity == 0) {
+			velSensitivity = new Matrix( numberDOF, numGrads );
+		}
+		if (accSensitivity == 0) {
+			accSensitivity = new Matrix( numberDOF, numGrads );
+		}
+	}
 
-  return 0;
-}
 
-int 
-Node::saveAccelSensitivity(const Vector &vdotdot, int gradNum, int numGrads)
-{
-  // If the sensitivity matrices are not already created:
-  if (accSensitivity == 0) {
-    accSensitivity = new Matrix( numberDOF, numGrads );
-  } 
+	// Put GRADIENT VECTORS into COLUMNS of matrices
+	for (i=0; i<numberDOF; i++ ) {
+		(*dispSensitivity)(i,gradNum-1) = (*v)(i);
+	}
+	if ( (vdot!=0) && (vdotdot!=0) ) {
+		for (i=0; i<numberDOF; i++ ) {
+			(*velSensitivity)(i,gradNum-1) = (*vdot)(i);
+		}
+		for (i=0; i<numberDOF; i++ ) {
+			(*accSensitivity)(i,gradNum-1) = (*vdotdot)(i);
+		}
+	}
 
-  for (int i=0; i<numberDOF; i++ )
-    (*accSensitivity)(i,gradNum-1) = vdotdot(i);
-
-  return 0;
+    return 0;
 }
 
 double 
@@ -1956,26 +1953,4 @@ Node::resetReactionForce(bool inclInertia){
   }
 
   return 0;
-}
-
-const Vector *
-Node::getResponse(NodeResponseType responseType)
-{
-  const Vector *result = NULL;
-  if (responseType == Disp) 
-    result  = &(this->getDisp());
-  else if (responseType == Vel) 
-    return &(this->getVel());
-  else if (responseType == Accel) 
-    return &(this->getAccel());
-  else if (responseType == IncrDisp) 
-    return &(this->getIncrDisp());
-  else if (responseType == IncrDeltaDisp) 
-    return &(this->getIncrDeltaDisp());
-  else if (responseType == Reaction) 
-    return &(this->getReaction());
-  else
-    return NULL;
-
-  return result;
 }

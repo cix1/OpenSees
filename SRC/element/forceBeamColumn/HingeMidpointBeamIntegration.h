@@ -18,19 +18,9 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-02-15 23:43:56 $
+// $Revision: 1.1 $
+// $Date: 2006-01-17 21:32:35 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/forceBeamColumn/HingeMidpointBeamIntegration.h,v $
-
-/*
- * Reference
-
-Scott, M. H. and G. L. Fenves. "Plastic Hinge Integration Methods for
-Force-Based Beam-Column Elements." Journal of Structural Engineering,
-132(2):244-252, February 2006.
-
- *
- */
 
 #ifndef HingeMidpointBeamIntegration_h
 #define HingeMidpointBeamIntegration_h
@@ -57,7 +47,7 @@ class HingeMidpointBeamIntegration : public BeamIntegration
   int sendSelf(int cTag, Channel &theChannel);
   int recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker);
 
-  int setParameter(const char **argv, int argc, Parameter &param);
+  int setParameter(const char **argv, int argc, Information &info);
   int updateParameter(int parameterID, Information &info);
   int activateParameter(int parameterID);
 

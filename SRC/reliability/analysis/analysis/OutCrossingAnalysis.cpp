@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2006-12-06 22:32:23 $
+// $Revision: 1.4 $
+// $Date: 2003-10-27 23:45:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/analysis/OutCrossingAnalysis.cpp,v $
 
 //
@@ -73,12 +73,14 @@ OutCrossingAnalysis::OutCrossingAnalysis(
 	stepsToEnd = p_stepsToEnd;
 	sampleFreq = p_sampleFreq;
 	littleDeltaT = p_littleDeltaT;
+	fileName = new char[256];
 	strcpy(fileName,passedFileName);
 }
 
 OutCrossingAnalysis::~OutCrossingAnalysis()
 {
-
+	if (fileName != 0)
+		delete [] fileName;
 }
 
 int 
@@ -232,7 +234,7 @@ OutCrossingAnalysis::analyze(void)
 					// (... because this works only when g is linear in u)
 					numVel = DgDdispl.noRows();
 					accuSum = 0.0;
-					char expressionPtr[100];
+					char *expressionPtr = new char[100];
 					for (j=0; j<numVel; j++) {
 
 						nodeNumber = (int)DgDdispl(j,0);
@@ -246,6 +248,7 @@ OutCrossingAnalysis::analyze(void)
 						// Add it to the limit-state function
 						theLimitStateFunction->addExpression(expressionPtr);
 					}
+					delete []expressionPtr;
 
 
 					// Inform the user

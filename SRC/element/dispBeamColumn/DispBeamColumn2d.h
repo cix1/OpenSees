@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.18 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.15 $
+// $Date: 2006-08-04 18:44:02 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/dispBeamColumn/DispBeamColumn2d.h,v $
 
 // Written: MHS
@@ -40,7 +40,7 @@
 #include <Matrix.h>
 #include <Vector.h>
 #include <ID.h>
-#include <BeamIntegration.h>
+#include <GaussQuadRule1d01.h>
 
 class Node;
 class SectionForceDeformation;
@@ -52,8 +52,7 @@ class DispBeamColumn2d : public Element
   public:
     DispBeamColumn2d(int tag, int nd1, int nd2,
 		     int numSections, SectionForceDeformation **s,
-		     BeamIntegration &bi, CrdTransf2d &coordTransf,
-		     double rho = 0.0);
+		     CrdTransf2d &coordTransf, double rho = 0.0);
     DispBeamColumn2d();
     ~DispBeamColumn2d();
 
@@ -91,11 +90,11 @@ class DispBeamColumn2d : public Element
     int displaySelf(Renderer &theViewer, int displayMode, float fact);
     void Print(OPS_Stream &s, int flag =0);
 
-    Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &s);
     int getResponse(int responseID, Information &eleInfo);
 
     // AddingSensitivity:BEGIN //////////////////////////////////////////
-    int setParameter(const char **argv, int argc, Parameter &param);
+    int            setParameter(const char **argv, int argc, Information &info);
     int            updateParameter(int parameterID, Information &info);
     int            activateParameter(int parameterID);
     const Vector & getResistingForceSensitivity(int gradNumber);
@@ -113,8 +112,6 @@ class DispBeamColumn2d : public Element
     SectionForceDeformation **theSections; // pointer to the ND material objects
     CrdTransf2d *crdTransf;        // pointer to coordinate tranformation object 
 
-    BeamIntegration *beamInt;
-
     ID connectedExternalNodes; // Tags of quad nodes
 
     Node *theNodes[2];
@@ -129,9 +126,9 @@ class DispBeamColumn2d : public Element
 
     double rho;			// Mass density per unit length
 
-    enum {maxNumSections = 100};
-
     static double workArea[];
+
+    static GaussQuadRule1d01 quadRule;
 
     // AddingSensitivity:BEGIN //////////////////////////////////////////
     int parameterID;

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-01-25 19:53:17 $
+// $Revision: 1.1 $
+// $Date: 2006-08-11 18:32:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/integration/SectionIntegration.h,v $
 
 #ifndef SectionIntegration_h
@@ -38,13 +38,13 @@ class SectionIntegration : public MovableObject
 
   virtual int getNumFibers(void) = 0;
 
-  virtual void getFiberLocations(int nFibers, double *yi, double *zi = 0) = 0;
+  virtual void getFiberLocations(int nFibers, double *xi) = 0;
   virtual void getFiberWeights(int nFibers, double *wt) = 0;
 
   virtual SectionIntegration *getCopy(void) = 0;
 
-  virtual void getLocationsDeriv(int nFibers, double *dyidh, double *dzidh = 0);
-  virtual void getWeightsDeriv(int nFibers, double *dwtdh);
+  virtual void getLocationsDeriv(int nFibers, double *dptsdh);
+  virtual void getWeightsDeriv(int nFibers, double *dwtsdh);
 
   virtual void Print(OPS_Stream &s, int flag = 0) = 0;
 };

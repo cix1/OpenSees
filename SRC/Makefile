@@ -1,9 +1,6 @@
 # Makefile for fe objects
-ifndef SHARED
 
 include ../Makefile.def
-
-endif
 
 ifeq ($(RELIABILITY), YES_RELIABILITY)
 
@@ -36,6 +33,7 @@ all:
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATRIX_LIBS) 
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ELE_LIBS) 
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATERIAL_LIBS)
+	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(HYSTERETIC_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SECTION_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DATABASE_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FEDEAS_LIBS)
@@ -68,7 +66,6 @@ all:
 
 else
 
-ifeq ($(GRAPHICS), NONE)
 all:
 	@$(RM) $(RMFLAGS) $(FE_LIBRARY);
 	@$(CD) $(FE)/matrix; $(MAKE);
@@ -97,65 +94,7 @@ all:
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATRIX_LIBS) 
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ELE_LIBS) 
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATERIAL_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SECTION_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DATABASE_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FEDEAS_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MODEL_BUILDER_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DOMAIN_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATMOD_BJ_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(NDARRAY_BJ_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ELEMENT_BJ_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FINITE_DEFORMATION_BJ_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(PY_SJB_RWB_BJ_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ANALYSIS_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SysOfEqn_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(GRAPH_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(TAGGED_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(UTILITY_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ACTOR_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(RECORDER_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(LAW_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(GGD_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(REMO_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(GLF_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ZHY_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ERRORHANDLER_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DRAIN_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SNAP_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FMK_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(KJE_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ACTOR_LIBS)
-	@$(RANLIB) $(RANLIBFLAGS) $(FE_LIBRARY)
-else
-
-all:
-	@$(RM) $(RMFLAGS) $(FE_LIBRARY);
-	@$(CD) $(FE)/matrix; $(MAKE);
-	@$(CD) $(FE)/nDarray; $(MAKE);
-	@$(CD) $(FE)/database; $(MAKE);
-	@$(CD) $(FE)/system_of_eqn; $(MAKE);
-	@$(CD) $(FE)/modelbuilder; $(MAKE);
-	@$(CD) $(FE)/tagged; $(MAKE);
-	@$(CD) $(FE)/material; $(MAKE);
-	@$(CD) $(FE)/analysis; $(MAKE);
-	@$(CD) $(FE)/graph; $(MAKE);
-	@$(CD) $(FE)/utility; $(MAKE);
-	@$(CD) $(FE)/convergenceTest; $(MAKE);
-	@$(CD) $(FE)/recorder; $(MAKE);
-	@$(CD) $(FE)/tcl; $(MAKE);
-	@$(CD) $(FE)/renderer; $(MAKE);
-	@$(CD) $(FE)/domain; $(MAKE);
-	@$(CD) $(FE)/handler; $(MAKE);
-	@$(CD) $(FE)/actor; $(MAKE);
-	@$(CD) $(FE)/machine; $(MAKE);
-	@$(CD) $(FE)/element; $(MAKE);
-	@$(CD) $(FE)/coordTransformation; $(MAKE);
-	@$(CD) $(FE)/package; $(MAKE);
-	@$(CD) $(FE)/damage; $(MAKE);
-	@$(CD) $(FE)/package; $(MAKE);
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATRIX_LIBS) 
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ELE_LIBS) 
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(MATERIAL_LIBS)
+	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(HYSTERETIC_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SECTION_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(DATABASE_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FEDEAS_LIBS)
@@ -184,9 +123,7 @@ all:
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(SNAP_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(FMK_LIBS)
 	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(KJE_LIBS)
-	@$(AR) $(ARFLAGS) $(FE_LIBRARY) $(ACTOR_LIBS)
 	@$(RANLIB) $(RANLIBFLAGS) $(FE_LIBRARY)
-endif
 
 endif
 
@@ -244,10 +181,8 @@ REMO_LIBS = $(FE)/element/nonlinearBeamColumn/quadrule/QuadRule.o \
 	$(FE)/coordTransformation/CrdTransf3d.o \
 	$(FE)/coordTransformation/LinearCrdTransf2d.o \
 	$(FE)/coordTransformation/PDeltaCrdTransf2d.o \
-	$(FE)/coordTransformation/CorotCrdTransf2d.o \
 	$(FE)/coordTransformation/LinearCrdTransf3d.o \
 	$(FE)/coordTransformation/PDeltaCrdTransf3d.o \
-	$(FE)/coordTransformation/CorotCrdTransf3d.o \
 	$(FE)/coordTransformation/TclGeomTransfCommand.o
 
 LAW_LIBS = $(FE)/system_of_eqn/linearSOE/sparseSYM/SymSparseLinSOE.o \
@@ -424,6 +359,7 @@ ELEMENT_BJ_LIBS = $(FE)/element/8nbrick/EightNodeBrick.o \
                   $(FE)/element/upU/TwentyNodeBrick_u_p_U.o \
                   $(FE)/element/upU/TclEightNodeBrick_u_p_U.o \
                   $(FE)/element/upU/TclTwentyNodeBrick_u_p_U.o \
+		  $(FE)/element/upU/TclTwentyNodeBrick_u_p_U.o \
 		  $(FE)/element/UP_ucdavis/EightNode_LDBrick_u_p.o \
 		  $(FE)/element/UP_ucdavis/EightNode_Brick_u_p.o \
 		  $(FE)/element/UP_ucdavis/TclBrick_u_p.o
@@ -558,7 +494,6 @@ TAGGED_LIBS =   $(FE)/tagged/TaggedObject.o \
 
 UTILITY_LIBS = $(FE)/utility/Timer.o \
 	$(FE)/utility/SimulationInformation.o \
-	$(FE)/utility/StringContainer.o 
 
 
 GRAPH_LIBS = $(FE)/graph/graph/DOF_Graph.o \
@@ -596,10 +531,6 @@ ELE_LIBS   =  $(FE)/element/Element.o \
 	$(FE)/element/dispBeamColumn/DispBeamColumn2d.o \
 	$(FE)/element/dispBeamColumn/DispBeamColumn3d.o \
 	$(FE)/element/dispBeamColumn/TclDispBeamColumnCommand.o \
-	$(FE)/element/dispBeamColumnInt/DispBeamColumn2dInt.o \
-	$(FE)/element/dispBeamColumnInt/FiberSection2dInt.o \
-	$(FE)/element/dispBeamColumnInt/LinearCrdTransf2dInt.o \
-	$(FE)/element/dispBeamColumnInt/TclDispBeamColumnIntCommand.o \
 	$(FE)/element/elasticBeamColumn/ElasticBeam2d.o \
 	$(FE)/element/elasticBeamColumn/ElasticBeam3d.o \
 	$(FE)/element/elasticBeamColumn/TclElasticBeamCommand.o \
@@ -620,7 +551,6 @@ ELE_LIBS   =  $(FE)/element/Element.o \
 MATERIAL_LIBS   =  $(FE)/material/Material.o \
 	$(FE)/material/uniaxial/UniaxialMaterial.o \
 	$(FE)/material/uniaxial/ElasticMaterial.o \
-	$(FE)/material/uniaxial/Elastic2Material.o \
 	$(FE)/material/uniaxial/ReinforcingSteel.o \
 	$(FE)/material/uniaxial/TclReinforcingSteel.o \
 	$(FE)/material/uniaxial/ElasticPPMaterial.o \
@@ -630,13 +560,9 @@ MATERIAL_LIBS   =  $(FE)/material/Material.o \
 	$(FE)/material/uniaxial/Concrete01.o \
 	$(FE)/material/uniaxial/Concrete02.o \
 	$(FE)/material/uniaxial/Concrete04.o \
-	$(FE)/material/uniaxial/Concrete06.o \
-	$(FE)/material/uniaxial/Concrete07.o \
 	$(FE)/material/uniaxial/Steel01.o \
 	$(FE)/material/uniaxial/Steel02.o \
 	$(FE)/material/uniaxial/Steel03.o \
-	$(FE)/material/uniaxial/Concrete01WithSITC.o \
-	$(FE)/material/uniaxial/ECC01.o \
 	$(FE)/material/uniaxial/HystereticMaterial.o \
 	$(FE)/material/uniaxial/EPPGapMaterial.o \
 	$(FE)/material/uniaxial/ViscousMaterial.o \
@@ -647,7 +573,6 @@ MATERIAL_LIBS   =  $(FE)/material/Material.o \
 	$(FE)/material/uniaxial/ENTMaterial.o \
 	$(FE)/material/uniaxial/BoucWenMaterial.o \
 	$(FE)/material/uniaxial/Pinching4Material.o \
-	$(FE)/material/uniaxial/ShearPanelMaterial.o \
 	$(FE)/material/uniaxial/BarSlipMaterial.o \
 	$(FE)/material/uniaxial/Bond_SP01.o \
 	$(FE)/material/nD/NDMaterial.o \
@@ -685,8 +610,6 @@ MATERIAL_LIBS   =  $(FE)/material/Material.o \
 FEDEAS_LIBS = $(FE)/material/uniaxial/FedeasMaterial.o \
 	$(FE)/material/uniaxial/fedeas/FedeasHardeningMaterial.o \
 	$(FE)/material/uniaxial/fedeas/Hard1.o \
-	$(FE)/material/uniaxial/fedeas/PlasticDamageMaterial.o \
-	$(FE)/material/uniaxial/fedeas/PD1.o \
 	$(FE)/material/uniaxial/fedeas/FedeasBond1Material.o \
 	$(FE)/material/uniaxial/fedeas/FedeasBond2Material.o \
 	$(FE)/material/uniaxial/fedeas/FedeasConcr1Material.o \
@@ -723,8 +646,6 @@ SECTION_LIBS = $(FE)/material/section/SectionForceDeformation.o \
 	$(FE)/material/section/fiber/UniaxialFiber3d.o \
 	$(FE)/material/section/ElasticSection2d.o \
 	$(FE)/material/section/ElasticSection3d.o \
-	$(FE)/material/section/ElasticShearSection2d.o \
-	$(FE)/material/section/ElasticShearSection3d.o \
 	$(FE)/material/section/FiberSection2d.o \
 	$(FE)/material/section/FiberSection3d.o \
 	$(FE)/material/section/FiberSectionGJ.o \
@@ -735,9 +656,6 @@ SECTION_LIBS = $(FE)/material/section/SectionForceDeformation.o \
 	$(FE)/material/section/MembranePlateFiberSection.o \
 	$(FE)/material/section/Bidirectional.o \
 	$(FE)/material/section/Isolator2spring.o \
-	$(FE)/material/section/integration/SectionIntegration.o \
-	$(FE)/material/section/integration/RCSectionIntegration.o \
-	$(FE)/material/section/integration/WideFlangeSectionIntegration.o \
 	$(FE)/material/section/repres/patch/Patch.o \
 	$(FE)/material/section/repres/patch/QuadPatch.o \
 	$(FE)/material/section/repres/patch/CircPatch.o \
@@ -776,6 +694,7 @@ endif
 #endif
 
 
+
 SysOfEqn_LIBS = $(FE)/system_of_eqn/SystemOfEqn.o \
 	$(FE)/system_of_eqn/Solver.o \
 	$(FE)/system_of_eqn/linearSOE/LinearSOE.o \
@@ -801,10 +720,13 @@ SysOfEqn_LIBS = $(FE)/system_of_eqn/SystemOfEqn.o \
 	$(FE)/system_of_eqn/linearSOE/profileSPD/DistributedProfileSPDLinSOE.o \
 	$(FE)/system_of_eqn/linearSOE/profileSPD/ProfileSPDLinSolver.o \
 	$(FE)/system_of_eqn/linearSOE/profileSPD/ProfileSPDLinDirectSolver.o \
+	$(FE)/system_of_eqn/linearSOE/profileSPD/ProfileSPDLinDirectSkypackSolver.o \
+	$(FE)/system_of_eqn/linearSOE/profileSPD/ProfileSPDLinDirectBlockSolver.o \
 	$(FE)/system_of_eqn/linearSOE/profileSPD/ProfileSPDLinSubstrSolver.o \
 	$(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenColLinSOE.o \
-	$(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenColLinSolver.o \
 	$(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenRowLinSOE.o \
+	$(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenColLinSolver.o \
+        $(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenRowLinSOE.o \
         $(FE)/system_of_eqn/linearSOE/sparseGEN/SparseGenRowLinSolver.o \
 	$(SUPER_LU_OBJ) \
 	$(FE)/system_of_eqn/linearSOE/umfGEN/UmfpackGenLinSOE.o \
@@ -819,18 +741,12 @@ MODEL_BUILDER_LIBS = $(FE)/modelbuilder/ModelBuilder.o \
 	$(FE)/modelbuilder/tcl/Block3D.o
 
 DOMAIN_LIBS =  $(FE)/domain/component/DomainComponent.o \
-	$(FE)/domain/component/Parameter.o \
-	$(FE)/domain/component/MaterialStageParameter.o \
-	$(FE)/domain/component/TclUpdateMaterialCommand.o \
-	$(FE)/domain/component/MatParameter.o \
-	$(FE)/domain/component/TclParameterCommands.o \
 	$(FE)/domain/domain/Domain.o \
 	$(FE)/domain/domain/single/SingleDomEleIter.o \
 	$(FE)/domain/domain/single/SingleDomNodIter.o \
 	$(FE)/domain/domain/single/SingleDomSP_Iter.o \
 	$(FE)/domain/domain/single/SingleDomAllSP_Iter.o \
 	$(FE)/domain/domain/single/SingleDomMP_Iter.o \
-	$(FE)/domain/domain/single/SingleDomParamIter.o \
 	$(FE)/domain/domain/partitioned/PartitionedDomain.o \
 	$(FE)/domain/domain/partitioned/PartitionedDomainEleIter.o \
 	$(FE)/domain/domain/partitioned/PartitionedDomainSubIter.o \
@@ -866,7 +782,6 @@ DOMAIN_LIBS =  $(FE)/domain/component/DomainComponent.o \
 	$(FE)/domain/pattern/ConstantSeries.o \
 	$(FE)/domain/pattern/TrigSeries.o \
 	$(FE)/domain/pattern/PathSeries.o \
-	$(FE)/domain/pattern/PeerMotion.o \
 	$(FE)/domain/pattern/PathTimeSeries.o \
 	$(FE)/domain/pattern/PulseSeries.o \
 	$(FE)/domain/pattern/TriangleSeries.o \
@@ -975,12 +890,9 @@ ANALYSIS_LIBS = $(FE)/analysis/analysis/Analysis.o \
 
 ACTOR_LIBS = $(FE)/actor/channel/Channel.o \
 	$(FE)/actor/channel/TCP_Socket.o \
-	$(FE)/actor/channel/Socket.o \
-	$(FE)/actor/channel/HTTP.o \
 	$(FE)/actor/message/Message.o \
 	$(FE)/actor/machineBroker/MachineBroker.o \
 	$(FE)/actor/objectBroker/FEM_ObjectBroker.o \
-	$(FE)/actor/objectBroker/FEM_ObjectBrokerAllClasses.o \
 	$(FE)/actor/actor/Actor.o \
 	$(FE)/actor/actor/MovableObject.o \
 	$(FE)/actor/shadow/Shadow.o \

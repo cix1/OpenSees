@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.2 $
-// $Date: 2006-09-05 22:32:43 $
+// $Revision: 1.1 $
+// $Date: 2006-02-07 23:15:55 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/limitState/limitCurve/LimitCurve.h,v $
 
 //
@@ -64,6 +64,10 @@ class LimitCurve : public TaggedObject, public MovableObject
     virtual double findLimit(double input) = 0;
 
     virtual int revertToStart (void) = 0;        
+
+    virtual int    setParameter             (const char **argv, int argc, Information &info);
+    virtual int    updateParameter          (int parameterID, Information &info);
+
 
   protected:
     

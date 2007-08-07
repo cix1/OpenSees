@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-07-13 19:54:41 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:45:42 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/designPoint/SearchWithStepSizeAndStepDirection.cpp,v $
 
 
@@ -85,6 +85,7 @@ SearchWithStepSizeAndStepDirection::SearchWithStepSizeAndStepDirection(
 	startPoint						= pStartPoint;
 	printFlag						= pprintFlag;
 	numberOfEvaluations =0;
+	fileNamePrint = new char[256];
 	if (printFlag != 0) {
 		strcpy(fileNamePrint,pFileNamePrint);
 	}
@@ -97,7 +98,8 @@ SearchWithStepSizeAndStepDirection::SearchWithStepSizeAndStepDirection(
 
 SearchWithStepSizeAndStepDirection::~SearchWithStepSizeAndStepDirection()
 {
-  
+	if (fileNamePrint!=0)
+		delete [] fileNamePrint;
 }
 
 
@@ -116,19 +118,19 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 	x = dummy;
 	u = dummy;
 	Vector u_old(numberOfRandomVariables);
-	uSecondLast = dummy;
+	uSecondLast(numberOfRandomVariables);
 	Vector uNew(numberOfRandomVariables);
-	alpha = dummy;
-	gamma = dummy;
-	alphaSecondLast = dummy;
+	alpha (numberOfRandomVariables);
+	gamma (numberOfRandomVariables);
+	alphaSecondLast(numberOfRandomVariables);
 	double gFunctionValue = 1.0;
 	double gFunctionValue_old = 1.0;
 	Vector gradientOfgFunction(numberOfRandomVariables);
-	gradientInStandardNormalSpace = dummy;
+	gradientInStandardNormalSpace(numberOfRandomVariables);
 	Vector gradientInStandardNormalSpace_old(numberOfRandomVariables);
 	double normOfGradient =0;
 	double stepSize;
-	//Matrix jacobian_x_u(numberOfRandomVariables,numberOfRandomVariables);
+	Matrix jacobian_x_u(numberOfRandomVariables,numberOfRandomVariables);
 	int evaluationInStepSize = 0;
 	int result;
 	theGFunEvaluator->initializeNumberOfEvaluations();
@@ -192,7 +194,7 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 			return -1;
 		}
 		x = theProbabilityTransformation->get_x();
-		const Matrix &jacobian_x_u = theProbabilityTransformation->getJacobian_x_u();
+		jacobian_x_u = theProbabilityTransformation->getJacobian_x_u();
 
 
 		// Possibly print the point to output file
@@ -269,8 +271,7 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 
 		// Gradient in standard normal space
 		gradientInStandardNormalSpace_old = gradientInStandardNormalSpace;
-		//gradientInStandardNormalSpace = jacobian_x_u ^ gradientOfgFunction;
-		gradientInStandardNormalSpace.addMatrixTransposeVector(0.0, jacobian_x_u, gradientOfgFunction, 1.0);
+		gradientInStandardNormalSpace = jacobian_x_u ^ gradientOfgFunction;
 
 
 		// Compute the norm of the gradient in standard normal space
@@ -334,22 +335,29 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 
 
 			// Compute the gamma vector
-			const Matrix &jacobian_u_x = theProbabilityTransformation->getJacobian_u_x();
+			MatrixOperations theMatrixOperations(jacobian_x_u);
 
-			//Vector tempProduct = jacobian_u_x ^ alpha;
-			Vector tempProduct(numberOfRandomVariables);
-			tempProduct.addMatrixTransposeVector(0.0, jacobian_u_x, alpha, 1.0);
-
-			// Only diagonal elements of (J_xu*J_xu^T) are used
-			for (j = 0; j < numberOfRandomVariables; j++) {
-			  double sum = 0.0;
-			  double jk;
-			  for (int k = 0; k < numberOfRandomVariables; k++) {
-			    jk = jacobian_x_u(j,k);
-			    sum += jk*jk;
-			  }
-			  gamma(j) = sqrt(sum) * tempProduct(j);
+			result = theMatrixOperations.computeTranspose();
+			if (result < 0) {
+				opserr << "SearchWithStepSizeAndStepDirection::doTheActualSearch() - " << endln
+					<< " could not compute transpose of jacobian matrix. " << endln;
+				return -1;
 			}
+			Matrix transposeOfJacobian_x_u = theMatrixOperations.getTranspose();
+
+			Matrix jacobianProduct = jacobian_x_u * transposeOfJacobian_x_u;
+
+			Matrix D_prime(numberOfRandomVariables,numberOfRandomVariables);
+			for (j=0; j<numberOfRandomVariables; j++) {
+				D_prime(j,j) = sqrt(jacobianProduct(j,j));
+			}
+
+
+			Matrix jacobian_u_x = theProbabilityTransformation->getJacobian_u_x();
+
+			Vector tempProduct = jacobian_u_x ^ alpha;
+
+			gamma = D_prime ^ tempProduct;
 			
 			Glast = gFunctionValue;
 
@@ -412,9 +420,7 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 
 		// Determine new iteration point (take the step)
 		u_old = u;
-		//u = u_old + (searchDirection * stepSize);
-		u = u_old;
-		u.addVector(1.0, searchDirection, stepSize);
+		u = u_old + (searchDirection * stepSize);
 
 
 		// Increment the loop parameter
@@ -433,31 +439,28 @@ SearchWithStepSizeAndStepDirection::findDesignPoint(ReliabilityDomain *passedRel
 
 
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::get_x()
 {
 	return x;
 }
 
-const Vector &
+Vector
 SearchWithStepSizeAndStepDirection::get_u()
 {
 	return u;
 }
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::get_alpha()
 {
 	return alpha;
 }
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::get_gamma()
 {
-  if (gamma.Norm() > 1.0)
-    gamma = gamma / gamma.Norm();
-
-  return gamma;
+	return gamma*(1.0/gamma.Norm());
 }
 
 int
@@ -466,19 +469,19 @@ SearchWithStepSizeAndStepDirection::getNumberOfSteps()
 	return (i-1);
 }
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::getSecondLast_u()
 {
 	return uSecondLast;
 }
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::getSecondLast_alpha()
 {
 	return alphaSecondLast;
 }
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::getLastSearchDirection()
 {
 	return searchDirection;
@@ -497,7 +500,7 @@ SearchWithStepSizeAndStepDirection::getLastGFunValue()
 }
 
 
-const Vector&
+Vector
 SearchWithStepSizeAndStepDirection::getGradientInStandardNormalSpace()
 {
 	return gradientInStandardNormalSpace;

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-05-03 23:03:01 $
+// $Revision: 1.6 $
+// $Date: 2003-02-14 23:01:34 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/MembranePlateFiberSection.cpp,v $
 
 // Ed "C++" Love
@@ -463,9 +463,7 @@ void  MembranePlateFiberSection::Print( OPS_Stream &s, int flag )
   s << "MembranePlateFiberSection: \n " ;
   s <<  "  Thickness h = "        <<  h  <<  endln ;
 
-  for (int i = 0; i < 5; i++) {
-    theFibers[i]->Print( s, flag ) ;
-  }
+  theFibers[0]->Print( s, flag ) ;
 
   return ;
 }
@@ -517,7 +515,7 @@ MembranePlateFiberSection::sendSelf(int commitTag, Channel &theChannel)
       return res;
     }
   }
-
+  
   return res;
 }
 
@@ -537,7 +535,7 @@ MembranePlateFiberSection::recvSelf(int commitTag, Channel &theChannel, FEM_Obje
     return res;
   }
 
-  this->setTag(idData(10));
+  this->setTag(idData(11));
 
   int i;
 
@@ -556,8 +554,8 @@ MembranePlateFiberSection::recvSelf(int commitTag, Channel &theChannel, FEM_Obje
       theFibers[i]->setDbTag(matDbTag);
       res += theFibers[i]->recvSelf(commitTag, theChannel, theBroker);
       if (res < 0) {
-	opserr << "MembranePlateFiber::recvSelf() - material " << i << "failed to recv itself\n";
-	  
+	opserr << "NLBeamColumn3d::recvSelf() - material " << 
+	  i << "failed to recv itself\n";
 	return res;
       }
     }
@@ -588,7 +586,7 @@ MembranePlateFiberSection::recvSelf(int commitTag, Channel &theChannel, FEM_Obje
       }
     }
   }
-
+  
   return res;
 }
  

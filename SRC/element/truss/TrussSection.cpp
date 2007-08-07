@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.19 $
-// $Date: 2007-02-02 01:35:22 $
+// $Revision: 1.17 $
+// $Date: 2006-08-04 19:13:02 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/truss/TrussSection.cpp,v $
                                                                         
                                                                         
@@ -33,7 +33,6 @@
 
 #include <TrussSection.h>
 #include <Information.h>
-#include <Parameter.h>
 
 #include <string.h>
 
@@ -871,7 +870,7 @@ TrussSection::computeCurrentStrain(void) const
 }
 
 Response*
-TrussSection::setResponse(const char **argv, int argc, OPS_Stream &output)
+TrussSection::setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &output)
 {
   Response *theResponse = 0;
 
@@ -898,7 +897,7 @@ TrussSection::setResponse(const char **argv, int argc, OPS_Stream &output)
 
   // a section quantity    
   }  else if (strcmp(argv[0],"section") ==0) {
-    theResponse = theSection->setResponse(&argv[1], argc-1, output);
+    theResponse = theSection->setResponse(&argv[1], argc-1, eleInformation, output);
 
   }  
 
@@ -960,23 +959,34 @@ TrussSection::getResponse(int responseID, Information &eleInformation)
 }
 
 int
-TrussSection::setParameter (const char **argv, int argc, Parameter &param)
+TrussSection::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
-
-  // a section parameter
-  if (strstr(argv[0],"section") != 0) {
-
-    if (argc < 2)
-      return -1;
-
+    // a material parameter
+    if (strcmp(argv[0],"section") == 0 || strcmp(argv[0],"-section") == 0) {
+		int ok = theSection->setParameter(&argv[1], argc-1, info);
+		if (ok < 0)
+			return -1;
+		else
+			return ok + 100;
+    } 
+    
+    // otherwise parameter is unknown for the TrussSection class
     else
-      return theSection->setParameter(&argv[1], argc-1, param);
-  } 
-  
-  // otherwise parameter is unknown for the TrussSection class
-  else
-    return -1;
-}
+		return -1;
 
+}
+    
+int
+TrussSection::updateParameter (int parameterID, Information &info)
+{
+  switch (parameterID) {
+    case -1:
+      return -1;
+      
+    default:
+      if (parameterID >= 100)
+	  return theSection->updateParameter(parameterID-100, info);
+      else
+	  return -1;
+  }
+}

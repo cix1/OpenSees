@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-02-08 01:25:47 $
+// $Revision: 1.6 $
+// $Date: 2003-10-27 23:04:38 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/components/LimitStateFunction.h,v $
 
 
@@ -86,15 +86,11 @@ protected:
 
 private:
 
-	void initializeFORMAnalysis(void);
-	void initializeSimulationAnalysis(void);
-	void initializeSORMAnalysis(void);
-
 	int tokenizeIt(TCL_Char *expression);
 
-	char originalExpression[500];
-	char tokenizedExpression[500];
-	char expressionWithAddition[500];
+	char *originalExpression;
+	char *tokenizedExpression;
+	char *expressionWithAddition;
 
 };
 

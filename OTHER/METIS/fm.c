@@ -11,7 +11,7 @@
  * Started 9/10/94
  * George
  *
- * $Id: fm.c,v 1.2 2007-05-17 05:23:30 fmk Exp $
+ * $Id: fm.c,v 1.1.1.1 2000-09-15 08:23:12 fmk Exp $
  *
  */
 
@@ -21,6 +21,13 @@
 * External Variables
 **************************************************************************/
 extern CtrlType *__Ctrl;	/* mlevelpart.c.c */
+#ifndef METISLIB
+extern timer GreedyTmr;		/* main.c */
+extern timer GreedyInitTmr;	/* main.c */
+extern timer GreedyIterTmr;	/* main.c */
+extern timer GreedyWrapUpTmr;	/* main.c */
+#endif
+
 
 /*************************************************************************
 * This function performs Kernighan-Lin refinement by swapping a vertex 
@@ -43,6 +50,8 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
   int *pwgts;                 /* The weights of the partitions */
   int from, me, limit, status;
 
+  starttimer(&GreedyInitTmr);
+
   limit = amax(0.001*graph->nvtxs, 15);
   limit = amin(limit, 50);
 
@@ -57,7 +66,10 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
   where = graph->where;
   pwgts = graph->pwgts;
 
+  stoptimer(&GreedyInitTmr);
+
   for (pass=0; pass<npasses; pass++) {
+    starttimer(&GreedyInitTmr);
 
     resetbucket(&parts[0]);
     resetbucket(&parts[1]);
@@ -70,6 +82,8 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
     for (i=0; i<graph->nvtxs; i++) 
       Add2Part(&parts[where[i]], i, ed[i]-id[i]);
 
+    stoptimer(&GreedyInitTmr);
+
     if (__Ctrl->dbglvl&DBG_FFCUT)
       if (pass == 0)
         printf("Partitions: [%6d,%8d]  [%6d,%8d], Initial Cut: %8d [%d]\n",
@@ -79,6 +93,7 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
     /******************************************************
     * Get into the FM loop
     *******************************************************/
+    starttimer(&GreedyIterTmr);
     order = nswaps = 0;
     for (;;) {
       order++;
@@ -132,6 +147,7 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
         break;
       }
     }
+    stoptimer(&GreedyIterTmr);
 
     if (__Ctrl->dbglvl&DBG_FFCUT)
       printf("\tMinimum Cut: %8d at %5d [%6d %6d]\n",mincut, mincutorder, pwgts[0], pwgts[1]);
@@ -140,6 +156,7 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
     /****************************************************************
     * Roll back computation 
     *****************************************************************/
+    starttimer(&GreedyWrapUpTmr);
     for (nswaps--; nswaps>=0; nswaps--) {
       higain = swaps[nswaps];
       if (moved[higain] > mincutorder) {
@@ -159,6 +176,7 @@ void FMR_Refine(CoarseGraphType *graph, int zeropwgt, int npasses)
       else
         break;
     }
+    stoptimer(&GreedyWrapUpTmr);
 
     graph->mincut = mincut;
 
@@ -202,6 +220,8 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
 
   smart = (smart == SMART);
 
+  TIMELVL(starttimer(&GreedyInitTmr));
+
   initbucket(&parts[0], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
   initbucket(&parts[1], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
 
@@ -216,7 +236,10 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
 
   halfsplit = (graph->tvwgt > 2*(zeropwgt-1) && graph->tvwgt < 2*(zeropwgt+1) ? 1 : 0);
 
+  TIMELVL(stoptimer(&GreedyInitTmr));
+
   for (pass=0; pass<npasses; pass++) {
+    TIMELVL(starttimer(&GreedyInitTmr));
 
     resetbucket(&parts[0]);
     resetbucket(&parts[1]);
@@ -238,6 +261,7 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
         }
       }
     }
+    TIMELVL(stoptimer(&GreedyInitTmr));
 
     if (__Ctrl->dbglvl&DBG_FFCUT)
       if (pass == 0)
@@ -248,6 +272,7 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
     /******************************************************
     * Get into the FM loop
     *******************************************************/
+    TIMELVL(starttimer(&GreedyIterTmr));
     order = nswaps = 0;
     for (;;) {
       order++;
@@ -320,6 +345,7 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
         break;
       }
     }
+    TIMELVL(stoptimer(&GreedyIterTmr));
 
     if (__Ctrl->dbglvl&DBG_FFCUT)
       printf("\tMinimum Cut: %8d at %5d (%d) [%6d %6d]\n",mincut, mincutorder, order, pwgts[0], pwgts[1]);
@@ -327,6 +353,7 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
     /****************************************************************
     * Roll back computation 
     *****************************************************************/
+    TIMELVL(starttimer(&GreedyWrapUpTmr));
     for (nswaps--; nswaps>=0; nswaps--) {
       higain = swaps[nswaps];
       if (moved[higain] > mincutorder) {
@@ -356,6 +383,7 @@ void BFMR_Refine(CoarseGraphType *graph, int zeropwgt, int smart, int npasses)
       else
         break;
     }
+    TIMELVL(stoptimer(&GreedyWrapUpTmr));
 
     graph->mincut = mincut;
     graph->nbnd = htable->nelem;
@@ -405,6 +433,8 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
 
   smart = (smart == SMART);
 
+  starttimer(&GreedyInitTmr);
+
   initbucket(&parts[0], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
   initbucket(&parts[1], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
 
@@ -419,7 +449,10 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
 
   halfsplit = (graph->tvwgt > 2*(zeropwgt-1) && graph->tvwgt < 2*(zeropwgt+1) ? 1 : 0);
 
+  stoptimer(&GreedyInitTmr);
+
   for (pass=0; pass<npasses; pass++) {
+    starttimer(&GreedyInitTmr);
 
     resetbucket(&parts[0]);
     resetbucket(&parts[1]);
@@ -441,6 +474,7 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
         }
       }
     }
+    stoptimer(&GreedyInitTmr);
 
     if (__Ctrl->dbglvl&DBG_FFCUT)
       if (pass == 0)
@@ -451,6 +485,7 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
     /******************************************************
     * Get into the FM loop
     *******************************************************/
+    starttimer(&GreedyIterTmr);
     order = nswaps = 0;
     for (;;) {
       order++;
@@ -529,6 +564,7 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
         break;
       }
     }
+    stoptimer(&GreedyIterTmr);
 
     if (__Ctrl->dbglvl&DBG_FFCUT)
       printf("\tMinimum Cut: %8d at %5d (%d) [%6d %6d]\n",mincut, mincutorder, order, pwgts[0], pwgts[1]);
@@ -536,6 +572,7 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
     /****************************************************************
     * Roll back computation 
     *****************************************************************/
+    starttimer(&GreedyWrapUpTmr);
     for (nswaps--; nswaps>=0; nswaps--) {
       higain = swaps[nswaps];
       if (moved[higain] > mincutorder) {
@@ -565,6 +602,7 @@ void BFMR_Refine_Weighted(CoarseGraphType *graph, int zeropwgt, int smart, int n
       else
         break;
     }
+    stoptimer(&GreedyWrapUpTmr);
 
     graph->mincut = mincut;
     graph->nbnd = htable->nelem;
@@ -609,6 +647,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
 
   ASSERT(CheckBndSize(graph));
 
+  TIMELVL(starttimer(&GreedyInitTmr));
 
   initbucket(&parts[0], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
   initbucket(&parts[1], graph->tvwgt, graph->nvtxs, graph->nvtxs, graph->level);
@@ -649,6 +688,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
       }
     }
   }
+  TIMELVL(stoptimer(&GreedyInitTmr));
 
   if (__Ctrl->dbglvl&DBG_FFCUT)
     printf("[D]Partitions: [%6d,%8d]  [%6d,%8d], BND: %5d, ICut: %8d, IDiff: %d\n",
@@ -657,6 +697,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
   /******************************************************
   * Get into the FM loop
   *******************************************************/
+  TIMELVL(starttimer(&GreedyIterTmr));
   order = nswaps = 0;
   for (;;) {
     order++;
@@ -733,6 +774,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
       break;
     }
   }
+  TIMELVL(stoptimer(&GreedyIterTmr));
 
   if (__Ctrl->dbglvl&DBG_FFCUT)
     printf("\tMinimum Cut: %8d at %5d, MinDiff: %4d\n",mincut, mindifforder, mindiff);
@@ -740,6 +782,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
   /****************************************************************
   * Roll back computation 
   *****************************************************************/
+  TIMELVL(starttimer(&GreedyWrapUpTmr));
   for (nswaps--; nswaps>=0; nswaps--) {
     higain = swaps[nswaps];
     if (moved[higain] > mindifforder) {
@@ -769,6 +812,7 @@ void BFMR_Refine_EqWgt(CoarseGraphType *graph, int zeropwgt)
     else
       break;
   }
+  TIMELVL(stoptimer(&GreedyWrapUpTmr));
 
   graph->mincut = mincut;
   graph->nbnd = htable->nelem;
@@ -801,6 +845,8 @@ void Greedy_Refine(CoarseGraphType *graph, int npasses)
 
   ASSERT(CheckBndSize(graph));
 
+  TIMELVL(starttimer(&GreedyInitTmr));
+
   id = graph->id;
   ed = graph->ed;
   where = graph->where;
@@ -810,9 +856,12 @@ void Greedy_Refine(CoarseGraphType *graph, int npasses)
   halfwgt = graph->tvwgt/2;
   movewgt = halfwgt*0.90;
 
+  TIMELVL(stoptimer(&GreedyInitTmr));
+
   if (__Ctrl->dbglvl&DBG_FFCUT)
     printf("Initial Cut: %8d [%6d %6d] [%d]\n", graph->mincut, pwgts[0], pwgts[1], ComputeCut(graph));
 
+  starttimer(&GreedyIterTmr);
   for (pass=0; pass<npasses; pass++) {
     newcut = graph->mincut;
 
@@ -856,6 +905,8 @@ void Greedy_Refine(CoarseGraphType *graph, int npasses)
 
     graph->mincut = newcut;
   }
+  stoptimer(&GreedyIterTmr);
+
 }
 
 

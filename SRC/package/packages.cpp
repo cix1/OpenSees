@@ -17,8 +17,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2006-10-02 20:10:46 $
+// $Revision: 1.4 $
+// $Date: 2005-07-25 22:56:39 $
 // $Source: /usr/local/cvs/OpenSees/SRC/package/packages.cpp,v $
                                                                         
 // Written: fmk 
@@ -106,21 +106,14 @@ getLibraryFunction(const char *libName, const char *funcName, void **libHandle, 
   
   char *error;
   *libHandle = dlopen (localLibName, RTLD_NOW);
-
   if (*libHandle != NULL) {    
     
     *funcHandle = dlsym(*libHandle, funcName);
-    error = dlerror();
-    if (funcHandle == NULL ) 
-      if (error != NULL) {
+    if ((error = dlerror()) != NULL) {
       opserr << *error;
-      opserr << "Could not find function: " << funcName << endln;
-      result = -2; // could not find function
-      } else {
-	opserr << "Could not find function: " << funcName << endln;
-	result = -1;
-      }
-
+      result = -2;
+    } else
+      result = -1;
   } else
     result = -3;
 

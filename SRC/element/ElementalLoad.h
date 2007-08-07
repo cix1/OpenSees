@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2006-09-05 23:25:24 $
+// $Revision: 1.3 $
+// $Date: 2002-06-11 20:48:07 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/ElementalLoad.h,v $
                                                                         
                                                                         
@@ -32,8 +32,6 @@
 // ElementalLoad is an abstract class.
 
 #include <Load.h>
-#include <Vector.h>
-
 class Element;
 
 class ElementalLoad : public Load
@@ -47,7 +45,6 @@ class ElementalLoad : public Load
     virtual void setDomain(Domain *theDomain);
     virtual void applyLoad(double loadfactor);
     virtual const Vector &getData(int &type, double loadFactor) = 0;
-    virtual const Vector &getSensitivityData(int gradNumber);
 
     virtual const ID &getElementTags(void);
     virtual int removeElement(int tag); // returns -1 if fails, 

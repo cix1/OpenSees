@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-04-21 00:06:20 $
+// $Revision: 1.10 $
+// $Date: 2005-11-29 23:36:47 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/analysis/StaticAnalysis.cpp,v $
                                                                         
                                                                         
@@ -74,11 +74,11 @@ StaticAnalysis::StaticAnalysis(Domain &the_Domain,
     // first we set up the links needed by the elements in the 
     // aggregation
     theAnalysisModel->setLinks(the_Domain, theHandler);
-    theConstraintHandler->setLinks(the_Domain, theModel, theStaticIntegrator);
+    theConstraintHandler->setLinks(the_Domain,theModel,theStaticIntegrator);
     theDOF_Numberer->setLinks(theModel);
 
-    theIntegrator->setLinks(theModel, theLinSOE, theTest);
-    theAlgorithm->setLinks(theModel, theStaticIntegrator, theLinSOE, theTest);
+    theIntegrator->setLinks(theModel,theLinSOE);
+    theAlgorithm->setLinks(theModel,theStaticIntegrator,theLinSOE);
 
     if (theTest != 0)
       theAlgorithm->setConvergenceTest(theTest);
@@ -313,7 +313,6 @@ StaticAnalysis::domainChanged(void)
     // finally we invoke domainChanged on the Integrator and Algorithm
     // objects .. informing them that the model has changed
 
-
     result = theIntegrator->domainChanged();
     if (result < 0) {
 	opserr << "StaticAnalysis::setAlgorithm() - ";
@@ -379,7 +378,7 @@ StaticAnalysis::setAlgorithm(EquiSolnAlgo &theNewAlgorithm)
 
     // first set the links needed by the Algorithm
     theAlgorithm = &theNewAlgorithm;
-    theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
+    theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
     
     if (theTest != 0)
       theAlgorithm->setConvergenceTest(theTest);
@@ -387,9 +386,7 @@ StaticAnalysis::setAlgorithm(EquiSolnAlgo &theNewAlgorithm)
       theTest = theAlgorithm->getConvergenceTest();
     
     // invoke domainChanged() either indirectly or directly
-    //    domainStamp = 0;
-    if (domainStamp != 0)
-      theAlgorithm->domainChanged();
+    domainStamp = 0;
 
     return 0;
 }
@@ -406,15 +403,13 @@ StaticAnalysis::setIntegrator(StaticIntegrator &theNewIntegrator)
     Domain *the_Domain = this->getDomainPtr();
   
     theIntegrator = &theNewIntegrator;
-    theIntegrator->setLinks(*theAnalysisModel, *theSOE, theTest);
-    theConstraintHandler->setLinks(*the_Domain, *theAnalysisModel, *theIntegrator);
-    theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
+    theIntegrator->setLinks(*theAnalysisModel,*theSOE);
+    theConstraintHandler->setLinks(*the_Domain,*theAnalysisModel,*theIntegrator);
+    theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
+    
     // cause domainChanged to be invoked on next analyze
-    //    domainStamp = 0;
-
-    if (domainStamp != 0)
-      theIntegrator->domainChanged();
-
+    domainStamp = 0;
+  
   return 0;
 
 }
@@ -428,8 +423,8 @@ StaticAnalysis::setLinearSOE(LinearSOE &theNewSOE)
 
     // set the links needed by the other objects in the aggregation
     theSOE = &theNewSOE;
-    theIntegrator->setLinks(*theAnalysisModel, *theSOE, theTest);
-    theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
+    theIntegrator->setLinks(*theAnalysisModel,*theSOE);
+    theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
 
     // cause domainChanged to be invoked on next analyze
     domainStamp = 0;
@@ -447,8 +442,6 @@ StaticAnalysis::setConvergenceTest(ConvergenceTest &theNewTest)
 
     // set the links needed by the other objects in the aggregation
     theTest = &theNewTest;
-
-    theIntegrator->setLinks(*theAnalysisModel, *theSOE, theTest);
     return theAlgorithm->setConvergenceTest(theTest);
 }
 

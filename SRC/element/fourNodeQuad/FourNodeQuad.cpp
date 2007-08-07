@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.30 $
-// $Date: 2007-03-30 01:50:11 $
+// $Revision: 1.26 $
+// $Date: 2006-08-04 19:07:15 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/fourNodeQuad/FourNodeQuad.cpp,v $
 
 // Written: MHS
@@ -38,7 +38,6 @@
 #include <Domain.h>
 #include <string.h>
 #include <Information.h>
-#include <Parameter.h>
 #include <Channel.h>
 #include <FEM_ObjectBroker.h>
 #include <ElementResponse.h>
@@ -638,18 +637,13 @@ FourNodeQuad::sendSelf(int commitTag, Channel &theChannel)
   
   // Quad packs its data into a Vector and sends this to theChannel
   // along with its dbTag and the commitTag passed in the arguments
-  static Vector data(10);
+  static Vector data(6);
   data(0) = this->getTag();
   data(1) = thickness;
   data(2) = rho;
   data(3) = b[0];
   data(4) = b[1];
   data(5) = pressure;
-
-  data(6) = alphaM;
-  data(7) = betaK;
-  data(8) = betaK0;
-  data(9) = betaKc;
   
   res += theChannel.sendVector(dataTag, commitTag, data);
   if (res < 0) {
@@ -710,7 +704,7 @@ FourNodeQuad::recvSelf(int commitTag, Channel &theChannel,
 
   // Quad creates a Vector, receives the Vector and then sets the 
   // internal data with the data in the Vector
-  static Vector data(10);
+  static Vector data(6);
   res += theChannel.recvVector(dataTag, commitTag, data);
   if (res < 0) {
     opserr << "WARNING FourNodeQuad::recvSelf() - failed to receive Vector\n";
@@ -723,11 +717,6 @@ FourNodeQuad::recvSelf(int commitTag, Channel &theChannel,
   b[0] = data(3);
   b[1] = data(4);
   pressure = data(5);
-
-  alphaM = data(6);
-  betaK = data(7);
-  betaK0 = data(8);
-  betaKc = data(9);
 
   static ID idData(12);
   // Quad now receives the tags of its four external nodes
@@ -928,7 +917,7 @@ FourNodeQuad::displaySelf(Renderer &theViewer, int displayMode, float fact)
 
 Response*
 FourNodeQuad::setResponse(const char **argv, int argc, 
-			  OPS_Stream &output)
+			  Information &eleInfo, OPS_Stream &output)
 {
   Response *theResponse =0;
 
@@ -960,7 +949,7 @@ FourNodeQuad::setResponse(const char **argv, int argc,
       output.attr("eta",pts[pointNum-1][0]);
       output.attr("neta",pts[pointNum-1][1]);
 
-      theResponse =  theMaterial[pointNum-1]->setResponse(&argv[2], argc-2, output);
+      theResponse =  theMaterial[pointNum-1]->setResponse(&argv[2], argc-2, eleInfo, output);
       
       output.endTag();
 
@@ -1022,45 +1011,40 @@ FourNodeQuad::getResponse(int responseID, Information &eleInfo)
 }
 
 int
-FourNodeQuad::setParameter(const char **argv, int argc, Parameter &param)
+FourNodeQuad::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
-
-  int res = -1;
-
   // quad mass density per unit volume
-  if (strcmp(argv[0],"rho") == 0)
-    return param.addObject(1, this);
-
+  if (strcmp(argv[0],"rho") == 0) {
+    info.theType = DoubleType;
+    info.theDouble = rho;
+    return 1;
+  }
   // quad pressure loading
-  if (strcmp(argv[0],"pressure") == 0)
-    return param.addObject(2, this);
-
+  if (strcmp(argv[0],"pressure") == 0) {
+		info.theType = DoubleType;
+		info.theDouble = pressure;
+		return 2;
+  }
   // a material parameter
-  else if (strstr(argv[0],"material") != 0) {
-
-    if (argc < 3)
-      return -1;
-
+  else if (strcmp(argv[0],"material") == 0) {
     int pointNum = atoi(argv[1]);
-    if (pointNum > 0 && pointNum <= 4)
-      return theMaterial[pointNum-1]->setParameter(&argv[2], argc-2, param);
+    if (pointNum > 0 && pointNum <= 4) {
+      int ok = theMaterial[pointNum-1]->setParameter(&argv[2], argc-2, info);
+      if (ok < 0)
+	return -1;
+      else if (ok >= 0 && ok < 100)
+				return pointNum*100 + ok;
+      else
+	return -1;
+    }
     else 
       return -1;
-  }
+	}
   
-  // otherwise it could be just a forall material parameter
-  else {
-    int matRes = res;
-    for (int i=0; i<4; i++) {
-      matRes =  theMaterial[i]->setParameter(argv, argc, param);
-      if (matRes != -1)
-	res = matRes;
-    }
-  }
-  
-  return res;
+  // otherwise parameter is unknown for the FourNodeQuad class
+  else
+    return -1;
+
 }
     
 int
@@ -1079,16 +1063,14 @@ FourNodeQuad::updateParameter(int parameterID, Information &info)
 		this->setPressureLoadAtNodes();	// update consistent nodal loads
 		return 0;
 	default: 
-	  /*	  
-	  if (parameterID >= 100) { // material parameter
-	    int pointNum = parameterID/100;
-	    if (pointNum > 0 && pointNum <= 4)
-	      return theMaterial[pointNum-1]->updateParameter(parameterID-100*pointNum, info);
-	    else
-	      return -1;
-	  } else // unknown
-	  */
-	    return -1;
+		if (parameterID >= 100) { // material parameter
+			int pointNum = parameterID/100;
+			if (pointNum > 0 && pointNum <= 4)
+				return theMaterial[pointNum-1]->updateParameter(parameterID-100*pointNum, info);
+			else
+				return -1;
+		} else // unknown
+			return -1;
   }
 }
 

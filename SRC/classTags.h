@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.95 $
-// $Date: 2007-07-27 19:13:09 $
+// $Revision: 1.82 $
+// $Date: 2006-08-21 18:26:35 $
 // $Source: /usr/local/cvs/OpenSees/SRC/classTags.h,v $
                                                                         
 // Written: fmk
@@ -90,11 +90,6 @@
 #define TSERIES_TAG_SimulatedRandomProcessSeries 8
 #define TSERIES_TAG_PulseSeries       9
 #define TSERIES_TAG_TriangleSeries       10
-#define TSERIES_TAG_PeerMotion       11
-
-#define PARAMETER_TAG_Parameter			1
-#define PARAMETER_TAG_MaterialStageParameter       2
-#define PARAMETER_TAG_MatParameter       3
 
 
 #define MAT_TAG_ElasticMaterial			1
@@ -121,7 +116,6 @@
 #define MAT_TAG_Fatigue			20
 #define MAT_TAG_Steel03					23
 #define MAT_TAG_ReinforcingSteel					24
-#define MAT_TAG_ShearPanelMaterial					40
 
 // Terje:
 #define MAT_TAG_SmoothSteel01			21
@@ -131,13 +125,9 @@
 #define MAT_TAG_Steel02					26
 
 #define MAT_TAG_Bond_SP01  27
-#define MAT_TAG_Hysteretic2				28
 #define MAT_TAG_Concrete04 30
 #define MAT_TAG_SecantConcrete 31
 #define MAT_TAG_ContinuumUniaxial 32
-#define MAT_TAG_Concrete05 33
-#define MAT_TAG_Concrete06 34
-#define MAT_TAG_Concrete07 37
 
 //B Jeremic
 #define MAT_TAG_PySimple1        205
@@ -157,8 +147,6 @@
 #define MAT_TAG_FedeasHysteretic2       1008
 #define MAT_TAG_FedeasSteel1       1009
 #define MAT_TAG_FedeasSteel2       1010
-#define MAT_TAG_PlasticDamage			       1011
-
 
 #define MAT_TAG_DrainMaterial		2000
 #define MAT_TAG_DrainHardening		2001
@@ -175,11 +163,6 @@
 #define MAT_TAG_SnapCloughDamage	3004
 #define MAT_TAG_SnapPinchingDamage	3005
 
-
-#define MAT_TAG_ECC01 3010
-#define MAT_TAG_Concrete01WithSITC 3011
-
-
 #define MAT_TAG_Clough1	201
 #define MAT_TAG_Clough2	202
 #define MAT_TAG_Pinch1	203
@@ -187,7 +170,7 @@
 #define MAT_TAG_Pinching	205
 
 #define MAT_TAG_LimitState	1972
-#define MAT_TAG_Elastic2Material	1973
+
 
 
 #define SEC_TAG_Elastic2d   3
@@ -210,9 +193,7 @@
 #define SEC_TAG_YieldSurface2d  30
 #define SEC_TAG_YieldSurface2D02  31
 #define SEC_TAG_YieldSurface2D01  32
-#define SEC_TAG_ElasticShear2d   33
-#define SEC_TAG_ElasticShear3d   34
-#define SEC_TAG_FiberSection2dInt		35
+
 
 #define SECTION_INTEGRATION_TAG_WideFlange 1
 #define SECTION_INTEGRATION_TAG_RC 2
@@ -371,8 +352,6 @@
 #define ELE_TAG_ForceBeamColumn2d 9878
 #define ELE_TAG_ForceBeamColumn3d 9879
 
-#define ELE_TAG_DispBeamColumn2dInt 9880
-
 #define ELE_TAG_InternalSpring   9900
 #define ELE_TAG_SimpleJoint2D    9901
 #define ELE_TAG_Joint2D    9902
@@ -420,7 +399,6 @@
 #define CRDTR_TAG_LinearCrdTransf3d 4
 #define CRDTR_TAG_PDeltaCrdTransf3d 5
 #define CRDTR_TAG_CorotCrdTransf3d  6
-#define CRDTR_TAG_LinearCrdTransf2dInt 7
 
 #define NOD_TAG_Node      	1
 #define NOD_TAG_DummyNode 	2

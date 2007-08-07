@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.10 $
-// $Date: 2007-04-25 23:45:02 $
+// $Revision: 1.5 $
+// $Date: 2005-11-30 23:47:00 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/subdomain/ShadowSubdomain.h,v $
                                                                         
                                                                         
@@ -65,8 +65,6 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual  bool addNode(Node *);
     virtual  bool addExternalNode(Node *);
     virtual  bool addSP_Constraint(SP_Constraint *);
-    virtual  int  addSP_Constraint(int startTag, int axisDirn, double axisValue, 
-				   const ID &fixityCodes, double tol=1e-10);
     virtual  bool addMP_Constraint(MP_Constraint *);    
     virtual  bool addLoadPattern(LoadPattern *);            
     virtual  bool addNodalLoad(NodalLoad *, int loadPattern);
@@ -81,7 +79,6 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual Element 	  *removeElement(int tag);
     virtual Node 	  *removeNode(int tag);    
     virtual SP_Constraint *removeSP_Constraint(int tag);
-    virtual SP_Constraint *removeSP_Constraint(int nodeTag, int dof, int loadPatternTag);
     virtual MP_Constraint *removeMP_Constraint(int tag);
     virtual LoadPattern   *removeLoadPattern(int tag);
     virtual NodalLoad     *removeNodalLoad(int tag, int loadPattern);
@@ -93,8 +90,8 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual  NodeIter	       &getInternalNodeIter(void);
     virtual  NodeIter	       &getExternalNodeIter(void);    
     
-    virtual  Element       *getElement(int tag);
-    virtual  Node          *getNode(int tag);
+    virtual  Element       *getElementPtr(int tag);
+    virtual  Node          *getNodePtr(int tag);
 
     virtual int getNumElements(void) const;
     virtual int getNumNodes(void) const;
@@ -105,19 +102,12 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual  Graph &getElementGraph(void);
     virtual  Graph &getNodeGraph(void);
 
-    // methods dealing with Parameters
-    virtual  bool           addParameter(Parameter *);            
-    virtual  Parameter     *removeParameter(int tag);
-    virtual  int  updateParameter(int tag, int value);
-    virtual  int  updateParameter(int tag, double value);    
-
     // methods to update the domain
     virtual  void setCommitTag(int newTag);    	
     virtual  void setCurrentTime(double newTime);    
     virtual  void setCommittedTime(double newTime);        
     virtual  void applyLoad(double pseudoTime);
     virtual  void setLoadConstant(void);    
-    virtual  int  setRayleighDampingFactors(double alphaM, double betaK, double betaK0, double betaKc);
 
     virtual  int update(void);    
     virtual  int update(double newTime, double dT);    
@@ -126,6 +116,8 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual  int revertToStart(void);    
     virtual  int barrierCheckIN(void);    
     virtual  int barrierCheckOUT(int);    
+
+    virtual int setRayleighDampingFactors(double alphaM, double betaK, double betaK0, double betaKc);
 
     virtual int  addRecorder(Recorder &theRecorder);    	
     virtual int  removeRecorders(void);
@@ -138,7 +130,6 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual int setAnalysisConvergenceTest(ConvergenceTest &theTest);
     virtual void clearAnalysis(void);
     virtual void domainChange(void);
-    virtual bool getDomainChangeFlag(void);    
     
     virtual int 	getNumExternalNodes(void) const;    
     virtual const ID   &getExternalNodes(void);
@@ -161,18 +152,12 @@ class ShadowSubdomain: public Shadow, public Subdomain
     virtual double getCost(void);
     
     virtual  void Print(OPS_Stream &s, int flag =0);
-    virtual void Print(OPS_Stream &s, ID *nodeTags, ID *eleTags, int flag =0);
 
     // nodal methods required in domain interface for parallel interprter
     virtual double getNodeDisp(int nodeTag, int dof, int &errorFlag);
     virtual int setMass(const Matrix &mass, int nodeTag);
-
-    virtual const Vector *getNodeResponse(int tag, NodeResponseType responseType);
-    virtual int calculateNodalReactions(bool inclInertia);
     
   protected:    
-
-
     virtual int buildMap(void);
     virtual int buildEleGraph(Graph *theEleGraph);
     virtual int buildNodeGraph(Graph *theNodeGraph);    

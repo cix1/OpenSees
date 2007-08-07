@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.3 $
-// $Date: 2007-07-27 19:01:48 $
+// $Revision: 1.2 $
+// $Date: 2004-10-06 19:21:12 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/Pinching4Material.cpp,v $
                                                                         
                                                                         
@@ -104,11 +104,6 @@ Pinching4Material::Pinching4Material(int tag,
 	envlpPosStress.Zero(); envlpPosStrain.Zero(); envlpNegStress.Zero(); envlpNegStrain.Zero(); 
 	energyCapacity = 0.0; kunload = 0.0; elasticStrainEnergy = 0.0;
 
-
-#ifdef _G3DEBUG
-	fg = new FileStream();
-	fg->setFile("PinchDamage.out", APPEND);
-#endif
 	// set envelope slopes
 	this->SetEnvelope();
 
@@ -192,9 +187,7 @@ Pinching4Material::Pinching4Material():
 
 Pinching4Material::~Pinching4Material()
 {
-#ifdef _G3DEBUG
-	fg->close();
-#endif
+ 
 }
 
 int Pinching4Material::setTrialStrain(double strain, double CstrainRate)
@@ -292,7 +285,8 @@ double Pinching4Material::getInitialTangent(void)
 	return envlpPosStress(0)/envlpPosStrain(0);
 }
 
-int Pinching4Material::commitState(void)  {
+int Pinching4Material::commitState(void)					   
+{
 	Cstate = Tstate;
 
 	if (dstrain>1e-12||dstrain<-(1e-12)) {
@@ -327,9 +321,6 @@ int Pinching4Material::commitState(void)  {
 
 	CnCycle = TnCycle; // number of cycles of loading
 
-#ifdef _G3DEBUG
-	(*fg) << tagMat << "  " << CgammaF << "  " << CgammaK << "  " << CgammaD << endln;
-#endif
 	return 0;
 }
 
@@ -1222,7 +1213,7 @@ void Pinching4Material::updateDmg(double strain, double dstrain)
 		else if (strain<uultAbs && strain>-uultAbs) {
 			double kminP = (posEnvlpStress(TmaxStrainDmnd)/TmaxStrainDmnd);
 			double kminN = (negEnvlpStress(TminStrainDmnd)/TminStrainDmnd);
-			double kmin = ((kminP/kElasticPos)>=(kminN/kElasticNeg)) ? (kminP/kElasticPos):(kminN/kElasticNeg);
+			double kmin = ((kminP/kElasticPos)>(kminN/kElasticNeg)) ? (kminP/kElasticPos):(kminN/kElasticNeg);
 			double gammaKLimEnv = (0.0>(1.0-kmin)) ? 0.0:(1.0-kmin);
 			
 			TgammaK = (gammaKLimit<gammaKLimEnv) ? gammaKLimit:gammaKLimEnv;    

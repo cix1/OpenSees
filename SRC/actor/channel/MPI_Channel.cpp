@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-04-10 18:53:18 $
+// $Revision: 1.4 $
+// $Date: 2005-11-23 18:27:24 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/channel/MPI_Channel.cpp,v $
                                                                         
                                                                         
@@ -66,6 +66,8 @@ MPI_Channel::setUpConnection(void)
 ChannelAddress *
 MPI_Channel::getLastSendersAddress(void) 
 {
+  opserr << "MPI_Channel::getLastSendersAddress(void) - ";
+  opserr << " this should not be called - need MPI-2.0 to use\n";
   
   return 0;
 }    
@@ -179,16 +181,6 @@ MPI_Channel::recvMsg(int dbTag, int commitTag, Message &msg, ChannelAddress *the
     else
       return 0;
 }
-
-
-int 
-MPI_Channel::recvMsgUnknownSize(int dbTag, int commitTag, Message &msg, ChannelAddress *theAddress)
-{	
-    opserr << "MPI_Channel::recvMsgUnknownSize() -";
-    opserr << " not yet implemented ";
-    return -1;
-}
-
 
 
 // void Send(Message &):
@@ -419,7 +411,7 @@ MPI_Channel::recvID(int dbTag, int commitTag, ID &theID, ChannelAddress *theAddr
 
     if (count != nleft) {
       opserr << "MPI_Channel::recvID() -";
-      opserr << " incorrect number of entries for ID received: " << count << " exptected: " << theID.sz << endln;
+      opserr << " incorrect number of entries for ID received: " << count << "\n";
       return -1;
     }
     else

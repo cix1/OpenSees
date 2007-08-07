@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-04-02 23:41:13 $
+// $Revision: 1.5 $
+// $Date: 2005-11-29 22:42:42 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/NewtonRaphson.h,v $
                                                                         
                                                                         
@@ -53,6 +53,8 @@ class NewtonRaphson: public EquiSolnAlgo
     ~NewtonRaphson();
 
     int solveCurrentStep(void);    
+    int setConvergenceTest(ConvergenceTest *theNewTest);
+    ConvergenceTest *getConvergenceTest(void);     
     
     virtual int sendSelf(int commitTag, Channel &theChannel);
     virtual int recvSelf(int commitTag, Channel &theChannel, 
@@ -60,9 +62,9 @@ class NewtonRaphson: public EquiSolnAlgo
     void Print(OPS_Stream &s, int flag =0);    
     
   protected:
-
     
   private:
+    ConvergenceTest *theTest;
     int tangent;
   
 };

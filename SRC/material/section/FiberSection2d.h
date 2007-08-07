@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-02-02 01:18:12 $
+// $Revision: 1.11 $
+// $Date: 2006-08-03 23:49:46 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/FiberSection2d.h,v $
                                                                         
 // Written: fmk
@@ -40,15 +40,12 @@
 class UniaxialMaterial;
 class Fiber;
 class Response;
-class SectionIntegration;
 
 class FiberSection2d : public SectionForceDeformation
 {
   public:
     FiberSection2d(); 
-    FiberSection2d(int tag, int numFibers, Fiber **fibers);
-    FiberSection2d(int tag, int numFibers, UniaxialMaterial **mats,
-		   SectionIntegration &si);
+    FiberSection2d(int tag, int numFibers, Fiber **fibers); 
     ~FiberSection2d();
 
     const char *getClassType(void) const {return "FiberSection2d";};
@@ -74,24 +71,25 @@ class FiberSection2d : public SectionForceDeformation
     void Print(OPS_Stream &s, int flag = 0);
 	    
     Response *setResponse(const char **argv, int argc, 
+			  Information &info, 
 			  OPS_Stream &s);
     int getResponse(int responseID, Information &info);
 
     int addFiber(Fiber &theFiber);
 
     // AddingSensitivity:BEGIN //////////////////////////////////////////
-    int setParameter(const char **argv, int argc, Parameter &param);
-    const Vector& getStressResultantSensitivity(int gradNumber,
-						bool conditional);
-    const Vector& getSectionDeformationSensitivity(int gradNumber);
-    const Matrix& getInitialTangentSensitivity(int gradNumber);
-    int commitSensitivity(const Vector& sectionDeformationGradient,
-			  int gradNumber, int numGrads);
+    int   setParameter(const char **argv, int argc, Information &info);
+    int   updateParameter(int parameterID, Information &info);
+    int   activateParameter(int parameterID);
+    const Vector & getStressResultantSensitivity(int gradNumber, bool conditional);
+    const Vector & getSectionDeformationSensitivity(int gradNumber);
+    const Matrix & getSectionTangentSensitivity(int gradNumber);
+    int   commitSensitivity(const Vector& sectionDeformationGradient, int gradNumber, int numGrads);
     // AddingSensitivity:END ///////////////////////////////////////////
 
   protected:
     
-    //  private:
+  private:
     int numFibers;                   // number of fibers in the section
     UniaxialMaterial **theMaterials; // array of pointers to materials
     double   *matData;               // data for the materials [yloc and area]
@@ -100,8 +98,6 @@ class FiberSection2d : public SectionForceDeformation
     
     double yBar;       // Section centroid
   
-    SectionIntegration *sectionIntegr;
-
     static ID code;
 
     Vector e;          // trial section deformations 
@@ -110,7 +106,7 @@ class FiberSection2d : public SectionForceDeformation
     Matrix *ks;        // section stiffness
 
 // AddingSensitivity:BEGIN //////////////////////////////////////////
-    Vector dedh; // MHS hack
+    int parameterID;
 // AddingSensitivity:END ///////////////////////////////////////////
 };
 

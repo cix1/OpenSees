@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-08-03 00:17:09 $
+// $Revision: 1.11 $
+// $Date: 2006-05-26 18:19:16 $
 // $Source: /usr/local/cvs/OpenSees/SRC/matrix/ID.cpp,v $
                                                                         
                                                                         
@@ -254,28 +254,6 @@ ID::removeValue(int value)
 }    
 
 
-int
-ID::unique(void)
-{
-    // find unique values and number thereof
-    int i = 0;
-    while (i < sz-1)  {
-        int j = i+1;
-        while (j < sz)  {
-            if (data[i] == data[j])  {
-                for (int k=j; k<sz-1; k++)
-	                data[k] = data[k+1];
-                sz--;
-            } else  {
-                j++;
-            }
-        }
-        i++;
-    }
-    return sz;
-}
-
-
 int &
 ID::operator[](int x) 
 {
@@ -439,54 +417,7 @@ ID::operator=(const ID &V)
 }
 
 
-// ID operator==(const ID &V):
-//	The == operator checks the two IDs are of the same size.
-// 	Then returns 1 if all the components of the two IDs are equal and 0 otherwise.
 
-int 
-ID::operator==(const ID &V) const
-{
-#ifdef _G3DEBUG
-  if (sz != V.sz) {
-    opserr << "WARNING Vector::operator==(ID):IDs not of same sizes: " << sz << " != " << V.sz << endln;
-    return -1;
-  }
-#endif
-
-  int *dataThis = data;
-  int *dataV = V.data;
-
-  for (int i=0; i<sz; i++)
-    if (*dataThis++ != *dataV++)
-      return 0;
-
-  return 1;
-}
-
-
-// ID operator!=(const ID &V):
-//	The != operator checks the two IDs are of the same size.
-// 	Then returns 1 if any of the components of the two IDs are unequal and 0 otherwise.
-
-int 
-ID::operator!=(const ID &V) const
-{
-#ifdef _G3DEBUG
-  if (sz != V.sz) {
-    opserr << "WARNING ID::operator!=(ID):IDs not of same sizes: " << sz << " != " << V.sz << endln;
-    return -1;
-  }
-#endif
-
-  int *dataThis = data;
-  int *dataV = V.data;
-
-  for (int i=0; i<sz; i++)
-    if (*dataThis++ != *dataV++)
-      return 1;
-
-  return 0;
-}
 
 
 // friend OPS_Stream &operator<<(OPS_Stream &s, const ID &V)

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.6 $
+// $Date: 2006-08-14 13:45:57 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/NewElement.cpp,v $
                                                                         
 // Written: fmk 
@@ -206,9 +206,9 @@ NewElement::Print(OPS_Stream &s, int flag)
 
 
 Response*
-NewElement::setResponse(const char **argv, int argc, OPS_Stream &S)
+NewElement::setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &S)
 {
-	return this->Element::setResponse(argv, argc, S);
+	return this->Element::setResponse(argv, argc, eleInfo, S);
 }
 
 
@@ -220,9 +220,9 @@ NewElement::getResponse(int responseID, Information &eleInfo)
 
 
 int
-NewElement::setParameter(const char **argv, int argc, Parameter &param)
+NewElement::setParameter(const char **argv, int argc, Information &info)
 {
-  return 0;
+  return -1;
 }
     
 

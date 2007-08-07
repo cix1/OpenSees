@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.29 $
-// $Date: 2007-08-07 18:05:53 $
+// $Revision: 1.25 $
+// $Date: 2006-08-04 19:13:02 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/truss/Truss.cpp,v $
                                                                         
                                                                         
@@ -31,9 +31,8 @@
 //
 // What: "@(#) Truss.C, revA"
 
-#include <Truss.h>
+#include "Truss.h"
 #include <Information.h>
-#include <Parameter.h>
 
 #include <Domain.h>
 #include <Node.h>
@@ -854,7 +853,6 @@ Truss::displaySelf(Renderer &theViewer, int displayMode, float fact)
 	  v2(i) = end2Crd(i);
 	}    
       }
-      return theViewer.drawLine(v1, v2, 1.0, 1.0);	
     }
     return 0;
 }
@@ -931,7 +929,7 @@ Truss::computeCurrentStrainRate(void) const
 }
 
 Response*
-Truss::setResponse(const char **argv, int argc, OPS_Stream &output)
+Truss::setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &output)
 {
 
   Response *theResponse = 0;
@@ -946,22 +944,8 @@ Truss::setResponse(const char **argv, int argc, OPS_Stream &output)
   // we compare argv[0] for known response types for the Truss
   //
 
-
-  if (strcmp(argv[0],"force") == 0 || strcmp(argv[0],"forces") == 0){
-    char outputData[10];
-    int numDOFperNode = numDOF/2;
-    for (int i=0; i<numDOFperNode; i++) {
-      sprintf(outputData,"P1_%d", i+1);
-      output.tag("ResponseType", outputData);
-    }
-    for (int j=0; j<numDOFperNode; j++) {
-      sprintf(outputData,"P2_%d", j+1);
-      output.tag("ResponseType", outputData);
-    }
-    theResponse =  new ElementResponse(this, 1, this->getResistingForce());
-
-  } else if ((strcmp(argv[0],"axialForce") == 0) || (strcmp(argv[0],"localForce") == 0) || 
-	     (strcmp(argv[0],"localForce") == 0)) {
+  if (strcmp(argv[0],"force") == 0 || strcmp(argv[0],"forces") == 0 || strcmp(argv[0],"axialForce") == 0) {
+    opserr << "HELLO\n";
     output.tag("ResponseType", "N");
     theResponse =  new ElementResponse(this, 1, 0.0);
 
@@ -974,7 +958,7 @@ Truss::setResponse(const char **argv, int argc, OPS_Stream &output)
   // a material quantity    
   } else if (strcmp(argv[0],"material") == 0 || strcmp(argv[0],"-material") == 0) {
 
-    theResponse =  theMaterial->setResponse(&argv[1], argc-1, output);
+    theResponse =  theMaterial->setResponse(&argv[1], argc-1, eleInfo, output);
   }
 
   output.endTag();
@@ -1001,55 +985,75 @@ Truss::getResponse(int responseID, Information &eleInfo)
 
 // AddingSensitivity:BEGIN ///////////////////////////////////
 int
-Truss::setParameter(const char **argv, int argc, Parameter &param)
+Truss::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
-  
-  // Cross sectional area of the truss
-  if (strcmp(argv[0],"A") == 0)
-    return param.addObject(1, this);
-  
-  // Mass densitity of the truss
-  if (strcmp(argv[0],"rho") == 0)
-    return param.addObject(2, this);
-  
-  // Explicit specification of a material parameter
-  if (strstr(argv[0],"material") != 0) {
+    if (argc < 1)
+        return -1;
+
+    // Cross sectional area of the truss itself
+    if (strcmp(argv[0],"A") == 0) {
+        info.theType = DoubleType;
+        return 1;
+    }
+
+    // Mass densitity (per unit volume) of the truss itself
+    if (strcmp(argv[0],"rho") == 0) {
+        info.theType = DoubleType;
+        return 2;
+    }
+
+    // a material parameter
+    if (strcmp(argv[0],"-material") == 0 || strcmp(argv[0],"material") == 0) {
+      int ok = theMaterial->setParameter(&argv[1], argc-1, info);
+      if (ok < 0)
+	return -1;
+      else
+	return ok + 100;
+    } 
     
-    if (argc < 2)
-      return -1;
-    
+    // otherwise parameter is unknown for the Truss class
     else
-      return theMaterial->setParameter(&argv[1], argc-1, param);
-  } 
-  
-  // Otherwise, send it to the material
-  else
-    return theMaterial->setParameter(argv, argc, param);
+      return -1;
 }
 
 int
 Truss::updateParameter (int parameterID, Information &info)
 {
   switch (parameterID) {
-  case 1:
-    A = info.theDouble;
-    return 0;
-  case 2:
-    rho = info.theDouble;
-    return 0;
-  default:
-    return -1;
+    case -1:
+      return -1;
+      
+    case 1:
+        this->A = info.theDouble;
+        return 0;
+
+    case 2:
+        this->rho = info.theDouble;
+        return 0;
+
+    default:
+      if (parameterID >= 100)
+	  return theMaterial->updateParameter(parameterID-100, info);
+      else
+	  return -1;
   }
 }
-
 int
 Truss::activateParameter(int passedParameterID)
 {
-  parameterID = passedParameterID;
-  
-  return 0;
+	parameterID = passedParameterID;
+
+	// The identifier needs to be passed "downwards" also when it's zero
+	if (passedParameterID == 0 || passedParameterID == 1 || passedParameterID == 2) {
+		theMaterial->activateParameter(0);
+	}
+
+	// If the identifier is non-zero and the parameter belongs to the material
+	else if ( passedParameterID > 100) {
+		theMaterial->activateParameter(passedParameterID-100);
+	}
+
+	return 0;
 }
 
 

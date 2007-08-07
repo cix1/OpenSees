@@ -18,14 +18,16 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-07-16 22:57:03 $
+// $Revision: 1.10 $
+// $Date: 2003-04-02 22:02:46 $
 // $Source: /usr/local/cvs/OpenSees/SRC/matrix/Matrix.h,v $
                                                                         
                                                                         
 #ifndef Matrix_h
 #define Matrix_h 
 
+// File: ~/matrix/Matrix.h
+//
 // Written: fmk 
 // Created: 11/96
 // Revision: A
@@ -74,11 +76,10 @@ class Matrix
 
     int addMatrix(double factThis, const Matrix &other, double factOther);
     int addMatrixProduct(double factThis, const Matrix &A, const Matrix &B, double factOther); // AB
-    int addMatrixTransposeProduct(double factThis, const Matrix &A, const Matrix &B, double factOther); // A'B
     int addMatrixTripleProduct(double factThis, const Matrix &A, const Matrix &B, double factOther); // A'BA
-    int addMatrixTripleProduct(double factThis, const Matrix &A, const Matrix &B, const Matrix &C, double otherFact); //A'BC
+    //int addMatrixTripleProduct(const Matrix &A, const Matrix &B, const Matrix &C double fact = 1.0); //ABC
     
-    // overloaded operators 
+    // overloaded operators all of which are pure 
     inline double &operator()(int row, int col);
     inline double operator()(int row, int col) const;
     Matrix operator()(const ID &rows, const ID & cols) const;
@@ -126,7 +127,7 @@ class Matrix
     // methods added by Remo
     int  Assemble(const Matrix &V, int init_row, int init_col, double fact = 1.0);
     int  AssembleTranspose(const Matrix &V, int init_row, int init_col, double fact = 1.0);
-    int  Extract(const Matrix &V, int init_row, int init_col, double fact = 1.0);
+    int  Extract (const Matrix &V, int init_row, int init_col, double fact = 1.0);
 
     friend OPS_Stream &operator<<(OPS_Stream &s, const Matrix &M);
     //    friend istream &operator>>(istream &s, Matrix &M);    
@@ -135,10 +136,9 @@ class Matrix
     
     friend class Vector;    
     friend class Message;
-    friend class UDP_Socket;
     friend class TCP_Socket;
-    friend class TCP_SocketSSL;
     friend class TCP_SocketNoDelay;
+    friend class UDP_Socket;
     friend class MPI_Channel;
     friend class MySqlDatastore;
     friend class BerkeleyDbDatastore;

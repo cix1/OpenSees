@@ -18,14 +18,13 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-08-07 16:40:53 $
+// $Revision: 1.4 $
+// $Date: 2003-04-02 22:02:34 $
 // $Source: /usr/local/cvs/OpenSees/SRC/coordTransformation/TclGeomTransfCommand.cpp,v $
 #include <string.h>
 #include <TclModelBuilder.h>
 
 #include <LinearCrdTransf2d.h>
-#include <LinearCrdTransf2dInt.h>
 #include <LinearCrdTransf3d.h>
 #include <PDeltaCrdTransf2d.h>
 #include <PDeltaCrdTransf3d.h>
@@ -39,10 +38,10 @@ static TclModelBuilder *theTclModelBuilder = 0;
 // to create a coordinate transformation 
 //
 int
-TclCommand_addGeomTransf(ClientData clientData, Tcl_Interp *interp,
-			 int argc, TCL_Char **argv,
-			 Domain *theDomain,
-			 TclModelBuilder *theBuilder)
+TclModelBuilder_addGeomTransf(ClientData clientData, Tcl_Interp *interp,
+			      int argc, TCL_Char **argv,
+			      Domain *theDomain,
+			      TclModelBuilder *theBuilder)
   
 {
   // Make sure there is a minimum number of arguments
@@ -51,21 +50,21 @@ TclCommand_addGeomTransf(ClientData clientData, Tcl_Interp *interp,
     opserr << "Want: geomTransf type? tag? <specific transf args>" << endln;
     return TCL_ERROR;
   }   
-  
+	
   theTclModelBuilderDomain = theDomain;
   theTclModelBuilder = theBuilder;
-  
+    
   int NDM, NDF;
      
   NDM = theTclModelBuilder->getNDM();   // dimension of the structure (1d, 2d, or 3d)
   NDF = theTclModelBuilder->getNDF();   // number of degrees of freedom per node
-  
+
   // create 2d coordinate transformation
   if (NDM == 2 && NDF == 3) {
-    
+
     int crdTransfTag;
     Vector jntOffsetI(2), jntOffsetJ(2);
-    
+	 
     if (argc < 3) {
       opserr << "WARNING insufficient arguments - want: geomTransf type? tag? <-jntOffset dXi? dYi? dXj? dYj?>\n"; 
       return TCL_ERROR;
@@ -107,21 +106,18 @@ TclCommand_addGeomTransf(ClientData clientData, Tcl_Interp *interp,
 
     // construct the transformation object
     
-    CrdTransf2d *crdTransf2d =0;
+    CrdTransf2d *crdTransf2d;
     
     if (strcmp(argv[1],"Linear") == 0)
       crdTransf2d = new LinearCrdTransf2d(crdTransfTag, jntOffsetI, jntOffsetJ);
-
-    else if (strcmp(argv[1],"LinearInt") ==0)
-      //      crdTransf2d = new LinearCrdTransf2dInt(crdTransfTag, jntOffsetI, jntOffsetJ);
-      crdTransf2d = new LinearCrdTransf2dInt(crdTransfTag, jntOffsetI, jntOffsetJ);
     
     else if (strcmp(argv[1],"PDelta") == 0 || strcmp(argv[1],"LinearWithPDelta") == 0)
       crdTransf2d = new PDeltaCrdTransf2d(crdTransfTag, jntOffsetI, jntOffsetJ);
     
+#ifdef _COROTATIONAL
     else if (strcmp(argv[1],"Corotational") == 0)
       crdTransf2d = new CorotCrdTransf2d(crdTransfTag, jntOffsetI, jntOffsetJ);
-
+#endif
     else {
       opserr << "WARNING TclElmtBuilder - addGeomTransf - invalid Type\n";
       opserr << argv[1] << endln;
@@ -208,8 +204,10 @@ TclCommand_addGeomTransf(ClientData clientData, Tcl_Interp *interp,
     else if (strcmp(argv[1],"PDelta") == 0 || strcmp(argv[1],"LinearWithPDelta") == 0)
       crdTransf3d = new PDeltaCrdTransf3d(crdTransfTag, vecxzPlane, jntOffsetI, jntOffsetJ);
     
+#ifdef _COROTATIONAL
     else if (strcmp(argv[1],"Corotational") == 0)
       crdTransf3d = new CorotCrdTransf3d(crdTransfTag, vecxzPlane, jntOffsetI, jntOffsetJ);
+#endif
     
     else {
       opserr << "WARNING TclElmtBuilder - addGeomTransf - invalid Type\n";

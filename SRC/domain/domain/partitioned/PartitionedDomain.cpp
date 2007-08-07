@@ -18,9 +18,10 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.14 $
-// $Date: 2007-06-13 18:02:12 $
+// $Revision: 1.5 $
+// $Date: 2006-01-10 00:33:09 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/domain/partitioned/PartitionedDomain.cpp,v $
+                                                                        
                                                                         
 // Written: fmk 
 // Revision: A
@@ -37,8 +38,6 @@
 
 #include <PartitionedDomain.h>
 #include <stdlib.h>
-
-#include <Matrix.h>
 
 #include <DomainPartitioner.h>
 #include <Element.h>
@@ -60,18 +59,6 @@
 #include <ElementalLoad.h>
 #include <SP_Constraint.h>
 #include <Recorder.h>
-#include <Parameter.h>
-
-#include <MapOfTaggedObjects.h>
-#include <MapOfTaggedObjectsIter.h>
-
-typedef map<int, int>         MAP_INT;
-typedef MAP_INT::value_type   MAP_INT_TYPE;
-typedef MAP_INT::iterator     MAP_INT_ITERATOR;
-
-typedef map<int, ID *> MAP_ID;
-typedef MAP_ID::value_type   MAP_ID_TYPE;
-typedef MAP_ID::iterator     MAP_ID_ITERATOR;
 
 PartitionedDomain::PartitionedDomain()
 :Domain(),
@@ -150,7 +137,7 @@ PartitionedDomain::PartitionedDomain(int numNodes, int numElements,
 
 PartitionedDomain::~PartitionedDomain()
 {
-  this->PartitionedDomain::clearAll();
+  this->clearAll();
 
   if (elements != 0)
     delete elements;
@@ -168,16 +155,15 @@ PartitionedDomain::~PartitionedDomain()
 void
 PartitionedDomain::clearAll(void)
 {
+  this->Domain::clearAll();
+  elements->clearAll();
+
   SubdomainIter &mySubdomains = this->getSubdomains();
   Subdomain *theSub;
   while ((theSub = mySubdomains()) != 0) 
     theSub->clearAll();
 
   theSubdomains->clearAll();
-
-
-  this->Domain::clearAll();
-  elements->clearAll();
 }
     
 
@@ -224,13 +210,11 @@ PartitionedDomain::addElement(Element *elePtr)
     bool result = elements->addComponent(elePtr);
     if (result == true) {
 	elePtr->setDomain(this);
-	elePtr->update();
 	this->domainChange();
     }
     
     return result;
 }    
-
 
 
 
@@ -271,33 +255,14 @@ PartitionedDomain::addSP_Constraint(SP_Constraint *load)
       return theSub->addSP_Constraint(load);
   }
 
+    
   // if no subdomain .. node not in model .. error message and return failure
   opserr << "PartitionedDomain::addSP_Constraint - cannot add as node with tag" <<
     nodeTag << "does not exist in model\n"; 
 
   return false;
+
 }
-
-
-
-int
-PartitionedDomain::addSP_Constraint(int startTag, int axisDirn, double axisValue, 
-				   const ID &fixityCodes, double tol)
-{
-  int spTag = startTag;
-
-  spTag = this->Domain::addSP_Constraint(spTag, axisDirn, axisValue, fixityCodes, tol);
-
-  // find subdomain with node and add it .. break if find as internal node
-  SubdomainIter &theSubdomains = this->getSubdomains();
-  Subdomain *theSub;
-  while ((theSub = theSubdomains()) != 0) {
-    spTag = theSub->addSP_Constraint(spTag, axisDirn, axisValue, fixityCodes, tol);
-  }
-
-  return spTag;
-}
-
 
 bool
 PartitionedDomain::addSP_Constraint(SP_Constraint *load, int pattern)
@@ -327,168 +292,8 @@ PartitionedDomain::addSP_Constraint(SP_Constraint *load, int pattern)
     nodeTag << "does not exist in model\n"; 
 
   return false;
-}
-
-
-bool
-PartitionedDomain::addMP_Constraint(MP_Constraint *load)
-{
-  bool res = true;
-  bool getRetained = false;
-  bool addedMain = false;
-
-  // to every domain with the constrained node we must
-  // 1. add the retained node if not already there & any sp constraints on that node
-  // 2. add the constraint.
-
-  int retainedNodeTag = load->getNodeRetained();
-  int constrainedNodeTag = load->getNodeConstrained();
-
-  //
-  // first we check the main domain
-  // if has the constrained but not retained we mark as needing retained
-  //
-
-  Node *retainedNodePtr = this->Domain::getNode(retainedNodeTag);
-  Node *constrainedNodePtr = this->Domain::getNode(constrainedNodeTag);
-  if (constrainedNodePtr != 0) {
-    if (retainedNodePtr != 0) {
-
-      res = this->Domain::addMP_Constraint(load);    
-      if (res == false) {
-	opserr << "PartitionedDomain::addMP_Constraint - problems adding to main domain\n";
-	return res;
-      }
-      addedMain = true;
-    } else {
-      getRetained = true;
-    }
-  }
-
-  //
-  // now we check all subdomains
-  // if a subdomain has both nodes we add the constraint, if only the
-  // constrained node we mark as needing retained
-  //
-
-  SubdomainIter &theSubdomains = this->getSubdomains();
-  Subdomain *theSub;
-  while ((theSub = theSubdomains()) != 0) {
-
-    bool hasConstrained = theSub->hasNode(constrainedNodeTag);
-
-    if (hasConstrained == true) {
-
-      bool hasRestrained = theSub->hasNode(retainedNodeTag);
-
-      if (hasRestrained == true) {
-
-	res = theSub->addMP_Constraint(load);
-
-	if (res == false) {
-	  opserr << "PartitionedDomain::addMP_Constraint - problems adding to subdomain with retained\n";
-	  return res;
-	}
-      } else
-	getRetained = true;
-    }
-  }
-
-  //
-  // if getRetained is true, a subdomain or main domain has the constrained node
-  // but no retained node .. we must go get it && SP constraints as well
-  // 1. we first go get it
-  // 2. then we add to main domain
-  // 3. then we add to any subdomain
-  // 
-
-  if (getRetained == true) {
-
-    // we get a copy of the retained Node, set mass equal 0 (don't want to double it)
-    if (retainedNodePtr == 0) {
-      SubdomainIter &theSubdomains2 = this->getSubdomains();
-      while ((theSub = theSubdomains2()) != 0 && retainedNodePtr == 0) {
-	
-	bool hasRestrained = theSub->hasNode(retainedNodeTag);
-
-	if (hasRestrained == true) {
-	  retainedNodePtr = theSub->getNode(retainedNodeTag);
-
-	  Matrix mass(retainedNodePtr->getNumberDOF(), retainedNodePtr->getNumberDOF());
-	  mass.Zero();
-	  retainedNodePtr->setMass(mass);
-	}
-      }
-    } else {
-      // get a copy & zero the mass
-      retainedNodePtr = new Node(*retainedNodePtr, false);
-    }
-
-    if (retainedNodePtr == 0) {
-      opserr << "partitionedDomain::addMP_Constraint - can't find retained node anywhere!\n";
-      return false;
-    }
-
-    //
-    // if main has it we add the retained to main & constraint
-    //
-
-    if (constrainedNodePtr != 0 && addedMain == false) {
-      res = this->Domain::addNode(retainedNodePtr);
-
-      if (res == false) {
-	opserr << "PartitionedDomain::addMP_Constraint - problems adding retained to main domain\n";
-	return res;
-      } 
-      res = this->Domain::addMP_Constraint(load);
-
-      if (res == false) {
-	opserr << "PartitionedDomain::addMP_Constraint - problems adding constraint to main domain after adding node\n";
-	return res;
-      } 
-    }
-
-    //
-    // to subdmains that have the constrained but no retained
-    // 1. we add a copy of retained
-    // 2. we add the constraint
-    //
-
-    SubdomainIter &theSubdomains3 = this->getSubdomains();
-    while ((theSub = theSubdomains3()) != 0) {
-      bool hasConstrained = theSub->hasNode(constrainedNodeTag);
-      if (hasConstrained == true) {
-
-	bool hasRestrained = theSub->hasNode(retainedNodeTag);
-	if (hasRestrained == false) {
-
-	  res = theSub->addNode(retainedNodePtr);
-
-	  if (res == false) {
-	    opserr << "PartitionedDomain::addMP_Constraint - problems adding retained to subdomain\n";
-	    return res;
-	  } 
-
-	  res = theSub->addMP_Constraint(load);
-
-	  if (res == false) {
-	    opserr << "PartitionedDomain::addMP_Constraint - problems adding constraint to subdomain after adding node\n";
-	    return res;
-	  } 
-	}
-      }
-    }
-
-    // clean up memory
-    if (addedMain == true && getRetained == true) 
-      delete retainedNodePtr;
-
-  }
-
-  return res;
 
 }
-
 
 bool 
 PartitionedDomain::addLoadPattern(LoadPattern *loadPattern)
@@ -714,7 +519,6 @@ PartitionedDomain::getElement(int tag)
 	return result;
     }
 
-    /*
     // go through the other subdomains until we find it or we run out of subdomains
     if (theSubdomains != 0) {
 	ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);
@@ -726,8 +530,7 @@ PartitionedDomain::getElement(int tag)
 		return result;
 	}
     }
-    */
-
+    
     // its not there
     return 0;
 }
@@ -826,24 +629,6 @@ PartitionedDomain::setLoadConstant(void)
 	    theSub->setLoadConstant();
 	}
     }
-}
-
-
-int
-PartitionedDomain::setRayleighDampingFactors(double alphaM, double betaK, double betaK0, double betaKc)
-{
-    this->Domain::setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
-
-    // do the same for all the subdomains
-    if (theSubdomains != 0) {
-	ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-	TaggedObject *theObject;
-	while ((theObject = theSubsIter()) != 0) {
-	    Subdomain *theSub = (Subdomain *)theObject;	    
-	    theSub->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
-	}
-    }
-    return 0;
 }
 
 
@@ -950,42 +735,11 @@ PartitionedDomain::update(double newTime, double dT)
 }
 
 
-int
-PartitionedDomain::hasDomainChanged(void)
-{
-  return this->Domain::hasDomainChanged();
-}
 
 int
 PartitionedDomain::newStep(double dT)
 {
-  // first we need to see if any subdomain has changed & mark the change in domain
-  bool domainChangedAnySubdomain = this->getDomainChangeFlag();
-  if (domainChangedAnySubdomain == false) {
-    // do the same for all the subdomains
-    if (theSubdomains != 0) {
-	ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-	TaggedObject *theObject;
-	while (((theObject = theSubsIter()) != 0) && (domainChangedAnySubdomain == false)) {
-	    Subdomain *theSub = (Subdomain *)theObject;	    
-	    domainChangedAnySubdomain = theSub->getDomainChangeFlag();
-	}
-    }
-  }
-
-  if (domainChangedAnySubdomain == true) {
-    this->Domain::domainChange();
-    if (theSubdomains != 0) {
-	ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-	TaggedObject *theObject;
-	while (((theObject = theSubsIter()) != 0) && (domainChangedAnySubdomain == false)) {
-	    Subdomain *theSub = (Subdomain *)theObject;	    
-	    theSub->domainChange();
-	}
-    }
-  }
-
-  this->Domain::newStep(dT);
+    this->Domain::newStep(dT);
 
     int res = 0;
     // do the same for all the subdomains
@@ -1160,36 +914,6 @@ PartitionedDomain::Print(OPS_Stream &s, int flag)
 }
 
 
-void 
-PartitionedDomain::Print(OPS_Stream &s, ID *nodeTags, ID *eleTags, int flag)
-{
-  if (nodeTags != 0)
-    this->Domain::Print(s, nodeTags, 0, flag);
-
-  if (eleTags != 0) {
-    int numEle = eleTags->Size();
-    for (int i=0; i<numEle; i++) {
-      int eleTag = (*eleTags)(i);
-      TaggedObject *theEle = elements->getComponentPtr(eleTag);
-      if (theEle != 0)
-	theEle->Print(s, flag);
-    }
-  }
-  
-
-  // print all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      theSub->Print(s, nodeTags, eleTags, flag);
-    }
-  }
-}
-
-
-
 int 
 PartitionedDomain::setPartitioner(DomainPartitioner *thePartitioner)
 {
@@ -1292,164 +1016,162 @@ PartitionedDomain::getPartitioner(void) const
 	
 
 
+
 int 
 PartitionedDomain::buildEleGraph(Graph *theEleGraph)
 {
-   // see if quick return
-    int numVertex = this->getNumElements();
-    if (numVertex == 0)
-        return 0;
+    int numVertex = elements->getNumComponents();
 
-    //
-    // iterate over the lements of the domain
-    //  create a vertex with a unique tag for each element
-    //  also create a map to hold element tag - vertex tag mapping
-    //
+    // see if quick return
 
-    MAP_INT theEleToVertexMap;
-    MAP_INT_ITERATOR theEleToVertexMapEle;
+    if (numVertex == 0) 
+	return 0;
+    
+    // create another vertices array which aids in adding edges
+    
+    int *theElementTagVertices = 0;
+    int maxEleNum = 0;
+    
+    TaggedObject *tagdObjPtr;
+    TaggedObjectIter &theEles = elements->getComponents();
+    while ((tagdObjPtr = theEles()) != 0)
+	if (tagdObjPtr->getTag() > maxEleNum)
+	    maxEleNum = tagdObjPtr->getTag();
 
+    theElementTagVertices = new int[maxEleNum+1];
 
-    TaggedObject *theTagged;
-    TaggedObjectIter &theElements = elements->getComponents();
-    int count = START_VERTEX_NUM;
-    while ((theTagged = theElements()) != 0) {
-      int eleTag = theTagged->getTag();
-      Vertex *vertexPtr = new Vertex(count, eleTag);
-
-      if (vertexPtr == 0) {
-        opserr << "WARNING Domain::buildEleGraph - Not Enough Memory to create the " << count << " vertex\n";
-        return -1;
-      }
-
-      theEleGraph->addVertex(vertexPtr);
-      theEleToVertexMapEle = theEleToVertexMap.find(eleTag);
-      if (theEleToVertexMapEle == theEleToVertexMap.end()) {
-        theEleToVertexMap.insert(MAP_INT_TYPE(eleTag, count));
-
-        // check if sucessfully added
-        theEleToVertexMapEle = theEleToVertexMap.find(eleTag);
-        if (theEleToVertexMapEle == theEleToVertexMap.end()) {
-          opserr << "Domain::buildEleGraph - map STL failed to add object with tag : " << eleTag << endln;
-          return false;
-        }
-
-        count++;
-      }
+    if (theElementTagVertices == 0) {
+	opserr << "WARNING Domain::buildEleGraph ";
+	opserr << " - Not Enough Memory for ElementTagVertices\n";
+	return -1;
     }
 
-    //
+    for (int j=0; j<=maxEleNum; j++) theElementTagVertices[j] = -1;
+
+    // now create the vertices with a reference equal to the element number.
+    // and a tag which ranges from 0 through numVertex-1
+    
+    TaggedObjectIter &theEles2 = elements->getComponents();
+    
+    int count = START_VERTEX_NUM;
+    while ((tagdObjPtr = theEles2()) != 0) {
+	int ElementTag = tagdObjPtr->getTag();
+	Vertex *vertexPtr = new Vertex(count,ElementTag);
+
+	if (vertexPtr == 0) {
+	    opserr << "WARNING Domain::buildEleGraph";
+	    opserr << " - Not Enough Memory to create ";
+	    opserr << count << "th Vertex\n";
+	    delete [] theElementTagVertices;
+	    return -1;
+	}
+
+	theEleGraph->addVertex(vertexPtr);
+	theElementTagVertices[ElementTag] = count++;
+	
+    }
+
     // We now need to determine which elements are asssociated with each node.
-    // As this info is not in the Node interface we must build it;
-    //
-    // again we will use an stl map, index will be nodeTag, object will be Vertex
+    // As this info is not in the Node interface we must build it; which we
     // do using vertices for each node, when we addVertex at thes nodes we
     // will not be adding vertices but element tags.
-    //
 
-    MAP_ID theNodeToVertexMap;
-    MAP_ID_ITERATOR theNodeEle;
-
+    Vertex **theNodeTagVertices = 0;
+    int maxNodNum = 0;
     Node *nodPtr;
+    NodeIter &nodeIter = this->getNodes();
+    while ((nodPtr = nodeIter()) != 0)
+	if (nodPtr->getTag() > maxNodNum)
+	    maxNodNum = nodPtr->getTag();
+
+    theNodeTagVertices = new Vertex *[maxNodNum+1];
+
+    if (theNodeTagVertices == 0) {
+	opserr << "WARNING Domain::buildEleGraph ";
+	opserr << " - Not Enough Memory for NodeTagVertices\n";
+	return -1;
+    }
+
+    for (int l=0; l<=maxNodNum; l++) theNodeTagVertices[l] = 0;
 
     // now create the vertices with a reference equal to the node number.
     // and a tag which ranges from 0 through numVertex-1 and placed in
     // theNodeTagVertices at a position equal to the node's tag.
 
-    NodeIter &theNodes = this->getNodes();
-    while ((nodPtr = theNodes()) != 0) {
-      int nodeTag = nodPtr->getTag();
-      ID *eleTags = new ID(0, 4);
+    NodeIter &nodeIter2 = this->getNodes();
+    count = START_VERTEX_NUM;
+    while ((nodPtr = nodeIter2()) != 0) {
+	int nodeTag = nodPtr->getTag();
+	Vertex *vertexPtr = new Vertex(count++,nodeTag);
+	theNodeTagVertices[nodeTag] = vertexPtr;
 
-      if (eleTags == 0) {
-        opserr << "WARNING Domain::buildEleGraph - Not Enough Memory to create the " << count << " vertex\n";
-        return -1;
-      }
-
-      theNodeEle = theNodeToVertexMap.find(nodeTag);
-      if (theNodeEle == theNodeToVertexMap.end()) {
-        theNodeToVertexMap.insert(MAP_ID_TYPE(nodeTag, eleTags));
-
-        // check if sucessfully added
-        theNodeEle = theNodeToVertexMap.find(nodeTag);
-        if (theNodeEle == theNodeToVertexMap.end()) {
-          opserr << "Domain::buildEleGraph - map STL failed to add object with tag : " << nodeTag << endln;
-          return false;
-        }
-      }
+	if (vertexPtr == 0) {
+	    opserr << "WARNING Domain::buildEleGraph";
+	    opserr << " - Not Enough Memory to create ";
+	    opserr << count << "th Node Vertex\n";
+	    delete [] theNodeTagVertices;
+	    return -1;
+	}
     }
 
-    // now add the the Elements to the node vertices
-    Element *theEle;
-    TaggedObjectIter &theEle3 = elements->getComponents();
+    // now add the the Elements to the nodes
+    Element *elePtr;
+    TaggedObjectIter &theEles3 = elements->getComponents();
+    
+    while((tagdObjPtr = theEles3()) != 0) {
+	elePtr = (Element *)tagdObjPtr;
+	int eleTag = elePtr->getTag();
+	const ID &id = elePtr->getExternalNodes();
 
-    while((theTagged = theEle3()) != 0) {
-      theEle = (Element *)theTagged;
-      int eleTag = theEle->getTag();
-      const ID &id = theEle->getExternalNodes();
-
-      int size = id.Size();
-      for (int i=0; i<size; i++) {
-        int nodeTag = id(i);
-
-        MAP_ID_ITERATOR theNodeEle;
-        theNodeEle = theNodeToVertexMap.find(nodeTag);
-        if (theNodeEle == theNodeToVertexMap.end()) {
-          return -1;
-        } else {
-          ID *theNodeEleTags = (*theNodeEle).second;
-          theNodeEleTags->insert(eleTag);
-        }
-      }
+	int size = id.Size();
+	for (int i=0; i<size; i++) 
+	    theNodeTagVertices[id(i)]->addEdge(eleTag);
     }
 
-    //
     // now add the edges to the vertices of our element graph;
-    // this is done by looping over the Node vertices, getting their
+    // this is done by looping over the Node vertices, getting their 
     // Adjacenecy and adding edges between elements with common nodes
-    //
 
-    MAP_ID_ITERATOR currentComponent;
-    currentComponent = theNodeToVertexMap.begin();
-    while (currentComponent != theNodeToVertexMap.end()) {
-      ID *id = (*currentComponent).second;
 
-      int size = id->Size();
-      for (int i=0; i<size; i++) {
-        int eleTag1 = (*id)(i);
+    Vertex *vertexPtr;
+    for (int k=0; k<=maxNodNum; k++)
+	if ((vertexPtr = theNodeTagVertices[k]) != 0) {
 
-        theEleToVertexMapEle = theEleToVertexMap.find(eleTag1);
-        if (theEleToVertexMapEle != theEleToVertexMap.end()) {
-          int vertexTag1 = (*theEleToVertexMapEle).second;
+	    const ID &id = vertexPtr->getAdjacency();
 
-          for (int j=0; j<size; j++)
-            if (i != j) {
-	      int eleTag2 = (*id)(j);
-              theEleToVertexMapEle = theEleToVertexMap.find(eleTag2);
-              if (theEleToVertexMapEle != theEleToVertexMap.end()) {
-                int vertexTag2 = (*theEleToVertexMapEle).second;
+	    int size = id.Size();
+	    for (int i=0; i<size; i++) {
+		int Element1 = id(i);
 
-                // addEdge() adds for both vertices - do only once
+		int vertexTag1 = theElementTagVertices[Element1];
 
-                if (vertexTag1 > vertexTag2) {
-                  theEleGraph->addEdge(vertexTag1,vertexTag2);
-		  theEleGraph->addEdge(vertexTag2,vertexTag1);
-		}
-              }
-            }
-        }
-      }
-      currentComponent++;
-    }
+		for (int j=0; j<size; j++) 
+		    if (i != j) {
 
-    // clean up - delete the ID's associated with the nodes
-    currentComponent = theNodeToVertexMap.begin();
-    while (currentComponent != theNodeToVertexMap.end()) {
-      delete (*currentComponent).second;
-      currentComponent++;
-    }
+			int Element2 = id(j);
+			int vertexTag2 = theElementTagVertices[Element2];
+
+			// addEdge() adds for both vertices - do only once
+			if (vertexTag1 > vertexTag2) 
+			    theEleGraph->addEdge(vertexTag1,vertexTag2);
+			    theEleGraph->addEdge(vertexTag2,vertexTag1);			
+		    }
+	    }
+	}
+
+    // done now delete theElementTagVertices, the node Vertices and
+    // theNodeTagVertices
+   
+    delete [] theElementTagVertices;    
+    
+    for (int i=0; i<=maxNodNum; i++)
+	if ((vertexPtr = theNodeTagVertices[i]) != 0) 
+	    delete vertexPtr;
 	    
-    return 0;    
+    delete [] theNodeTagVertices;
+
+    return 0;
+    
 }
 
 
@@ -1677,118 +1399,3 @@ PartitionedDomain::setMass(const Matrix &mass, int nodeTag)
   
   return result;
 }
-
-const Vector *
-PartitionedDomain::getNodeResponse(int nodeTag, NodeResponseType response)
-{
-  const Vector *res = this->Domain::getNodeResponse(nodeTag, response); 
-  if (res != 0)
-    return res;
-
-  // do the same for all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      const Vector *result = theSub->getNodeResponse(nodeTag, response); 
-      if (result != 0)
-	return result;
-    }	    
-  }
-
-  return NULL;
-}
-
-int 
-PartitionedDomain::calculateNodalReactions(bool inclInertia)
-{
-  int res = this->Domain::calculateNodalReactions(inclInertia); 
-
-  // do the same for all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      res += theSub->calculateNodalReactions(inclInertia); 
-    }
-  }
-  return res;
-}
-
-bool 
-PartitionedDomain::addParameter(Parameter *param)
-{
-    bool res = this->Domain::addParameter(param);
-
-    // do the same for all the subdomains
-    if (theSubdomains != 0) {
-      ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-      TaggedObject *theObject;
-      while ((theObject = theSubsIter()) != 0) {
-	Subdomain *theSub = (Subdomain *)theObject;	    
-	theSub->addParameter(param);
-      }
-    }
-
-    return res;
-}
-
-Parameter *
-PartitionedDomain::removeParameter(int tag)
-{
-  Parameter *res = this->Domain::removeParameter(tag);
-
-  // do the same for all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      theSub->removeParameter(tag);
-    }
-  }
-
-  return res;
-}
-
-
-int 
-PartitionedDomain::updateParameter(int tag, int value)
-{
-  int res = this->Domain::updateParameter(tag, value);
-
-  // do the same for all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      theSub->updateParameter(tag, value);
-    }
-  }
-
-  return res;
-}
-
-
-int 
-PartitionedDomain::updateParameter(int tag, double value)
-{
-  int res = this->Domain::updateParameter(tag, value);
-
-  // do the same for all the subdomains
-  if (theSubdomains != 0) {
-    ArrayOfTaggedObjectsIter theSubsIter(*theSubdomains);	
-    TaggedObject *theObject;
-    while ((theObject = theSubsIter()) != 0) {
-      Subdomain *theSub = (Subdomain *)theObject;	    
-      theSub->updateParameter(tag, value);
-    }
-  }
-
-  return res;
-}
-

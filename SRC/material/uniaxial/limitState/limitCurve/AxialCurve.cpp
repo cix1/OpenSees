@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.4 $
-// $Date: 2007-02-02 01:19:30 $
+// $Revision: 1.2 $
+// $Date: 2006-08-04 18:35:06 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/limitState/limitCurve/AxialCurve.cpp,v $
                                                                         
 // Written: KJE
@@ -170,10 +170,12 @@ AxialCurve::checkElementState(double springForce)
 
 			const char *r[1] = {"basicDeformations"}; // must be implemented in element
 
+			Information	*rotInfoObject =0;   
+			
 			Vector *rotVec; //vector of chord rotations at beam-column ends
 
 			// set type of beam-column element response desired
-			theRotations = theElement->setResponse(r, 1, dummy);
+			theRotations = theElement->setResponse(r, 1, *rotInfoObject, dummy);
 
 			// put element response in the vector of "myInfo"
 			result = theRotations->getResponse();
@@ -208,10 +210,12 @@ AxialCurve::checkElementState(double springForce)
 			const char *f[1] = {"localForce"}; // does not include influence of P-delta
 										 // for P-delta use forType = 0
 
+			Information	*forInfoObject =0;
+
 			Vector *forceVec; //vector of basic forces from beam column
 
 			// set type of beam-column element response desired
-			theForces    = theElement->setResponse(f, 1, dummy);
+			theForces    = theElement->setResponse(f, 1, *forInfoObject, dummy);
 
 			// put element response in the vector of "myInfo"
 			result += theForces->getResponse();
@@ -456,17 +460,36 @@ AxialCurve::findLimit(double DR)
 
 
 
-// AddingSensitivity:BEGIN ///////////////////////////////////
+/*// AddingSensitivity:BEGIN /////////////////////////////////// SDK
 int
-AxialCurve::setParameter(const char **argv, int argc, Parameter &param)
+AxialCurve::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
-  
-  else
-    opserr << "WARNING: Could not set parameter in Axial Curve. " << endln;
-  
-  return -1;
+	if (argc < 1)
+		return -1;
+
+	if (strcmp(argv[0],"theta2") == 0) {
+		info.theType = DoubleType;
+		return 1;
+	}
+
+	if (strcmp(argv[0],"sigma") == 0) {
+		info.theType = DoubleType;
+		return 2;
+	}
+	if (strcmp(argv[0],"eps_normal") == 0) {
+		info.theType = DoubleType;
+		return 3;
+	}
+	
+	if (strcmp(argv[0],"fyt") == 0) {
+		info.theType = DoubleType;
+		return 4;
+	}
+
+	else
+		opserr << "WARNING: Could not set parameter in Axial Curve. " << endln;
+                
+	return -1;
 }
 
 
@@ -477,6 +500,19 @@ AxialCurve::updateParameter(int parameterID, Information &info)
 	switch (parameterID) {
 	case -1:
 		return -1;
+	case 1:
+		this->theta2 = info.theDouble;
+		break;
+	
+	case 2:
+		this->sigma = info.theDouble;
+		break;
+	case 3:
+		this->eps_normal = info.theDouble;
+		break;
+	case 4:
+		this->fyt = info.theDouble;
+		break;
 
 	default:
 		return -1;
@@ -487,7 +523,8 @@ AxialCurve::updateParameter(int parameterID, Information &info)
 }
 
 
-/////////////////////////////////////////ENDS
+/////////////////////////////////////////ENDS///SDK
+*/
 
 int AxialCurve::revertToStart ()
 {

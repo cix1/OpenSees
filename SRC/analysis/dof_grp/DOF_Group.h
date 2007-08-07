@@ -18,14 +18,16 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-02-14 18:44:43 $
+// $Revision: 1.11 $
+// $Date: 2005-11-28 21:40:46 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/dof_grp/DOF_Group.h,v $
                                                                         
                                                                         
 #ifndef DOF_Group_h
 #define DOF_Group_h
 
+// File: ~/analysis/dof_grp/DOF_Group.h
+// 
 // Written: fmk 
 // Created: 11/96
 // Revision: A
@@ -59,7 +61,6 @@ class DOF_Group: public TaggedObject
     virtual void setID(int dof, int value);
     virtual void setID(const ID &values);
     virtual const ID &getID(void) const;
-    virtual int doneID(void);    
 
     virtual int getNodeTag(void) const;
     virtual int getNumDOF(void) const;    
@@ -111,14 +112,7 @@ class DOF_Group: public TaggedObject
     virtual const Vector & getDispSensitivity(int gradNumber);
     virtual const Vector & getVelSensitivity(int gradNumber);
     virtual const Vector & getAccSensitivity(int gradNumber);
-    virtual int saveDispSensitivity(const Vector &v,
-				    int gradNum, int numGrads);
-    virtual int saveVelSensitivity(const Vector &vdot,
-				   int gradNum, int numGrads);
-    virtual int saveAccSensitivity(const Vector &vdotdot,
-				   int gradNum, int numGrads);
-    virtual int saveSensitivity(const Vector &v, const Vector &vdot,
-				const Vector &vdotdot, int gradNum, int numGrads);
+    virtual int saveSensitivity(Vector *v,Vector *vdot,Vector *vdotdot,int gradNum,int numGrads);
 // AddingSensitivity:END //////////////////////////////////////
     virtual void  Print(OPS_Stream&, int = 0) {return;};
     virtual void resetNodePtr(void);

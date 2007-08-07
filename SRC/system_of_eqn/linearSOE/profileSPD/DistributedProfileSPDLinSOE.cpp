@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.2 $
-// $Date: 2007-01-09 19:31:44 $
+// $Revision: 1.1 $
+// $Date: 2005-12-06 22:07:52 $
 // $Source: /usr/local/cvs/OpenSees/SRC/system_of_eqn/linearSOE/profileSPD/DistributedProfileSPDLinSOE.cpp,v $
                                                                         
 // Written: fmk 
@@ -84,7 +84,6 @@ DistributedProfileSPDLinSOE::setSize(Graph &theGraph)
   // vector back containing size of system, etc.
   if (processID != 0) {
     Channel *theChannel = theChannels[0];
-
     theGraph.sendSelf(0, *theChannel);
     
     static ID data(1);
@@ -139,12 +138,7 @@ DistributedProfileSPDLinSOE::setSize(Graph &theGraph)
     for (int j=0; j<numChannels; j++) {
       Channel *theChannel = theChannels[j];
       Graph theSubGraph;
-      
-      if (theSubGraph.recvSelf(0, *theChannel, theBroker) < 0) {
-	opserr << "WARNING DistributedProfileSPDLinSOE::setSize() : ";
-	opserr << " - failed to recv graph\n";
-      }
-
+      theSubGraph.recvSelf(0, *theChannel, theBroker);
       theGraph.merge(theSubGraph);
 
       int numSubVertex = theSubGraph.getNumVertex();
@@ -487,6 +481,8 @@ DistributedProfileSPDLinSOE::solve(void)
 	}
       }    
     }
+
+    //  opserr << *vectB;
 
     // solve
     result(0) = this->LinearSOE::solve();

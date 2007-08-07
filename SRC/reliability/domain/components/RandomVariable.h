@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:04:38 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/components/RandomVariable.h,v $
 
 
@@ -41,7 +41,7 @@ class RandomVariable : public ReliabilityDomainComponent
 {
 
 public:
-	RandomVariable(int tag, int classTag, double startValue = 0.0);
+	RandomVariable(int tag, int classTag);
 	virtual ~RandomVariable();
 
 	virtual void Print(OPS_Stream &s, int flag =0) =0;
@@ -51,24 +51,19 @@ public:
 	virtual const char* getType() =0;
 	virtual double getMean() =0;
 	virtual double getStdv() =0;
-	virtual double getParameter1();
-	virtual double getParameter2();
-	virtual double getParameter3();
-	virtual double getParameter4();
-
-	virtual void setStartValue(double newVal) {startValue = newVal;}
-	virtual double getStartValue() {return startValue;}
-
-	int setRVnumber(int number) {rvNumber = number;}
-	int getRVnumber(void) {return rvNumber;}
+	virtual double getParameter1() =0;
+	virtual double getParameter2() =0;
+	virtual double getParameter3() =0;
+	virtual double getParameter4() =0;
+	virtual double getStartValue() =0;
 
 	int setNewTag(int tag);
 
 protected:
+	int tag;
+	double startValue;
 
 private:
-	int rvNumber; // in range 1,...,nrv
-	double startValue;
 
 
 };

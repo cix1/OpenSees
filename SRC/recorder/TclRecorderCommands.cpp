@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.43 $
-// $Date: 2007-06-26 20:13:24 $
+// $Revision: 1.39 $
+// $Date: 2006-08-17 22:25:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/recorder/TclRecorderCommands.cpp,v $
                                                                         
                                                                         
@@ -35,6 +35,7 @@
 
 
 #include <tcl.h>
+#include <tk.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,15 +74,13 @@ enum outputMode  {STANDARD_STREAM, DATA_STREAM, XML_STREAM, DATABASE_STREAM};
 
 
 #include <EquiSolnAlgo.h>
-#include <TclFeViewer.h>
 
 #ifdef _NOGRAPHICS
 
 #else
-
+#include <TclFeViewer.h>
 #include <FilePlotter.h>
 #include <AlgorithmIncrements.h>
-
 #endif
 
 
@@ -128,7 +127,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
       int flags = 0;
       int eleData = 0;
       outputMode eMode = STANDARD_STREAM; 
-      ID *eleIDs = 0;
+      ID eleIDs(0,32);
 
       while (flags == 0 && loc < argc) {
 	
@@ -147,22 +146,22 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	  //
 	  loc++;
 	  int eleTag;
-	  eleIDs = new ID(0, 32);
 	  while (loc < argc && Tcl_GetInt(interp, argv[loc], &eleTag) == TCL_OK) {
-	    (*eleIDs)[numEle] = eleTag;
-	    numEle++;
+	    eleIDs[numEle++] = eleTag;
 	    loc++;
 	  }
 	  Tcl_ResetResult(interp);
 	  
 	  if (loc == argc) {
 	    opserr << "ERROR: No response type specified for element recorder. " << endln;
-	    delete eleIDs;
 	    return TCL_ERROR;
 	  }
 	  
 	  if (strcmp(argv[loc],"all") == 0) {
-	    eleIDs = 0;
+	    ElementIter &theEleIter = theDomain.getElements();
+	    Element *theEle;
+	    while ((theEle = theEleIter()) != 0)
+	      eleIDs[numEle++] = theEle->getTag();
 	    loc++;
 	  }
 	  
@@ -192,14 +191,9 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	    end = start;
 	    start = swap;
 	  }
-
-	  eleIDs = new ID(end-start);	  
-	  if (eleIDs == 0) {
-	    opserr << "WARNING recorder Element -eleRange start? end? - out of memory\n";
-	    return TCL_ERROR;
-	  }
+	  
 	  for (int i=start; i<=end; i++)
-	    (*eleIDs)[numEle++] = i;	    
+	    eleIDs[numEle++] = i;	    
 	  
 	  loc += 3;
 	} 
@@ -222,13 +216,6 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	    return TCL_OK;
 	  }      
 	  const ID &eleRegion = theRegion->getElements();
-
-	  eleIDs = new ID(eleRegion.Size());	  
-	  if (eleIDs == 0) {
-	    opserr << "WARNING recorder Element -eleRange start? end? - out of memory\n";
-	    return TCL_ERROR;
-	  }
-
 	  for (int i=0; i<eleRegion.Size(); i++)
 	    eleIDs[numEle++] = eleRegion(i);
 	  
@@ -252,7 +239,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	else if (strcmp(argv[loc],"-file") == 0) {
 	  fileName = argv[loc+1];
 	  eMode = DATA_STREAM;
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  loc += 2;
 	  if (strcmp(argv[loc],"-xml") == 0) {
 	    eMode = XML_STREAM;
@@ -279,7 +266,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	else if ((strcmp(argv[loc],"-nees") == 0) || (strcmp(argv[loc],"-xml") == 0)) {
 	  // allow user to specify load pattern other than current
 	  fileName = argv[loc+1];
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  eMode = XML_STREAM;
 	  loc += 2;
 	}	    
@@ -290,6 +277,14 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	  eleData = loc;
 	  flags = 1;
 	}
+      }
+      
+      // if user has specified no element tags lets assume he wants them all
+      if (numEle == 0) {
+	ElementIter &theEleIter = theDomain.getElements();
+	Element *theEle;
+	while ((theEle = theEleIter()) != 0)
+	  eleIDs[numEle++] = theEle->getTag();
       }
       
       if (eleData >= argc) {
@@ -331,9 +326,6 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 						     *theOutputStream,
 						     dT, echoTime);
       
-      if (eleIDs != 0)
-	delete eleIDs;
-
       delete [] data;
     }
     
@@ -479,7 +471,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
       int numNodes = 0;
 
       // create ID's to contain the node tags & the dofs
-      ID *theNodes = 0;
+      ID theNodes(0,16);
       ID theDofs(0, 6);
 
       while (flags == 0 && pos < argc) {
@@ -496,7 +488,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 
 	else if (strcmp(argv[pos],"-file") == 0) {
 	  fileName = argv[pos+1];
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  eMode = DATA_STREAM;
 	  pos += 2;
 	}
@@ -516,7 +508,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	else if ((strcmp(argv[pos],"-nees") == 0) || (strcmp(argv[pos],"-xml") == 0)) {
 	  // allow user to specify load pattern other than current
 	  fileName = argv[pos+1];
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  eMode = XML_STREAM;
 	  pos += 2;
 	}	    
@@ -534,17 +526,24 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	  
 	  // read in the node tags or 'all' can be used
 	  if (strcmp(argv[pos],"all") == 0) {
-	    theNodes = 0;
+	    numNodes = theDomain.getNumNodes();
+	    
+	    NodeIter &theNodeIter = theDomain.getNodes();
+	    Node *theNode;
+	    int loc=0;
+	    while ((theNode= theNodeIter()) != 0) {
+	      int tag = theNode->getTag();
+	      theNodes[loc++] = tag;
+	    }
 	    pos++;
 	  } else {
-	    theNodes = new ID(0,16);
 	    int node;
 	    for (int j=pos; j< argc; j++) 
 	      if (Tcl_GetInt(interp, argv[pos], &node) != TCL_OK) {
 		j = argc;
 		Tcl_ResetResult(interp);
 	      } else {
-		(*theNodes)[numNodes] = node;
+		theNodes[numNodes] = node;
 		numNodes++;
 		pos++;
 	      }
@@ -577,10 +576,9 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	    end = start;
 	    start = swap;
 	  }
-
-	  theNodes = new ID(end-start+1);
+	  
 	  for (int i=start; i<=end; i++)
-	    (*theNodes)[numNodes++] = i;	    
+	    theNodes[numNodes++] = i;	    
 	  pos += 3;
 	}
 
@@ -602,7 +600,8 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	    return TCL_OK;
 	  }      
 	  const ID &nodeRegion = theRegion->getNodes();
-	  theNodes = new ID(nodeRegion);
+	  for (int i=0; i<nodeRegion.Size(); i++)
+	    theNodes[numNodes++] = nodeRegion(i);
 	  
 	  pos += 2;
 	} 
@@ -643,6 +642,15 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	responseID  = argv[pos];
       }
 
+      if (numNodes == 0) {
+	NodeIter &theNodeIter = theDomain.getNodes();
+	Node *theNode;
+	while ((theNode= theNodeIter()) != 0) {
+	  int tag = theNode->getTag();
+	  theNodes[numNodes++] = tag;
+	}
+      }
+
       // construct the DataHandler
       if (eMode == DATA_STREAM && fileName != 0) {
 	theOutputStream = new DataFileStream(fileName);
@@ -671,9 +679,6 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 						  theDomain,
 						  *theOutputStream,
 						  dT, echoTimeFlag);
-     
-      if (theNodes != 0)
-	delete theNodes;
     }
 
     else if (strcmp(argv[1],"Pattern") == 0) {
@@ -716,7 +721,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	if (strcmp(argv[pos],"-file") == 0) {
 	  fileName = argv[pos+1];
 	  eMode = DATA_STREAM;
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  pos += 2;
 	  if (strcmp(argv[pos],"-xml") == 0) {
 	    eMode = XML_STREAM;
@@ -743,7 +748,7 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	else if ((strcmp(argv[pos],"-nees") == 0) || (strcmp(argv[pos],"-xml") == 0)) {
 	  // allow user to specify load pattern other than current
 	  fileName = argv[pos+1];
-	  simulationInfo.addOutputFile(fileName);
+	  simulationInfo.addWriteFile(fileName);
 	  eMode = XML_STREAM;
 	  pos += 2;
 	}	    
@@ -853,10 +858,14 @@ TclCreateRecorder(ClientData clientData, Tcl_Interp *interp, int argc,
 	    wipeFlag = 1;
 
 
+#ifdef _NOGRAPHICS
+      return TCL_OK;
+#else
 	if (argc == 7 || argc == 8)
 	  (*theRecorder) = new TclFeViewer(argv[2], xLoc, yLoc, width, height, theDomain, wipeFlag, interp);
 	else if (argc == 9)
 	  (*theRecorder) = new TclFeViewer(argv[2], xLoc, yLoc, width, height, argv[8], theDomain, interp);
+#endif
     }
 
     else if (strcmp(argv[1],"plot") == 0) {
@@ -1135,17 +1144,19 @@ int
 TclAddRecorder(ClientData clientData, Tcl_Interp *interp, int argc, 
 	       TCL_Char **argv, Domain &theDomain)
 {
-  Recorder *theRecorder;
-  TclCreateRecorder(clientData, interp, argc, argv, theDomain, &theRecorder);
-
-  if (theRecorder != 0)
-    if ((theDomain.addRecorder(*theRecorder)) < 0) {
-      opserr << "WARNING could not add to domain - recorder " << argv[1]<< endln;
-      delete theRecorder;
-      return TCL_ERROR;
-    }
-  
-  return TCL_OK;
+	Recorder *theRecorder;
+	TclCreateRecorder(clientData, interp, argc, argv, theDomain, &theRecorder);
+	
+	if ((theRecorder == 0) || (theDomain.addRecorder(*theRecorder)) < 0) {
+		opserr << "WARNING could not add to domain - recorder " << argv[1]<< endln;
+		if (theRecorder == 0) 
+			opserr << "could not create recorder\n";
+		else
+			delete theRecorder;
+		return TCL_ERROR;
+	} 
+	return TCL_OK;
+	
 }
 
 
@@ -1153,23 +1164,21 @@ int
 TclAddAlgorithmRecorder(ClientData clientData, Tcl_Interp *interp, int argc, 
 			TCL_Char **argv, Domain &theDomain, EquiSolnAlgo *theAlgo)
 {
-  Recorder *theRecorder = 0;
-  theAlgorithm = theAlgo;
-  if (TclCreateRecorder(clientData, interp, argc, argv, theDomain,
+	Recorder *theRecorder = 0;
+	theAlgorithm = theAlgo;
+	if (TclCreateRecorder(clientData, interp, argc, argv, theDomain,
 			&theRecorder) == TCL_ERROR) {
-    return TCL_ERROR;
-  } else {
-    // add the recorder to the domain, 
-    // NOTE: will not be called with theALgo == 0
-    // see ~/g3/SRC/tcl/commands.C file
-    if (theRecorder != 0)
-      if ((theDomain.addRecorder(*theRecorder)) < 0) {
-	opserr << "WARNING could not add to domain - recorder " << argv[1]<< endln;
-	delete theRecorder;
-	return TCL_ERROR;
-      }
-    
-    return TCL_OK;
-  }
+		return TCL_ERROR;
+	} else {
+		// add the recorder to the domain, 
+		// NOTE: will not be called with theALgo == 0
+		// see ~/g3/SRC/tcl/commands.C file
+		if (theRecorder == 0 || theAlgo->addRecorder(*theRecorder) < 0) {
+			opserr << "WARNING could not add to algorithm - recorder " << argv[1]<< endln;
+			delete theRecorder;
+			return TCL_ERROR;
+		} 
+		return TCL_OK;
+	}
 }
 

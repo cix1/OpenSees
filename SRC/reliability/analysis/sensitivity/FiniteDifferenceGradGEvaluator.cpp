@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2007-02-16 22:57:29 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:45:44 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/sensitivity/FiniteDifferenceGradGEvaluator.cpp,v $
 
 
@@ -109,8 +109,7 @@ FiniteDifferenceGradGEvaluator::getAllGradG()
 }
 
 int
-FiniteDifferenceGradGEvaluator::computeGradG(double gFunValue,
-					     const Vector &passed_x)
+FiniteDifferenceGradGEvaluator::computeGradG(double gFunValue, Vector passed_x)
 {
 	// Call base class method
 	computeParameterDerivatives(gFunValue);
@@ -174,9 +173,9 @@ FiniteDifferenceGradGEvaluator::computeGradG(double gFunValue,
 		}
 		result = theGFunEvaluator->evaluateG(perturbed_x);
 		if (result < 0) {
-		  opserr << "FiniteDifferenceGradGEvaluator::evaluate_grad_g() - " << endln
-			 << " could not tokenize limit-state function. " << endln;
-		  return -1;
+			opserr << "FiniteDifferenceGradGEvaluator::evaluate_grad_g() - " << endln
+				<< " could not tokenize limit-state function. " << endln;
+			return -1;
 		}
 		gFunValueAStepAhead = theGFunEvaluator->getG();
 
@@ -208,8 +207,7 @@ FiniteDifferenceGradGEvaluator::computeGradG(double gFunValue,
 
 
 int
-FiniteDifferenceGradGEvaluator::computeAllGradG(const Vector &gFunValues,
-						const Vector &passed_x)
+FiniteDifferenceGradGEvaluator::computeAllGradG(Vector gFunValues, Vector passed_x)
 {
 
 	// Get number of random variables and performance functions
@@ -322,7 +320,7 @@ FiniteDifferenceGradGEvaluator::getDgDdispl()
 	LimitStateFunction *theLimitStateFunction = 
 		theReliabilityDomain->getLimitStateFunctionPtr(lsf);
 	char *theExpression = theLimitStateFunction->getExpression();
-	char lsf_copy[500];
+	char *lsf_copy = new char[500];
 	strcpy(lsf_copy,theExpression);
 
 
@@ -341,32 +339,20 @@ FiniteDifferenceGradGEvaluator::getDgDdispl()
 
 			// Evaluate the limit-state function again
 			char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
-			if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g ) == TCL_ERROR) {
-			  opserr << "ERROR FiniteDifferenceGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  //return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g );
 			
 			// Keep the original displacement value
 			double originalValue;
 			sprintf(tclAssignment,"$u_%d_%d", nodeNumber, direction);
-			if (Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue) == TCL_ERROR) {
-			  opserr << "ERROR FiniteDifferenceGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  //return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue);
 
 			// Set perturbed value in the Tcl workspace
 			double newValue = originalValue*(1.0+perturbationFactor);
 			sprintf(tclAssignment,"set u_%d_%d %35.20f", nodeNumber, direction, newValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			 opserr << "ERROR FiniteDifferenceGradGEvaluator -- Tcl_Eval returned error" << endln;
-			 //return -1; 
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
 
 			// Evaluate the limit-state function again
-			if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed ) == TCL_ERROR) {
-			  opserr << "ERROR FiniteDifferenceGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  //return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed );
 
 			// Compute gradient
 			double onedgdu = (g_perturbed-g)/(originalValue*perturbationFactor);
@@ -396,15 +382,15 @@ FiniteDifferenceGradGEvaluator::getDgDdispl()
 
 			// Make assignment back to its original value
 			sprintf(tclAssignment,"set u_%d_%d %35.20f", nodeNumber, direction, originalValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			 opserr << "ERROR FiniteDifferenceGradGEvaluator -- Tcl_Eval returned error" << endln;
-			 //return -1; 
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
+
 
 		}
 
 		tokenPtr = strtok( NULL, separators);  // read next token and go up and check the while condition again
 	} 
+
+	delete [] lsf_copy;
 
 	return (*DgDdispl);
 }

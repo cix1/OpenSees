@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.22 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.19 $
+// $Date: 2006-08-04 19:08:07 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/elasticBeamColumn/ElasticBeam2d.cpp,v $
                                                                         
                                                                         
@@ -41,7 +41,6 @@
 
 #include <CrdTransf2d.h>
 #include <Information.h>
-#include <Parameter.h>
 #include <ElementResponse.h>
 #include <Renderer.h>
 
@@ -483,7 +482,7 @@ ElasticBeam2d::sendSelf(int cTag, Channel &theChannel)
 {
   int res = 0;
 
-    static Vector data(15);
+    static Vector data(11);
     
     data(0) = A;
     data(1) = E; 
@@ -506,12 +505,7 @@ ElasticBeam2d::sendSelf(int cTag, Channel &theChannel)
     data(9) = alpha;
     data(10) = d;
 
-    data(11) = alphaM;
-    data(12) = betaK;
-    data(13) = betaK0;
-    data(14) = betaKc;
-
-    // Send the data vector
+	// Send the data vector
     res += theChannel.sendVector(this->getDbTag(), cTag, data);
     if (res < 0) {
       opserr << "ElasticBeam2d::sendSelf -- could not send data Vector\n";
@@ -533,7 +527,7 @@ ElasticBeam2d::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBrok
 {
     int res = 0;
 	
-    static Vector data(15);
+    static Vector data(11);
 
     res += theChannel.recvVector(this->getDbTag(), cTag, data);
     if (res < 0) {
@@ -546,11 +540,6 @@ ElasticBeam2d::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBrok
     I = data(2); 
     alpha = data(9);
     d = data(10);
-
-    alphaM = data(11);
-    betaK = data(12);
-    betaK0 = data(13);
-    betaKc = data(14);
 
     rho = data(3);
     this->setTag((int)data(4));
@@ -658,7 +647,7 @@ ElasticBeam2d::displaySelf(Renderer &theViewer, int displayMode, float fact)
 }
 
 Response*
-ElasticBeam2d::setResponse(const char **argv, int argc, OPS_Stream &output)
+ElasticBeam2d::setResponse(const char **argv, int argc, Information &info, OPS_Stream &output)
 {
 
   Response *theResponse = 0;
@@ -735,24 +724,28 @@ ElasticBeam2d::getResponse (int responseID, Information &eleInfo)
 }
 
 int
-ElasticBeam2d::setParameter(const char **argv, int argc, Parameter &param)
+ElasticBeam2d::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
+    // E of the beam interior
+    if (strcmp(argv[0],"E") == 0) {
+        info.theType = DoubleType;
+        return 1;
+    }
 
-  // E of the beam interior
-  if (strcmp(argv[0],"E") == 0)
-    return param.addObject(1, this);
+    // A of the beam interior
+    else if (strcmp(argv[0],"A") == 0) {
+        info.theType = DoubleType;
+        return 2;
+    }
 
-  // A of the beam interior
-  if (strcmp(argv[0],"A") == 0)
-    return param.addObject(2, this);
-  
-  // I of the beam interior
-  if (strcmp(argv[0],"I") == 0)
-    return param.addObject(3, this);
-  
-  return -1;
+    // I of the beam interior
+    else if (strcmp(argv[0],"I") == 0) {
+        info.theType = DoubleType;
+        return 3;
+    }
+
+    else
+        return -1;
 }
 
 int
@@ -762,13 +755,13 @@ ElasticBeam2d::updateParameter (int parameterID, Information &info)
 	case -1:
 		return -1;
 	case 1:
-		E = info.theDouble;
+		this->E = info.theDouble;
 		return 0;
 	case 2:
-		A = info.theDouble;
+		this->A = info.theDouble;
 		return 0;
 	case 3:
-		I = info.theDouble;
+		this->I = info.theDouble;
 		return 0;
 	default:
 		return -1;

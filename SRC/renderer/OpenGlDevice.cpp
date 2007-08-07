@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.16 $
-// $Date: 2007-06-26 20:13:24 $
+// $Revision: 1.15 $
+// $Date: 2005-07-05 17:37:04 $
 // $Source: /usr/local/cvs/OpenSees/SRC/renderer/OpenGlDevice.cpp,v $
                                                                         
                                                                         
@@ -33,6 +33,7 @@
 #define _PNG
 #include <png.h>
 #endif
+
 
 int OpenGlDevice::numWindows(0);
 // GLuint OpenGlDevice::FontBase(0);

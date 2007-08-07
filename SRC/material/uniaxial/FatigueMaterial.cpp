@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.6 $
-// $Date: 2007-05-07 21:30:45 $
+// $Revision: 1.4 $
+// $Date: 2006-08-18 23:00:31 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/FatigueMaterial.cpp,v $
 
 // Written: Patxi 
@@ -69,7 +69,7 @@ FatigueMaterial::FatigueMaterial(int tag, UniaxialMaterial &material,
 	     cycles did not flag a complete cycle */
   R1F = 0; //Flag for first  peak count
   R2F = 0; //Flag for second peak count
-  cSlope  = 0; //Current Slope
+  CS  = 0; //Current Slope
   PS  = 0; //Previous slope
   EP  = 0; //Previous Strain
   SF  = 0; /*Start Flag = 0 if very first strain, (i.e. when initializing)
@@ -121,7 +121,7 @@ FatigueMaterial::FatigueMaterial()
 	     cycles did not flag a complete cycle */
   R1F = 0; //Flag for first  peak count
   R2F = 0; //Flag for second peak count
-  cSlope  = 0; //Current Slope
+  CS  = 0; //Current Slope
   PS  = 0; //Previous slope
   EP  = 0; //Previous Strain
   SF  = 0; /*Start Flag = 0 if very first strain, (i.e. when initializing)
@@ -306,14 +306,14 @@ FatigueMaterial::commitState(void)
 
   // Determine the slope of the strain hysteresis
   if ( EP == trialStrain ) {
-    cSlope = PS;         // No real slope here....
+    CS = PS;         // No real slope here....
   } else {
-    cSlope = trialStrain - EP;   // Determine Current Slope
+    CS = trialStrain - EP;   // Determine Current Slope
   }
 
 
   // If we are at a peak or a valley, then check for damage
-  if (sign(PS) != sign(cSlope) && sign(PS) != 0 ) {
+  if (sign(PS) != sign(CS) && sign(PS) != 0 ) {
 
     if ( R1F == 0 )  {    // mark second peak
 
@@ -565,7 +565,7 @@ FatigueMaterial::commitState(void)
     
   }
   
-  PS = cSlope;            // Previous Slope
+  PS = CS;            // Previous Slope
   EP = trialStrain;   // Keep track of previous strain
   
   // Check if failed at current step
@@ -608,7 +608,7 @@ FatigueMaterial::revertToStart(void)
 	     cycles did not flag a complete cycle */
   R1F = 0; //Flag for first  peak count
   R2F = 0; //Flag for second peak count
-  cSlope  = 0; //Current Slope
+  CS  = 0; //Current Slope
   PS  = 0; //Previous slope
   EP  = 0; //Previous Strain
   SF  = 0; /*Start Flag = 0 if very first strain, (i.e. when initializing)
@@ -675,7 +675,7 @@ FatigueMaterial::sendSelf(int cTag, Channel &theChannel)
   dataVec(7)  = PCC;
   dataVec(8)  = R1F;
   dataVec(9)  = R2F;
-  dataVec(10) = cSlope;
+  dataVec(10) = CS;
   dataVec(11) = PS;
   dataVec(12) = EP;
   dataVec(13) = SF;
@@ -745,7 +745,7 @@ FatigueMaterial::recvSelf(int cTag, Channel &theChannel,
   PCC  = int(dataVec(7));
   R1F  = int(dataVec(8));
   R2F  = int(dataVec(9));
-  cSlope   = dataVec(10);
+  CS   = dataVec(10);
   PS   = dataVec(11);
   EP   = dataVec(12);
   SF   = int(dataVec(13));
@@ -789,7 +789,7 @@ FatigueMaterial::Print(OPS_Stream &s, int flag)
 }
 
 Response* 
-FatigueMaterial::setResponse(const char **argv, int argc, OPS_Stream &theOutput)
+FatigueMaterial::setResponse(const char **argv, int argc, Information &matInfo, OPS_Stream &theOutput)
 {
   if (argc == 0) 
     return 0;

@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.6 $
+// $Date: 2003-03-04 00:44:34 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/LaplaceRV.cpp,v $
 
 
@@ -41,10 +41,12 @@ LaplaceRV::LaplaceRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_laplace, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_laplace)
 {
+	tag = passedTag ;
 	alpha = passedMean;
 	beta = sqrt(2.0)/passedStdv;
+	startValue = passedStartValue;
 }
 LaplaceRV::LaplaceRV(int passedTag, 
 		 double passedParameter1,
@@ -52,18 +54,22 @@ LaplaceRV::LaplaceRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_laplace, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_laplace)
 {
+	tag = passedTag ;
 	alpha = passedParameter1;
 	beta = passedParameter2;
+	startValue = passedStartValue;
 }
 LaplaceRV::LaplaceRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_laplace, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_laplace)
 {
+	tag = passedTag ;
 	alpha = passedMean;
 	beta = sqrt(2.0)/passedStdv;
+	startValue = getMean();
 }
 LaplaceRV::LaplaceRV(int passedTag, 
 		 double passedParameter1,
@@ -72,9 +78,10 @@ LaplaceRV::LaplaceRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_laplace)
 {
+	tag = passedTag ;
 	alpha = passedParameter1;
 	beta = passedParameter2;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -139,14 +146,13 @@ LaplaceRV::getStdv()
 }
 
 
-double
-LaplaceRV::getParameter1()
+double 
+LaplaceRV::getStartValue()
 {
-  return alpha;
+	return startValue;
 }
 
-double
-LaplaceRV::getParameter2()
-{
-  return beta;
-}
+double LaplaceRV::getParameter1()  {return alpha;}
+double LaplaceRV::getParameter2()  {return beta;}
+double LaplaceRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double LaplaceRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}

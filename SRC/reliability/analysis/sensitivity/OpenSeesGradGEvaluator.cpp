@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-07-13 19:25:20 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:45:44 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/sensitivity/OpenSeesGradGEvaluator.cpp,v $
 
 
@@ -38,8 +38,6 @@
 #include <ReliabilityDomain.h>
 #include <LimitStateFunction.h>
 #include <RandomVariable.h>
-#include <RandomVariableIter.h>
-#include <SensitivityAlgorithm.h>
 #include <tcl.h>
 #include <string.h>
 
@@ -53,15 +51,14 @@ using std::setprecision;
 using std::setiosflags;
 
 
-OpenSeesGradGEvaluator::OpenSeesGradGEvaluator(Tcl_Interp *passedTclInterp,
-					       ReliabilityDomain *passedReliabilityDomain,
-					       SensitivityAlgorithm *theAlgo,
-					       bool PdoGradientCheck)
+OpenSeesGradGEvaluator::OpenSeesGradGEvaluator(
+					Tcl_Interp *passedTclInterp,
+					ReliabilityDomain *passedReliabilityDomain,
+					bool PdoGradientCheck)
 :GradGEvaluator(passedReliabilityDomain, passedTclInterp)
 {
 	theReliabilityDomain = passedReliabilityDomain;
 	doGradientCheck = PdoGradientCheck;
-	theSensAlgo = theAlgo;
 
 	int nrv = passedReliabilityDomain->getNumberOfRandomVariables();
 	grad_g = new Vector(nrv);
@@ -106,7 +103,7 @@ OpenSeesGradGEvaluator::getAllGradG()
 
 
 int
-OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
+OpenSeesGradGEvaluator::computeGradG(double g, Vector passed_x)
 {
 	// Zero out the previous result matrix
 	if (DgDdispl != 0) {
@@ -119,14 +116,14 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 
 	// Initial declaractions
 	double perturbationFactor = 0.001; // (is multiplied by stdv and added to others...)
-	char tclAssignment[1000];
+	char tclAssignment[500];
 	char *dollarSign = "$";
 	char *underscore = "_";
-	char lsf_expression[1000];
+	char lsf_expression[500] = "";
 	char separators[5] = "}{";
 	int nrv = theReliabilityDomain->getNumberOfRandomVariables();
 	RandomVariable *theRandomVariable;
-	char tempchar[1000];
+	char tempchar[100]="";
 	char newSeparators[5] = "_";
 	double g_perturbed;
 	int i;
@@ -136,8 +133,9 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 
 	// Compute gradients if this is a path-INdependent analysis
 	// (This command only has effect if it IS path-independent.)
-	if (theSensAlgo != 0 && !(theSensAlgo->shouldComputeAtEachStep()) )
-	  theSensAlgo->computeSensitivities();
+	sprintf(tclAssignment,"computeGradients");
+	Tcl_Eval( theTclInterp, tclAssignment );
+
 
 	// Initialize gradient vector
 	grad_g->Zero();
@@ -148,7 +146,7 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 	LimitStateFunction *theLimitStateFunction = 
 		theReliabilityDomain->getLimitStateFunctionPtr(lsf);
 	char *theExpression = theLimitStateFunction->getExpression();
-	char lsf_copy[1000];
+	char *lsf_copy = new char[500];
 	strcpy(lsf_copy,theExpression);
 
 
@@ -160,40 +158,26 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 
 		if ( strncmp(tokenPtr, "x",1) == 0) {
 
-			// Get random variable tag
-			int rvTag;
-			sscanf(tempchar,"x_%i",&rvTag);
+			// Get random variable number
+			int rvNum;
+			sscanf(tempchar,"x_%i",&rvNum);
 
 			// Perturb its value according to its standard deviation
-			theRandomVariable = theReliabilityDomain->getRandomVariablePtr(rvTag);
-
+			theRandomVariable = theReliabilityDomain->getRandomVariablePtr(rvNum);
 			double stdv = theRandomVariable->getStdv();
-
-			sprintf(tclAssignment , "set x_%d  %35.20f", rvTag, (passed_x(rvTag-1)+perturbationFactor*stdv) );
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			sprintf(tclAssignment , "set x_%d  %35.20f", rvNum, (passed_x(rvNum-1)+perturbationFactor*stdv) );
+			Tcl_Eval( theTclInterp, tclAssignment);
 
 			// Evaluate limit-state function again
 			char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
-			if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed ) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed );
 
 			// Make assignment back to its original value
-			sprintf(tclAssignment , "set x_%d  %35.20f", rvTag, passed_x(rvTag-1) );
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			sprintf(tclAssignment , "set x_%d  %35.20f", rvNum, passed_x(rvNum-1) );
+			Tcl_Eval( theTclInterp, tclAssignment);
 
 			// Add gradient contribution
-			(*grad_g)(rvTag-1) += (g_perturbed-g)/(perturbationFactor*stdv);
+			(*grad_g)(rvNum-1) += (g_perturbed-g)/(perturbationFactor*stdv);
 		}
 		// If a nodal velocity is detected
 		else if ( strncmp(tokenPtr, "ud", 2) == 0) {
@@ -205,59 +189,31 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 			// Keep the original value
 			double originalValue;
 			sprintf(tclAssignment,"$ud_%d_%d", nodeNumber, direction);
-			if (Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue);
 
 			// Set perturbed value in the Tcl workspace
 			double newValue = originalValue*(1.0+perturbationFactor);
 			sprintf(tclAssignment,"set ud_%d_%d %35.20f", nodeNumber, direction, newValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
+
 			// Evaluate the limit-state function again
 			char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
-			if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed ) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed );
 
 			// Compute gradient
 			double onedgdu = (g_perturbed-g)/(originalValue*perturbationFactor);
 
 			// Make assignment back to its original value
 			sprintf(tclAssignment,"set ud_%d_%d %35.20f", nodeNumber, direction, originalValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
+
 			// Obtain DDM gradient vector
-			//RandomVariableIter &rvIter = 
-			//theReliabilityDomain->getRandomVariables();
-			//RandomVariable *theRV;
-			//while ((theRV = rvIter()) != 0) {
-			//int i = theRV->getGradNumber();
-			//int rvTag = theRV->getTag();
 			for (int i=1; i<=nrv; i++) {
-			  sprintf(tclAssignment , "set sens [sensNodeVel %d %d %d ]",nodeNumber,direction,i);
-			  if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			    opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			    opserr << theTclInterp->result << endln;
-			    return -1;
-			  }
-			  sprintf(tclAssignment , "$sens ");
-			  if (Tcl_ExprDouble( theTclInterp, tclAssignment, &onedudx ) == TCL_ERROR) {
-			    opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			    opserr << theTclInterp->result << endln;
-			    return -1;
-			  }
-			  dudx( (i-1) ) = onedudx;
+				sprintf(tclAssignment , "set sens [sensNodeVel %d %d %d ]",nodeNumber,direction,i);
+				Tcl_Eval( theTclInterp, tclAssignment);
+				sprintf(tclAssignment , "$sens ");
+				Tcl_ExprDouble( theTclInterp, tclAssignment, &onedudx );
+				dudx( (i-1) ) = onedudx;
 			}
 
 			// Add gradient contribution
@@ -274,28 +230,16 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 			// Keep the original value
 			double originalValue;
 			sprintf(tclAssignment,"$u_%d_%d", nodeNumber, direction);
-			if (Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue);
 
 			// Set perturbed value in the Tcl workspace
 			double newValue = originalValue*(1.0+perturbationFactor);
 			sprintf(tclAssignment,"set u_%d_%d %35.20f", nodeNumber, direction, newValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
 
 			// Evaluate the limit-state function again
 			char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
-			if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed ) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
+			Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed );
 
 			// Compute gradient
 			double onedgdu = (g_perturbed-g)/(originalValue*perturbationFactor);
@@ -325,137 +269,28 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 
 			// Make assignment back to its original value
 			sprintf(tclAssignment,"set u_%d_%d %35.20f", nodeNumber, direction, originalValue);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
-			// Obtain DDM gradient vector
-			//RandomVariableIter &rvIter = 
-			//  theReliabilityDomain->getRandomVariables();
-			//RandomVariable *theRV;
-			//while ((theRV = rvIter()) != 0) {
-			//  int i = theRV->getGradNumber();
-			//  int rvTag = theRV->getTag();
-			for (int i=1; i<=nrv; i++) {
-			  sprintf(tclAssignment , "set sens [sensNodeDisp %d %d %d ]",nodeNumber,direction,i);
-			  if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			    opserr << theTclInterp->result << endln;
-			    opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			    return -1;
-			  }
-			  sprintf(tclAssignment , "$sens ");
-			  if (Tcl_ExprDouble( theTclInterp, tclAssignment, &onedudx ) == TCL_ERROR) {
-			    opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			    opserr << theTclInterp->result << endln;
-			    return -1;
-			  }
-			  dudx( (i-1) ) = onedudx;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
 
-			//opserr <<"OSGGE: " << nodeNumber << ' ' << direction << endln;;
-			//opserr <<"OSGGE u_: " << onedgdu << ' ' << nrv << ' ' << dudx ;
+			// Obtain DDM gradient vector
+			for (int i=1; i<=nrv; i++) {
+				sprintf(tclAssignment , "set sens [sensNodeDisp %d %d %d ]",nodeNumber,direction,i);
+				Tcl_Eval( theTclInterp, tclAssignment);
+				sprintf(tclAssignment , "$sens ");
+				Tcl_ExprDouble( theTclInterp, tclAssignment, &onedudx );
+				dudx( (i-1) ) = onedudx;
+			}
 
 			// Add gradient contribution
 			(*grad_g) += onedgdu*dudx;
 
 		}
-		else if ( strncmp(tokenPtr, "rec_element",11) == 0) {
-
-		  // Initial declarations
-		  char restString[100];
-		  
-		  // Start obtaining information about element number etc. 
-		  int eleNumber;
-		  sscanf(tempchar,"rec_element_%i_%s", &eleNumber, restString);
-		  
-		  if ( strncmp(restString, "section",7) == 0) {
-		    int sectionNumber;
-		    int rowNumber;
-		    sscanf(restString,"section_%i_%s", &sectionNumber, restString);
-		    if ( strncmp(restString, "force",5) == 0) {
-		      sscanf(restString,"force_%i", &rowNumber);
-
-		      // Keep the original value
-		      double originalValue;
-		      sprintf(tclAssignment,"$rec_element_%d_section_%d_force_%d", eleNumber, sectionNumber, rowNumber);
-		      if (Tcl_ExprDouble( theTclInterp, tclAssignment, &originalValue) == TCL_ERROR) {
-			opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			opserr << theTclInterp->result << endln;
-			return -1;
-		      }
-		      
-		      // Set perturbed value in the Tcl workspace
-		      double newValue = originalValue*(1.0+perturbationFactor);
-		      sprintf(tclAssignment,"set rec_element_%d_section_%d_force_%d %35.20f", eleNumber, sectionNumber, rowNumber, newValue);
-		      if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			opserr << theTclInterp->result << endln;
-			return -1;
-		      }
-
-		      // Evaluate the limit-state function again
-		      char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
-		      if (Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g_perturbed ) == TCL_ERROR) {
-			opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			opserr << theTclInterp->result << endln;
-			return -1;
-		      }
-
-		      // Compute gradient
-		      double onedgdu = (g_perturbed-g)/(originalValue*perturbationFactor);
-			
-		      //opserr << "OSGGE " << g_perturbed << ' ' << g << endln;
-
-
-
-
-		      // Make assignment back to its original value
-		      sprintf(tclAssignment,"set rec_element_%d_section_%d_force_%d %35.20f", eleNumber, sectionNumber, rowNumber, originalValue);
-		      if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			opserr << theTclInterp->result << endln;
-			return -1;
-		      }
-		      
-		      // Obtain DDM gradient vector
-		      //RandomVariableIter &rvIter = 
-		      //theReliabilityDomain->getRandomVariables();
-		      //RandomVariable *theRV;
-		      //while ((theRV = rvIter()) != 0) {
-		      //int i = theRV->getGradNumber();
-		      //int rvTag = theRV->getTag();
-		      for (int i=1; i<=nrv; i++) {
-			sprintf(tclAssignment , "set sens [sensSectionForce %d %d %d %d]",eleNumber,sectionNumber,rowNumber,i);
-			if (Tcl_Eval( theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_Eval returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			  return -1;
-			}
-			sprintf(tclAssignment , "$sens ");
-			if (Tcl_ExprDouble( theTclInterp, tclAssignment, &onedudx ) == TCL_ERROR) {
-			  opserr << "ERROR OpenSeesGradGEvaluator -- Tcl_ExprDouble returned error" << endln;
-			  opserr << theTclInterp->result << endln;
-			    return -1;
-			}
-			dudx( (i-1) ) = onedudx;
-		      }
-		      //opserr <<"OSGGE rec_element: " << onedgdu << ' ' << nrv << ' ' << dudx ;
-
-		      // Add gradient contribution
-		      (*grad_g) += onedgdu*dudx;
-		    }
-		    //opserr << "OSGGE: " << (*grad_g) << endln;
-		  }
-		  
-
-
-
-
+		else if ( strncmp(tokenPtr, "rec",3) == 0) {
 		}
 
 		tokenPtr = strtok( NULL, separators);  // read next token and go up and check the while condition again
 	} 
+
+	delete [] lsf_copy;
 
 	if (doGradientCheck) {
 		char myString[100];
@@ -481,8 +316,7 @@ OpenSeesGradGEvaluator::computeGradG(double g, const Vector &passed_x)
 
 
 int
-OpenSeesGradGEvaluator::computeAllGradG(const Vector &gFunValues,
-					const Vector &passed_x)
+OpenSeesGradGEvaluator::computeAllGradG(Vector gFunValues, Vector passed_x)
 {
 
 	// Allocate result matrix
@@ -505,7 +339,7 @@ OpenSeesGradGEvaluator::computeAllGradG(const Vector &gFunValues,
 		gradG = this->getGradG();
 
 		for (int i=1; i<=passed_x.Size(); i++) {
-		  //opserr << "OSFFE: (i,j) = " << i << ' ' << j << endln;
+	
 			(*grad_g_matrix)(i-1,j-1) = gradG(i-1);
 		}
 	}

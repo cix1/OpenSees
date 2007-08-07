@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.24 $
-// $Date: 2007-07-13 19:25:20 $
+// $Revision: 1.16 $
+// $Date: 2005-08-08 22:22:09 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/tcl/TclReliabilityBuilder.cpp,v $
 
 
@@ -54,10 +54,7 @@ using std::setiosflags;
 #include <CorrelationCoefficient.h>
 #include <LimitStateFunction.h>
 #include <RandomVariablePositioner.h>
-#include <Parameter.h>
-#include <ParameterIter.h>
 #include <ParameterPositioner.h>
-#include <ParameterPositionerIter.h>
 #include <NormalRV.h>
 #include <LognormalRV.h>
 #include <GammaRV.h>
@@ -207,9 +204,7 @@ int TclReliabilityModelBuilder_inputCheck(ClientData clientData, Tcl_Interp *int
 int TclReliabilityModelBuilder_getMean(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 int TclReliabilityModelBuilder_getStdv(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 int TclReliabilityModelBuilder_rvReduction(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-int TclReliabilityModelBuilder_getBetaFORM(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-int TclReliabilityModelBuilder_getGammaFORM(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-int TclReliabilityModelBuilder_invNormalCDF(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
+
 
 
 //
@@ -260,9 +255,7 @@ TclReliabilityBuilder::TclReliabilityBuilder(Domain &passedDomain, Tcl_Interp *i
   Tcl_CreateCommand(interp, "getMean",TclReliabilityModelBuilder_getMean,(ClientData)NULL, NULL);
   Tcl_CreateCommand(interp, "getStdv",TclReliabilityModelBuilder_getStdv,(ClientData)NULL, NULL);
   Tcl_CreateCommand(interp, "rvReduction",TclReliabilityModelBuilder_rvReduction,(ClientData)NULL, NULL);
-  Tcl_CreateCommand(interp, "betaFORM",TclReliabilityModelBuilder_getBetaFORM,(ClientData)NULL, NULL);
-  Tcl_CreateCommand(interp, "gammaFORM",TclReliabilityModelBuilder_getGammaFORM,(ClientData)NULL, NULL);
-  Tcl_CreateCommand(interp, "invNormalCDF",TclReliabilityModelBuilder_invNormalCDF,(ClientData)NULL, NULL);
+
 
   // set the static pointers in this file
   theStructuralDomain	= &passedDomain;
@@ -380,9 +373,6 @@ TclReliabilityBuilder::~TclReliabilityBuilder()
 	Tcl_DeleteCommand(theInterp, "inputCheck");
 	Tcl_DeleteCommand(theInterp, "getMean");
 	Tcl_DeleteCommand(theInterp, "getStdv");
-	Tcl_DeleteCommand(theInterp, "betaFORM");
-	Tcl_DeleteCommand(theInterp, "gammaFORM");
-	Tcl_DeleteCommand(theInterp, "invNormalCDF");
 }
 
 
@@ -469,7 +459,7 @@ TclReliabilityModelBuilder_addRandomVariable(ClientData clientData,Tcl_Interp *i
 
 		if (strcmp(argv[3],"-list") == 0) {
 
-		  numPoints = (argc-4) % 2;
+			numPoints = floor((argc-4)/2.0);
 			Vector temp_xPoints(numPoints);
 			Vector temp_PDFpoints(numPoints);
 
@@ -505,7 +495,7 @@ TclReliabilityModelBuilder_addRandomVariable(ClientData clientData,Tcl_Interp *i
 			// Open file where the vectors are given
 			ifstream inputFile( argv[4], ios::in );
 			if (inputFile.fail()) {
-				opserr << "File " << argv[4] << " could not be opened. " << endln;
+				opserr << "File " << *argv[4] << " could not be opened. " << endln;
 				return TCL_ERROR;
 			}
 
@@ -532,7 +522,7 @@ TclReliabilityModelBuilder_addRandomVariable(ClientData clientData,Tcl_Interp *i
 			// Open it again, now being ready to store the results in a matrix
 			ifstream inputFile2( argv[4], ios::in );
 			if (inputFile2.fail()) {
-				opserr << "File " << argv[4] << " could not be opened. " << endln;
+				opserr << "File " << *argv[4] << " could not be opened. " << endln;
 				return TCL_ERROR;
 			}
 
@@ -1787,6 +1777,7 @@ TclReliabilityModelBuilder_addRandomVariablePositioner(ClientData clientData, Tc
 		return TCL_ERROR;
 	}
 
+
 	// CHECK IF THE USER WANTS TO CREATE THE RANDOM VARIABLE HERE
 	if (strcmp(argv[argvCounter],"-createRV3") == 0) {
 		argvCounter++;
@@ -1976,29 +1967,14 @@ TclReliabilityModelBuilder_addRandomVariablePositioner(ClientData clientData, Tc
 		return TCL_ERROR;
 	}
 	
-	if (strcmp(argv[argvCounter],"-parameter") == 0) {
-	  argvCounter++;
-	  int paramTag;
-	  if (Tcl_GetInt(interp, argv[argvCounter++], &paramTag) != TCL_OK) {
-	    opserr << "ERROR: invalid input in positioner: parameter tag \n";
-	    return TCL_ERROR;
-	  }
 
-	  Parameter *theParameter = theStructuralDomain->getParameter(paramTag);
-
-	  if (theParameter == 0) {
-	    opserr << "ERROR: parameter with tag " << paramTag 
-		   << " not found in structural domain\n";
-	    return TCL_ERROR;
-	  }
-	  else {
-	    theRandomVariablePositioner =
-	      new RandomVariablePositioner(tag, rvNumber, *theParameter);
-	  }
-	}
+	const char **data = new const char *[argc-argvCounter-2];
+	int ii,jj;
+	for (ii=argvCounter+2, jj=0; ii<argc; ii++, jj++)
+	  data[jj] = argv[ii];
 
 	// IF UNCERTAIN *ELEMENT* PROPERTY
-	else if (strcmp(argv[argvCounter],"-element") == 0) {
+	if (strcmp(argv[argvCounter],"-element") == 0) {
 		argvCounter++;
 
 		if (Tcl_GetInt(interp, argv[argvCounter++], &tagOfObject) != TCL_OK) {
@@ -2009,14 +1985,13 @@ TclReliabilityModelBuilder_addRandomVariablePositioner(ClientData clientData, Tc
 
 		theObject = (DomainComponent *)theStructuralDomain->getElement(tagOfObject);
 
-		theRandomVariablePositioner =
-		  new RandomVariablePositioner(tag,
-					       rvNumber,
-					       theObject,
-					       &argv[argvCounter],
-					       argc-argvCounter);
+		theRandomVariablePositioner = new RandomVariablePositioner(tag,
+									   rvNumber,
+									   theObject,
+									   data,
+									   argc-argvCounter);
 
-		//int rvnumber = theRandomVariablePositioner->getRvNumber();
+		int rvnumber = theRandomVariablePositioner->getRvNumber();
 	}
 
 	// IF UNCERTAIN *LOAD*
@@ -2043,12 +2018,11 @@ TclReliabilityModelBuilder_addRandomVariablePositioner(ClientData clientData, Tc
 //		else {
 //			theRandomVariablePositioner = new RandomVariablePositioner(tag,rvNumber,theObject,&argv[5],argc-5);
 //		}
-		theRandomVariablePositioner =
-		  new RandomVariablePositioner(tag,
-					       rvNumber,
-					       theObject,
-					       &argv[argvCounter],
-					       argc-argvCounter);
+		theRandomVariablePositioner = new RandomVariablePositioner(tag,
+									   rvNumber,
+									   theObject,
+									   data,
+									   argc-argvCounter);
 	}
 
 	// IF UNCERTAIN *NODE* PROPERTY
@@ -2061,17 +2035,18 @@ TclReliabilityModelBuilder_addRandomVariablePositioner(ClientData clientData, Tc
 		}
 		theObject = (DomainComponent *)theStructuralDomain->getNode(tagOfObject);
 
-		theRandomVariablePositioner =
-		  new RandomVariablePositioner(tag,
-					       rvNumber,
-					       theObject,
-					       &argv[argvCounter],
-					       argc-argvCounter);
+		theRandomVariablePositioner = new RandomVariablePositioner(tag,
+									   rvNumber,
+									   theObject,
+									   data,
+									   argc-argvCounter);
 	}
 	else {
 		opserr << "ERROR: Unknown parameter in randomVariablePositioner" << endln;
 		return TCL_ERROR;
 	}
+
+	delete [] data;
 
 	// ADD THE RANDOMVARIABLEPOSITIONER TO THE DOMAIN
 	if (theReliabilityDomain->addRandomVariablePositioner(theRandomVariablePositioner) == false) {
@@ -2171,29 +2146,9 @@ TclReliabilityModelBuilder_addParameterPositioner(ClientData clientData, Tcl_Int
 		return TCL_ERROR;
 	}
 
-	if (strcmp(argv[argvCounter],"-parameter") == 0) {
-	  argvCounter++;
-	  int paramTag;
-	  if (Tcl_GetInt(interp, argv[argvCounter++], &paramTag) != TCL_OK) {
-	    opserr << "ERROR: invalid input in positioner: parameter tag \n";
-	    return TCL_ERROR;
-	  }
-
-	  Parameter *theParameter = theStructuralDomain->getParameter(paramTag);
-
-	  if (theParameter == 0) {
-	    opserr << "ERROR: parameter with tag " << paramTag 
-		   << " not found in structural domain\n";
-	    return TCL_ERROR;
-	  }
-	  else {
-	    theParameterPositioner =
-	      new ParameterPositioner(tag, *theParameter);
-	  }
-	}
 
 	// IF UNCERTAIN *LOAD*
-	else if (strcmp(argv[argvCounter],"-loadPattern") == 0) {
+	if (strcmp(argv[argvCounter],"-loadPattern") == 0) {
 		argvCounter++;
 		
 		if (Tcl_GetInt(interp, argv[argvCounter++], &tagOfObject) != TCL_OK) {
@@ -2202,48 +2157,24 @@ TclReliabilityModelBuilder_addParameterPositioner(ClientData clientData, Tcl_Int
 		}
 		theObject = (DomainComponent *)theStructuralDomain->getLoadPattern(tagOfObject);
 
-		theParameterPositioner =
-		  new ParameterPositioner(tag,
-					  theObject,
-					  &argv[argvCounter],
-					  argc-argvCounter);
-	}
-
-	// IF UNCERTAIN element property
-	else if (strcmp(argv[argvCounter],"-element") == 0) {
-		argvCounter++;
+		const char **data = new const char *[argc-argvCounter];
+		int ii,jj;
+		for (ii=argvCounter, jj=0; ii<argc; ii++, jj++)
+		  data[jj] = argv[ii];		
 		
-		if (Tcl_GetInt(interp, argv[argvCounter++], &tagOfObject) != TCL_OK) {
-		  opserr << "ERROR: invalid input: tagOfObject \n";
-		  return TCL_ERROR;
-		}
-		theObject = (DomainComponent *)theStructuralDomain->getElement(tagOfObject);
 
-		theParameterPositioner =
-		  new ParameterPositioner(tag,
-					  theObject,
-					  &argv[argvCounter],
-					  argc-argvCounter);
+		theParameterPositioner = new ParameterPositioner(tag,
+								 theObject,
+								 data,
+								 argc-argvCounter);
+		
+		delete [] data;
 	}
-	// IF UNCERTAIN *NODE* PROPERTY
-	else if (strcmp(argv[argvCounter],"-node") == 0) {
-		argvCounter++;
-
-		if (Tcl_GetInt(interp, argv[argvCounter++], &tagOfObject) != TCL_OK) {
-			opserr << "ERROR: invalid input: tagOfObject \n";
-			return TCL_ERROR;
-		}
-		theObject = (DomainComponent *)theStructuralDomain->getNode(tagOfObject);
-
-		theParameterPositioner =
-		  new ParameterPositioner(tag,
-					  theObject,
-					  &argv[argvCounter],
-					  argc-argvCounter);
-	}	else {
+	else {
 		opserr << "ERROR: Unknown parameter in parameterPositioner" << endln;
 		return TCL_ERROR;
 	}
+
 
 	// ADD THE PARAMETERPOSITIONER TO THE DOMAIN
 	if (theReliabilityDomain->addParameterPositioner(theParameterPositioner) == false) {
@@ -3565,14 +3496,13 @@ TclReliabilityModelBuilder_addgFunEvaluator(ClientData clientData, Tcl_Interp *i
 			// Try to open the file to make sure it exists
 			ifstream inputFile( argv[3], ios::in );
 			if (inputFile.fail()) {
-				opserr << "File " << argv[3] << " could not be opened. " << endln;
+				opserr << "File " << *argv[3] << " could not be opened. " << endln;
 				return TCL_ERROR;
 			}
 			inputFile.close();
 
 			theGFunEvaluator = new OpenSeesGFunEvaluator(
-				interp, theReliabilityDomain,
-				theStructuralDomain, argv[3]);
+				interp, theReliabilityDomain, argv[3]);
 		}
 		else if (strcmp(argv[2],"-analyze") == 0) {
 
@@ -3590,9 +3520,7 @@ TclReliabilityModelBuilder_addgFunEvaluator(ClientData clientData, Tcl_Interp *i
 					return TCL_ERROR;
 				}
 			}
-			theGFunEvaluator = new OpenSeesGFunEvaluator(
-				interp, theReliabilityDomain,
-				theStructuralDomain, nsteps, dt);
+			theGFunEvaluator = new OpenSeesGFunEvaluator(interp, theReliabilityDomain, nsteps, dt);
 
 		}
 		else {
@@ -3705,7 +3633,7 @@ TclReliabilityModelBuilder_addGradGEvaluator(ClientData clientData, Tcl_Interp *
 			return TCL_ERROR;
 		}
 
-		theGradGEvaluator = new OpenSeesGradGEvaluator(interp, theReliabilityDomain, theSensitivityAlgorithm, doGradientCheck);
+		theGradGEvaluator = new OpenSeesGradGEvaluator(interp, theReliabilityDomain,doGradientCheck);
 	}
 	else {
 		opserr << "ERROR: unrecognized type of GradGEvaluator \n";
@@ -3820,7 +3748,8 @@ TclReliabilityModelBuilder_addFindDesignPointAlgorithm(ClientData clientData, Tc
 		}
 
 		int printFlag=0;
-		char fileNamePrint[256];
+		char *fileNamePrint;
+		fileNamePrint = new char[256];
 		strcpy(fileNamePrint,"initialized");
 
 
@@ -3891,6 +3820,8 @@ TclReliabilityModelBuilder_addFindDesignPointAlgorithm(ClientData clientData, Tc
 					fileNamePrint,
 					theStartPoint);
 
+		delete [] fileNamePrint;
+		
 	}
 	else {
 		opserr << "ERROR: unrecognized type of FindDesignPointAlgorithm Algorithm \n";
@@ -3969,7 +3900,7 @@ TclReliabilityModelBuilder_addStartPoint(ClientData clientData, Tcl_Interp *inte
 
 		ifstream inputFile( argv[2], ios::in );
 		if (inputFile.fail()) {
-			opserr << "File " << argv[2] << " could not be opened. " << endln;
+			opserr << "File " << *argv[2] << " could not be opened. " << endln;
 			return TCL_ERROR;
 		}
 
@@ -4877,7 +4808,7 @@ TclReliabilityModelBuilder_runGFunVisualizationAnalysis(ClientData clientData, T
 				// Open file where the vectors are given
 				ifstream inputFile( argv[argvCounter], ios::in );
 				if (inputFile.fail()) {
-					opserr << "File " << argv[argvCounter] << " could not be opened. " << endln;
+					opserr << "File " << *argv[argvCounter] << " could not be opened. " << endln;
 					return TCL_ERROR;
 				}
 
@@ -4905,7 +4836,7 @@ TclReliabilityModelBuilder_runGFunVisualizationAnalysis(ClientData clientData, T
 				// Open it again, now being ready to store the results in a matrix
 				ifstream inputFile2( argv[argvCounter], ios::in );
 				if (inputFile2.fail()) {
-					opserr << "File " << argv[argvCounter] << " could not be opened. " << endln;
+					opserr << "File " << *argv[argvCounter] << " could not be opened. " << endln;
 					return TCL_ERROR;
 				}
 				argvCounter++;
@@ -5048,7 +4979,7 @@ TclReliabilityModelBuilder_runGFunVisualizationAnalysis(ClientData clientData, T
 			// Open file where the vectors are given
 			ifstream inputFile( argv[argvCounter], ios::in );
 			if (inputFile.fail()) {
-				opserr << "File " << argv[argvCounter] << " could not be opened. " << endln;
+				opserr << "File " << *argv[argvCounter] << " could not be opened. " << endln;
 				return TCL_ERROR;
 			}
 
@@ -5078,7 +5009,7 @@ TclReliabilityModelBuilder_runGFunVisualizationAnalysis(ClientData clientData, T
 			// Open it again, now being ready to store the results in a matrix
 			ifstream inputFile2( argv[argvCounter], ios::in );
 			if (inputFile2.fail()) {
-				opserr << "File " << argv[argvCounter] << " could not be opened. " << endln;
+				opserr << "File " << *argv[argvCounter] << " could not be opened. " << endln;
 				return TCL_ERROR;
 			}
 			argvCounter++;
@@ -5266,7 +5197,7 @@ TclReliabilityModelBuilder_rvReduction(ClientData clientData, Tcl_Interp *interp
 		Vector tempKeepRvs(numInList);
 		ifstream inputFile( argv[2], ios::in );
 		if (inputFile.fail()) {
-			opserr << "File " << argv[2] << " could not be opened. " << endln;
+			opserr << "File " << *argv[2] << " could not be opened. " << endln;
 			return TCL_ERROR;
 		}
 		for (int i=0; i<numInList; i++) {
@@ -5454,25 +5385,6 @@ TclReliabilityModelBuilder_inputCheck(ClientData clientData, Tcl_Interp *interp,
 		}
 	}
 	
-	// Clear out old parameter positioners so we don't produce a memory leak
-	theReliabilityDomain->removeAllParameterPositioners();
-
-	ParameterIter &paramIter = theStructuralDomain->getParameters();
-	Parameter *theParam;
-	i = 1;
-	while ((theParam = paramIter()) != 0) {
-	  ParameterPositioner *theParamPos = 
-	    new ParameterPositioner(i, *theParam);
-	  theParamPos->setGradNumber(i);
-	  if (theReliabilityDomain->addParameterPositioner(theParamPos) == false) {
-	    opserr << "ERROR: failed to add parameter positioner " << i << endln;
-	    delete theParamPos; // otherwise memory leak
-	    return TCL_ERROR;
-	  }
-	  i++;
-	}
-
-	/*
 	num = theReliabilityDomain->getNumberOfRandomVariablePositioners();
 	for (i=1; i<=num; i++) {
 		component = theReliabilityDomain->getRandomVariablePositionerPtr(i);
@@ -5481,8 +5393,7 @@ TclReliabilityModelBuilder_inputCheck(ClientData clientData, Tcl_Interp *interp,
 			return TCL_ERROR;
 		}
 	}
-	*/
-
+	
 	num = theReliabilityDomain->getNumberOfCorrelationCoefficients();
 	for (i=1; i<=num; i++) {
 		component = theReliabilityDomain->getCorrelationCoefficientPtr(i);
@@ -5501,7 +5412,6 @@ TclReliabilityModelBuilder_inputCheck(ClientData clientData, Tcl_Interp *interp,
 		}
 	}
 	
-	/*
 	num = theReliabilityDomain->getNumberOfLimitStateFunctions();
 	for (i=1; i<=num; i++) {
 		component = theReliabilityDomain->getLimitStateFunctionPtr(i);
@@ -5510,8 +5420,7 @@ TclReliabilityModelBuilder_inputCheck(ClientData clientData, Tcl_Interp *interp,
 			return TCL_ERROR;
 		}
 	}
-	*/
-
+	
 	num = theReliabilityDomain->getNumberOfModulatingFunctions();
 	for (i=1; i<=num; i++) {
 		component = theReliabilityDomain->getModulatingFunction(i);
@@ -5575,103 +5484,3 @@ TclReliabilityModelBuilder_tempCommand(ClientData clientData, Tcl_Interp *interp
 }
 
 
-int 
-TclReliabilityModelBuilder_getBetaFORM(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-  if (argc < 2) {
-    opserr << "ERROR: Invalid number of arguments to getBetaFORM command." << endln;
-    return TCL_ERROR;
-  }
-
-  int lsfTag;
-  if (Tcl_GetInt(interp, argv[1], &lsfTag) != TCL_OK) {
-    opserr << "WARNING betaFORM lsfTag? - could not read lsfTag\n";
-    return TCL_ERROR;	        
-  }   
-
-  LimitStateFunction *theLSF =
-    theReliabilityDomain->getLimitStateFunctionPtr(lsfTag);
-
-  if (theLSF != 0) {
-    double beta = theLSF->FORMReliabilityIndexBeta;
-    sprintf(interp->result,"%35.20f",beta);
-    return TCL_OK;
-  }
-  else {
-    opserr << "WARNING betaFORM LSF with tag " << lsfTag << " not found\n";
-    return TCL_ERROR;	        
-  }
-}
-
-int 
-TclReliabilityModelBuilder_getGammaFORM(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-  if (argc < 3) {
-    opserr << "ERROR: Invalid number of arguments to getGammaFORM command." << endln;
-    return TCL_ERROR;
-  }
-
-  int lsfTag, rvTag;
-  if (Tcl_GetInt(interp, argv[1], &lsfTag) != TCL_OK) {
-    opserr << "WARNING gammaFORM lsfTag? rvTag? - could not read lsfTag\n";
-    return TCL_ERROR;	        
-  }   
-  if (Tcl_GetInt(interp, argv[2], &rvTag) != TCL_OK) {
-    opserr << "WARNING gammaFORM lsfTag? rvTag? - could not read rvTag\n";
-    return TCL_ERROR;	        
-  }   
-
-  LimitStateFunction *theLSF =
-    theReliabilityDomain->getLimitStateFunctionPtr(lsfTag);
-
-  if (theLSF == 0) {
-    opserr << "WARNING gammaFORM LSF with tag " << lsfTag << " not found\n";
-    return TCL_ERROR;	        
-  }
-
-  RandomVariable *theRV =
-    theReliabilityDomain->getRandomVariablePtr(rvTag);
-
-  if (theRV == 0) {
-    opserr << "WARNING gammaFORM RV with tag " << rvTag << " not found\n";
-    return TCL_ERROR;	        
-  }
-
-  double gamma = theLSF->importanceVectorGamma(rvTag-1);
-  sprintf(interp->result,"%35.20f",gamma);
-  return TCL_OK;
-}
-
-int
-TclReliabilityModelBuilder_invNormalCDF(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv)
-{
-  static NormalRV aStdNormal(0, 0.0, 1.0);
-
-  double x;
-  if (Tcl_GetDouble(interp, argv[1], &x) != TCL_OK) {
-    opserr << "WARNING invNormalCDF x? <mean? stdev?>- could not read x\n";
-    return TCL_ERROR;	        
-  }
-
-  char buffer[40];
-
-  if (argc < 4) {
-    sprintf(buffer,"%35.20f", aStdNormal.getInverseCDFvalue(x));
-  }
-  else {
-    double mean, stdev;
-    if (Tcl_GetDouble(interp, argv[2], &mean) != TCL_OK) {
-      opserr << "WARNING invNormalCDF x? mean? stdev? - could not read mean\n";
-      return TCL_ERROR;	        
-    }
-    if (Tcl_GetDouble(interp, argv[3], &stdev) != TCL_OK) {
-      opserr << "WARNING invNormalCDF x? mean? stdev? - could not read stdev\n";
-      return TCL_ERROR;	        
-    }
-    sprintf(buffer,"%35.20f", mean + stdev*aStdNormal.getInverseCDFvalue(x));
-  }
-
-  Tcl_SetResult(interp, buffer, TCL_VOLATILE);
-
-  return TCL_OK;
-}

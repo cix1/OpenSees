@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2007-07-13 18:26:03 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:45:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/meritFunction/AdkZhangMeritFunctionCheck.cpp,v $
 
 
@@ -56,12 +56,12 @@ AdkZhangMeritFunctionCheck::~AdkZhangMeritFunctionCheck()
 
 
 int
-AdkZhangMeritFunctionCheck::check(const Vector &u_old, 
-				  double g_old, 
-				  const Vector &grad_G_old, 
-				  double stepSize,
-				  const Vector &stepDirection,
-				  double g_new)
+AdkZhangMeritFunctionCheck::check(Vector u_old, 
+								  double g_old, 
+								  Vector grad_G_old, 
+								  double stepSize,
+								  Vector stepDirection,
+								  double g_new)
 {
 
 	// Update penalty parameter 'c' (should remain constant along the search direction)
@@ -69,13 +69,11 @@ AdkZhangMeritFunctionCheck::check(const Vector &u_old,
 
 	
 	// New point in standard normal space
-	//Vector u_new = u_old + stepSize*stepDirection;
-	Vector u_new(u_old);
-	u_new.addVector(1.0, stepDirection, stepSize);
+	Vector u_new = u_old + stepSize*stepDirection;
 
 
 	// Compute value of merit functions
-	static Vector dummy(1);
+	Vector dummy(1);
 	double merit_old = this->getMeritFunctionValue(u_old,g_old,dummy);
 	double merit_new = this->getMeritFunctionValue(u_new,g_new,dummy);
 
@@ -88,19 +86,11 @@ AdkZhangMeritFunctionCheck::check(const Vector &u_old,
 	else {
 		signumG = 1.0;
 	}
-	//Vector gradM_old = u_old + c * signumG * grad_G_old;
-	//Vector gradM_old(u_old);
-	//gradM_old.addVector(1.0, grad_G_old, c*signumG);
+	Vector gradM_old = u_old + c * signumG * grad_G_old;
 
-
-	// Without forming temporary Vector object
-	double checkValue = u_old^stepDirection;
-	checkValue += c*signumG*(grad_G_old^stepDirection);
-	checkValue *= a*stepSize;
 
 	// Do the check
-	//if (  (merit_new-merit_old)  <=  a*stepSize*(gradM_old^stepDirection)  ) {
-	if (  (merit_new-merit_old)  <=  checkValue  ) {
+	if (  (merit_new-merit_old)  <=  a*stepSize*(gradM_old^stepDirection)  ) {
 		return 0;  // ok
 	}
 	else {
@@ -114,9 +104,9 @@ AdkZhangMeritFunctionCheck::check(const Vector &u_old,
 
 
 int
-AdkZhangMeritFunctionCheck::updateMeritParameters(const Vector &u, 
-						  double g,
-						  const Vector &grad_G)
+AdkZhangMeritFunctionCheck::updateMeritParameters(Vector u, 
+												  double g,
+												  Vector grad_G)
 {
 	// Update penalty factor 'c'
 	c = (u.Norm() / grad_G.Norm()) * multi + add;
@@ -126,9 +116,9 @@ AdkZhangMeritFunctionCheck::updateMeritParameters(const Vector &u,
 
 
 double
-AdkZhangMeritFunctionCheck::getMeritFunctionValue(const Vector &u, 
-						  double g,
-						  const Vector &grad_G)
+AdkZhangMeritFunctionCheck::getMeritFunctionValue(Vector u, 
+												  double g,
+												  Vector grad_G)
 {
 	// Note that it is correct to keep 'c' constant
 

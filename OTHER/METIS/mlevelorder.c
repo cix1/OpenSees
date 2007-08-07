@@ -9,7 +9,7 @@
  * Started 10/5/94
  * George
  *
- * $Id: mlevelorder.c,v 1.3 2007-05-17 05:23:30 fmk Exp $
+ * $Id: mlevelorder.c,v 1.2 2001-10-05 00:51:05 fmk Exp $
  *
  */
 
@@ -19,6 +19,9 @@
 * External Global Variables
 **************************************************************************/
 extern CtrlType *__Ctrl;	/* mlevelpart.c */
+#ifndef METISLIB
+extern timer SplitTmr;		/* main.c */
+#endif
 
 /*************************************************************************
 * This function is the entry point of Recursive nested dissection
@@ -139,6 +142,8 @@ void SplitGraphOrder(CoarseGraphType *graph, CoarseGraphType *lgraph, CoarseGrap
   int nedges, ewgtsum;
 
 
+  starttimer(&SplitTmr);
+
   /* Take care the separator first */
   FindMinCovNodeSeparator(graph, perm, order);
 
@@ -229,6 +234,7 @@ void SplitGraphOrder(CoarseGraphType *graph, CoarseGraphType *lgraph, CoarseGrap
     }
   }
 
+  stoptimer(&SplitTmr);
 }
 
 

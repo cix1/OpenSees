@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.5 $
-// $Date: 2006-09-05 20:53:29 $
+// $Revision: 1.4 $
+// $Date: 2003-10-30 22:46:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/pattern/DiscretizedRandomProcessSeries.cpp,v $
 
 
@@ -38,7 +38,7 @@
 #include <ModulatingFunction.h>
 #include <Filter.h>
 #include <classTags.h>
-#include <Parameter.h>
+
 
 DiscretizedRandomProcessSeries::DiscretizedRandomProcessSeries(int num, 
 							       ModulatingFunction **theModFuncs,
@@ -198,16 +198,12 @@ DiscretizedRandomProcessSeries::Print(OPS_Stream &s, int flag)
 }
 
 int
-DiscretizedRandomProcessSeries::setParameter(const char **argv, int argc,
-					     Parameter &param)
+DiscretizedRandomProcessSeries::setParameter (const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return -1;
+    if (argc < 1)
+        return -1;
 
-  // **** MHS needs to fix this!!
-  //int rvNumber = info.theInt;
-  int rvNumber = 1;  // to get it to compile for now
-  // **********************
+	int rvNumber = info.theInt;
 
 	// The second argument tells when the random variable "kicks in".
 	// Store this in a table...
@@ -223,7 +219,7 @@ DiscretizedRandomProcessSeries::setParameter(const char **argv, int argc,
 	else if (kickInTimes->Size() < rvNumber) {
 
 		// Store old values in a temporary vector
-		Vector temp(*kickInTimes);
+		Vector temp = (*kickInTimes);
 
 		// Create a large enough vector
 		delete kickInTimes;
@@ -302,11 +298,11 @@ opserr << "c: " << c << endln;
 	}
 
 	// The random variable number is returned as a parameter ID
-	return param.addObject(rvNumber, this);
+	return rvNumber;
 }
 
 int
-DiscretizedRandomProcessSeries::updateParameter(int parameterID, Information &info)
+DiscretizedRandomProcessSeries::updateParameter (int parameterID, Information &info)
 {
 	// In case the vector doesn't exist
 	if (randomVariables == 0) {
@@ -317,7 +313,7 @@ DiscretizedRandomProcessSeries::updateParameter(int parameterID, Information &in
 	else if (randomVariables->Size() < parameterID) {
 
 		// Store old values in a temporary vector
-		Vector temp(*randomVariables);
+		Vector temp = (*randomVariables);
 
 		// Create a large enough vector
 		delete randomVariables;

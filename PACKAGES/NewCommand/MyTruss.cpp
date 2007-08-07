@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.2 $
-// $Date: 2006-10-02 20:12:32 $
+// $Revision: 1.1 $
+// $Date: 2005-06-14 18:50:30 $
 // $Source: /usr/local/cvs/OpenSees/PACKAGES/NewCommand/MyTruss.cpp,v $
                                                                         
 // Written: fmk 
@@ -511,7 +511,7 @@ MyTruss::Print(OPS_Stream &s, int flag)
 
 
 Response *
-MyTruss::setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &s)
+MyTruss::setResponse(const char **argv, int argc, Information &eleInformation)
 {
     //
     // we compare argv[0] for known response types for the Truss
@@ -523,7 +523,7 @@ MyTruss::setResponse(const char **argv, int argc, Information &eleInformation, O
 
     // a material quantity    
     else if (strcmp(argv[0],"material") == 0)
-      return theMaterial->setResponse(&argv[1], argc-1, eleInformation, s);
+      return theMaterial->setResponse(&argv[1], argc-1, eleInformation);
 
     else
 	return 0;

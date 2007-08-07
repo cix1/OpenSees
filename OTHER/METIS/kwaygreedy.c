@@ -8,7 +8,7 @@
  * Started 6/7/95
  * George
  *
- * $Id: kwaygreedy.c,v 1.2 2007-05-17 05:23:30 fmk Exp $
+ * $Id: kwaygreedy.c,v 1.1.1.1 2000-09-15 08:23:12 fmk Exp $
  *
  */
 
@@ -18,6 +18,12 @@
 * External Variables
 **************************************************************************/
 extern CtrlType *__Ctrl;        /* mlevelpart.c */
+#ifndef METISLIB
+extern timer GreedyTmr;         /* main.c */
+extern timer GreedyInitTmr;     /* main.c */
+extern timer GreedyIterTmr;     /* main.c */
+extern timer GreedyWrapUpTmr;   /* main.c */
+#endif
 
 
 /*************************************************************************
@@ -38,6 +44,7 @@ void KWay_RefineGreedy(CoarseGraphType *graph, int nparts, int npasses)
   where = graph->where;
   pwgts = graph->kpwgts;
 
+  starttimer(&GreedyInitTmr);
 
   minpwgt = pwgts[iamin(nparts, pwgts)];
   maxpwgt = pwgts[iamax(nparts, pwgts)];
@@ -89,6 +96,9 @@ void KWay_RefineGreedy(CoarseGraphType *graph, int nparts, int npasses)
     if (graph->mincut == oldcut && minpwgt == pwgts[iamin(nparts, pwgts)] && maxpwgt == pwgts[iamax(nparts, pwgts)])
       break;
   }
+
+  stoptimer(&GreedyInitTmr);
+
 }
 
 

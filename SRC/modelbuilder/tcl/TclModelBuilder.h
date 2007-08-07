@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-06-26 20:13:24 $
+// $Revision: 1.5 $
+// $Date: 2004-09-01 03:56:49 $
 // $Source: /usr/local/cvs/OpenSees/SRC/modelbuilder/tcl/TclModelBuilder.h,v $
                                                                         
 // Written: fmk 
@@ -51,15 +51,12 @@ class YS_Evolution;
 class PlasticHardeningMaterial;
 class CyclicModel;	 //!!
 class DamageModel;
-class HystereticBackbone;
-class StiffnessDegradation;
-class UnloadingRule;
-class StrengthDegradation;
 
 class CrdTransf2d;
 class CrdTransf3d;
 
 #include <tcl.h>
+#include <tk.h>
 
 class TclModelBuilder : public ModelBuilder
 {
@@ -107,17 +104,7 @@ class TclModelBuilder : public ModelBuilder
     int addDamageModel(DamageModel &theModel); //!!
     DamageModel *getDamageModel(int tag); //!!
 
-#ifdef OO_HYSTERETIC
-    // methods needed to add/get material state relationships
-    int addStiffnessDegradation(StiffnessDegradation &theDegr);
-    StiffnessDegradation *getStiffnessDegradation(int tag);
-    int addUnloadingRule(UnloadingRule &theDegr);
-    UnloadingRule *getUnloadingRule(int tag);
-    int addStrengthDegradation(StrengthDegradation &theDegr);
-    StrengthDegradation *getStrengthDegradation(int tag);
-    int addHystereticBackbone(HystereticBackbone &theBackbone);
-    HystereticBackbone *getHystereticBackbone(int tag);
-#endif
+  protected:
 
   private:
     int ndm;	// space dimension of the mesh
@@ -135,14 +122,6 @@ class TclModelBuilder : public ModelBuilder
     TaggedObjectStorage *theCycModels; //!!
     TaggedObjectStorage *theDamageModels; //!!
 
-#ifdef OO_HYSTERETIC
-    TaggedObjectStorage *theStiffnessDegradations;
-    TaggedObjectStorage *theUnloadingRules;
-    TaggedObjectStorage *theStrengthDegradations;
-    TaggedObjectStorage *theHystereticBackbones;
-#endif
-
- protected:
     Tcl_Interp *theInterp;
 };
 

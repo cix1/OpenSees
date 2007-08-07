@@ -21,7 +21,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\src\element\dispBeamColumnInt;..\..\..\src\material\section\integration;..\..\..\SRC\material\nD\NewTemplate3Dep;..\..\..\SRC\tagged\storage;..\..\..\SRC\domain\node;..\..\..\SRC\material\uniaxial\limitState\limitCurve;..\..\..\SRC\material\uniaxial\limitState;..\..\..\SRC\package;..\..\..\src\material\nd\cyclicSoil;..\..\..\src\damage;..\..\..\src\material\nd\FiniteDeformation\fdEvolution;..\..\..\src\material\nd\FiniteDeformation\fdFlow;..\..\..\src\material\nd\FiniteDeformation\fdYield;..\..\..\src\material\nd\finitedeformation;..\..\..\src\element\fournodequad;..\..\..\src\material\uniaxial\fedeas;..\..\..\src\material\uniaxial\drain;..\..\..\src\domain\domain;..\..\..\src\renderer;..\..\..\src\material\nD\soil;..\..\..\src\material\nD\template3dep;..\..\..\src\recorder\response;..\..\..\src\material\backbone;..\..\..\src\material\state;..\..\..\src\material\state\strength;..\..\..\src\material\state\deformation;..\..\..\src\material\state\stiffness;..\..\..\src\material\section\repres\section;..\..\..\src\material\section\repres\cell;..\..\..\src\material\section\repres\patch;..\..\..\src\material\section\repres\reinfBar;..\..\..\src\material\section\repres\reinfLayer;..\..\..\src\material\section\fiber;..\..\..\src\element\nonlinearBeamColumn\fiber;..\..\..\src\element\nonlinearBeamColumn\matrixutil;..\..\..\src\material\section;..\..\..\src\handler;..\..\..\src\material\uniaxial;..\..\..\src\material\nD;..\..\..\src\element;..\..\..\src\actor\channel;..\..\..\src\actor\objectBroker;..\..\..\src\matrix;..\..\..\src;..\..\..\src\actor\actor;..\..\..\src\tagged;..\..\..\src\modelbuilder;..\..\..\src\domain\component;..\..\..\src\material;..\..\..\src\modelbuilder\tcl;..\..\..\src\material\nd\template3dep;..\..\..\src\nDarray;..\..\..\src\material\uniaxial\py;..\..\..\src\material\uniaxial\snap;..\..\..\src\material\yieldSurface\yieldSurfaceBC;..\..\..\src\material\yieldSurface\evolution;..\..\..\src\material\yieldSurface\plasticHardeningMaterial;..\..\..\src\material\section\yieldSurface;..\..\..\src\material\nd\feap;&quot;c:\Program Files\tcl\include&quot;;&quot;c:\Program Files\tcl&quot;"
+				AdditionalIncludeDirectories="..\..\..\SRC\material\nD\NewTemplate3Dep;..\..\..\SRC\tagged\storage;..\..\..\SRC\domain\node;..\..\..\SRC\material\uniaxial\limitState\limitCurve;..\..\..\SRC\material\uniaxial\limitState;..\..\..\SRC\package;..\..\..\src\material\nd\cyclicSoil;..\..\..\src\damage;..\..\..\src\material\nd\FiniteDeformation\fdEvolution;..\..\..\src\material\nd\FiniteDeformation\fdFlow;..\..\..\src\material\nd\FiniteDeformation\fdYield;..\..\..\src\material\nd\finitedeformation;..\..\..\src\element\fournodequad;..\..\..\src\material\uniaxial\fedeas;..\..\..\src\material\uniaxial\drain;..\..\..\src\domain\domain;..\..\..\src\renderer;..\..\..\src\material\nD\soil;..\..\..\src\material\nD\template3dep;..\..\..\src\recorder\response;..\..\..\src\material\backbone;..\..\..\src\material\state;..\..\..\src\material\state\strength;..\..\..\src\material\state\deformation;..\..\..\src\material\state\stiffness;..\..\..\src\material\section\repres\section;..\..\..\src\material\section\repres\cell;..\..\..\src\material\section\repres\patch;..\..\..\src\material\section\repres\reinfBar;..\..\..\src\material\section\repres\reinfLayer;..\..\..\src\material\section\fiber;..\..\..\src\element\nonlinearBeamColumn\fiber;..\..\..\src\element\nonlinearBeamColumn\matrixutil;..\..\..\src\material\section;..\..\..\src\handler;..\..\..\src\material\uniaxial;..\..\..\src\material\nD;..\..\..\src\element;..\..\..\src\actor\channel;..\..\..\src\actor\objectBroker;..\..\..\src\matrix;..\..\..\src;..\..\..\src\actor\actor;..\..\..\src\tagged;..\..\..\src\modelbuilder;..\..\..\src\domain\component;..\..\..\src\material;..\..\..\src\modelbuilder\tcl;..\..\..\src\material\nd\template3dep;..\..\..\src\nDarray;..\..\..\src\material\uniaxial\py;..\..\..\src\material\uniaxial\snap;..\..\..\src\material\yieldSurface\yieldSurfaceBC;..\..\..\src\material\yieldSurface\evolution;..\..\..\src\material\yieldSurface\plasticHardeningMaterial;..\..\..\src\material\section\yieldSurface;..\..\..\src\material\nd\feap;&quot;c:\Program Files\tcl\include&quot;;&quot;c:\Program Files\tcl&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;MHS_INSURE;_TCL84;_LIMITSTATEMATERIAL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
@@ -66,7 +66,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\..\src\element\dispBeamColumnInt;..\..\..\src\material\section\integration;..\..\..\SRC\material\nD\NewTemplate3Dep;..\..\..\SRC\tagged\storage;..\..\..\SRC\domain\node;..\..\..\SRC\material\uniaxial\limitState\limitCurve;..\..\..\SRC\material\uniaxial\limitState;..\..\..\SRC\package;..\..\..\src\material\nd\cyclicSoil;..\..\..\src\damage;..\..\..\src\material\nd\FiniteDeformation\fdEvolution;..\..\..\src\material\nd\FiniteDeformation\fdFlow;..\..\..\src\material\nd\FiniteDeformation\fdYield;..\..\..\src\material\nd\finitedeformation;..\..\..\src\element\fournodequad;..\..\..\src\material\uniaxial\fedeas;..\..\..\src\material\uniaxial\drain;..\..\..\src\domain\domain;..\..\..\src\renderer;..\..\..\src\material\nD\soil;..\..\..\src\material\nD\template3dep;..\..\..\src\recorder\response;..\..\..\src\material\backbone;..\..\..\src\material\state;..\..\..\src\material\state\strength;..\..\..\src\material\state\deformation;..\..\..\src\material\state\stiffness;..\..\..\src\material\section\repres\section;..\..\..\src\material\section\repres\cell;..\..\..\src\material\section\repres\patch;..\..\..\src\material\section\repres\reinfBar;..\..\..\src\material\section\repres\reinfLayer;..\..\..\src\material\section\fiber;..\..\..\src\element\nonlinearBeamColumn\fiber;..\..\..\src\element\nonlinearBeamColumn\matrixutil;..\..\..\src\material\section;..\..\..\src\handler;..\..\..\src\material\uniaxial;..\..\..\src\material\nD;..\..\..\src\element;..\..\..\src\actor\channel;..\..\..\src\actor\objectBroker;..\..\..\src\matrix;..\..\..\src;..\..\..\src\actor\actor;..\..\..\src\tagged;..\..\..\src\modelbuilder;..\..\..\src\domain\component;..\..\..\src\material;..\..\..\src\modelbuilder\tcl;..\..\..\src\material\nd\template3dep;..\..\..\src\nDarray;..\..\..\src\material\uniaxial\py;..\..\..\src\material\uniaxial\snap;..\..\..\src\material\yieldSurface\yieldSurfaceBC;..\..\..\src\material\yieldSurface\evolution;..\..\..\src\material\yieldSurface\plasticHardeningMaterial;..\..\..\src\material\section\yieldSurface;..\..\..\src\material\nd\feap;&quot;c:\Program Files\tcl\include&quot;;&quot;c:\Program Files\tcl&quot;"
+				AdditionalIncludeDirectories="..\..\..\SRC\material\nD\NewTemplate3Dep;..\..\..\SRC\tagged\storage;..\..\..\SRC\domain\node;..\..\..\SRC\material\uniaxial\limitState\limitCurve;..\..\..\SRC\material\uniaxial\limitState;..\..\..\SRC\package;..\..\..\src\material\nd\cyclicSoil;..\..\..\src\damage;..\..\..\src\material\nd\FiniteDeformation\fdEvolution;..\..\..\src\material\nd\FiniteDeformation\fdFlow;..\..\..\src\material\nd\FiniteDeformation\fdYield;..\..\..\src\material\nd\finitedeformation;..\..\..\src\element\fournodequad;..\..\..\src\material\uniaxial\fedeas;..\..\..\src\material\uniaxial\drain;..\..\..\src\domain\domain;..\..\..\src\renderer;..\..\..\src\material\nD\soil;..\..\..\src\material\nD\template3dep;..\..\..\src\recorder\response;..\..\..\src\material\backbone;..\..\..\src\material\state;..\..\..\src\material\state\strength;..\..\..\src\material\state\deformation;..\..\..\src\material\state\stiffness;..\..\..\src\material\section\repres\section;..\..\..\src\material\section\repres\cell;..\..\..\src\material\section\repres\patch;..\..\..\src\material\section\repres\reinfBar;..\..\..\src\material\section\repres\reinfLayer;..\..\..\src\material\section\fiber;..\..\..\src\element\nonlinearBeamColumn\fiber;..\..\..\src\element\nonlinearBeamColumn\matrixutil;..\..\..\src\material\section;..\..\..\src\handler;..\..\..\src\material\uniaxial;..\..\..\src\material\nD;..\..\..\src\element;..\..\..\src\actor\channel;..\..\..\src\actor\objectBroker;..\..\..\src\matrix;..\..\..\src;..\..\..\src\actor\actor;..\..\..\src\tagged;..\..\..\src\modelbuilder;..\..\..\src\domain\component;..\..\..\src\material;..\..\..\src\modelbuilder\tcl;..\..\..\src\material\nd\template3dep;..\..\..\src\nDarray;..\..\..\src\material\uniaxial\py;..\..\..\src\material\uniaxial\snap;..\..\..\src\material\yieldSurface\yieldSurfaceBC;..\..\..\src\material\yieldSurface\evolution;..\..\..\src\material\yieldSurface\plasticHardeningMaterial;..\..\..\src\material\section\yieldSurface;..\..\..\src\material\nd\feap;&quot;c:\Program Files\tcl\include&quot;;&quot;c:\Program Files\tcl&quot;"
 				PreprocessorDefinitions="WIN32,NDEBUG,_LIB,_TCL84,_LIMITSTATEMATERIAL"
 				StringPooling="TRUE"
 				RuntimeLibrary="4"
@@ -135,12 +135,6 @@
 				RelativePath="..\..\..\SRC\material\uniaxial\Concrete01.h">
 			</File>
 			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete01WithSITC.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete01WithSITC.h">
-			</File>
-			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\Concrete02.cpp">
 			</File>
 			<File
@@ -153,28 +147,10 @@
 				RelativePath="..\..\..\SRC\material\uniaxial\Concrete04.h">
 			</File>
 			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete06.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete06.h">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete07.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Concrete07.h">
-			</File>
-			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\DrainMaterial.cpp">
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\DrainMaterial.h">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\ECC01.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\ECC01.h">
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\ENTMaterial.cpp">
@@ -187,12 +163,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\EPPGapMaterial.h">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Elastic2Material.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\Elastic2Material.h">
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\ElasticMaterial.cpp">
@@ -243,9 +213,6 @@
 				RelativePath="..\..\..\SRC\material\uniaxial\NewUniaxialMaterial.h">
 			</File>
 			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\fedeas\PD1.c">
-			</File>
-			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\ParallelMaterial.cpp">
 			</File>
 			<File
@@ -264,12 +231,6 @@
 				RelativePath="..\..\..\SRC\material\uniaxial\Pinching4Material.h">
 			</File>
 			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\fedeas\PlasticDamageMaterial.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\fedeas\PlasticDamageMaterial.h">
-			</File>
-			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\ReinforcingSteel.cpp">
 			</File>
 			<File
@@ -280,12 +241,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\SeriesMaterial.h">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\ShearPanelMaterial.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\uniaxial\ShearPanelMaterial.h">
 			</File>
 			<File
 				RelativePath="..\..\..\SRC\material\uniaxial\Steel01.cpp">
@@ -1300,18 +1255,6 @@
 				RelativePath="..\..\..\SRC\material\section\ElasticSection3d.h">
 			</File>
 			<File
-				RelativePath="..\..\..\SRC\material\section\ElasticShearSection2d.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\section\ElasticShearSection2d.h">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\section\ElasticShearSection3d.cpp">
-			</File>
-			<File
-				RelativePath="..\..\..\SRC\material\section\ElasticShearSection3d.h">
-			</File>
-			<File
 				RelativePath="..\..\..\SRC\material\section\FiberSection2d.cpp">
 			</File>
 			<File
@@ -1497,28 +1440,6 @@
 				</File>
 				<File
 					RelativePath="..\..\..\SRC\material\section\yieldSurface\YieldSurfaceSection2d.h">
-				</File>
-			</Filter>
-			<Filter
-				Name="integration"
-				Filter="">
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\RCSectionIntegration.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\RCSectionIntegration.h">
-				</File>
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\SectionIntegration.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\SectionIntegration.h">
-				</File>
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\WideFlangeSectionIntegration.cpp">
-				</File>
-				<File
-					RelativePath="..\..\..\SRC\material\section\integration\WideFlangeSectionIntegration.h">
 				</File>
 			</Filter>
 		</Filter>

@@ -238,13 +238,11 @@ public :
 
 
 
-    Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &s);
 
     int getResponse(int responseID, Information &eleInformation);
 
 
-    int setParameter(const char **argv, int argc, Parameter &param);
-    int updateParameter(int parameterID, Information &info);
 
     //plotting
 

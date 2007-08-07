@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.4 $
-// $Date: 2007-02-02 01:19:30 $
+// $Revision: 1.2 $
+// $Date: 2006-08-04 18:35:06 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/limitState/limitCurve/ShearCurve.cpp,v $
                                                                         
 // Written: KJE
@@ -33,8 +33,6 @@
 #include <Node.h>
 #include <Domain.h>
 #include <Vector.h>
-#include <Parameter.h>
-
 #include <float.h>
 
 #include <DummyStream.h>
@@ -138,10 +136,12 @@ ShearCurve::checkElementState(double springForce)
 
 		const char *r[1] = {"basicDeformations"}; // must be implemented in element
 
+		Information	*rotInfoObject =0;   
+
 		Vector *rotVec; //vector of chord rotations at beam-column ends
 
 		// set type of beam-column element response desired
-		theRotations = theElement->setResponse(r, 1, dummy);
+		theRotations = theElement->setResponse(r, 1, *rotInfoObject, dummy);
 
 		// put element response in the vector of "myInfo"
 		result = theRotations->getResponse();
@@ -181,10 +181,12 @@ ShearCurve::checkElementState(double springForce)
 		const char *f[1] = {"localForce"}; // does not include influence of P-delta
 								     // for P-delta use forType = 0
 
+		Information	*forInfoObject =0;
+
 		Vector *forceVec; //vector of basic forces from beam column
 
 		// set type of beam-column element response desired
-		theForces    = theElement->setResponse(f, 1, dummy);
+		theForces    = theElement->setResponse(f, 1, *forInfoObject, dummy);
 
 		// put element response in the vector of "myInfo"
 		result += theForces->getResponse();
@@ -398,33 +400,42 @@ ShearCurve::findLimit(double DR) //SDK
 
 // AddingSensitivity:BEGIN ///////////////////////////////////
 int
-ShearCurve::setParameter(const char **argv, int argc, Parameter &param)
+ShearCurve::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return 0;
-  
-  if (strcmp(argv[0],"theta1") == 0)
-    return param.addObject(1, this);
+	if (argc < 1)
+		return -1;
 
-  if (strcmp(argv[0],"theta4") == 0)
-    return param.addObject(2, this);
-
-  if (strcmp(argv[0],"theta5") == 0)
-    return param.addObject(3, this);
-
-  if (strcmp(argv[0],"sigma") == 0)
-    return param.addObject(4, this);
-
-  if (strcmp(argv[0],"eps_normal") == 0)
-    return param.addObject(5, this);
-
-  if (strcmp(argv[0],"fc") == 0)
-    return param.addObject(6, this);
-    
-  else
-    opserr << "WARNING: Could not set parameter in Shear Curve. " << endln;
-  
-  return 0;
+	if (strcmp(argv[0],"theta1") == 0) {
+		info.theType = DoubleType;
+		return 1;
+	}
+	if (strcmp(argv[0],"theta4") == 0) {
+		info.theType = DoubleType;
+		return 2;
+	}
+	if (strcmp(argv[0],"theta5") == 0) {
+		info.theType = DoubleType;
+		return 3;
+	}
+	if (strcmp(argv[0],"sigma") == 0) {
+		info.theType = DoubleType;
+		return 4;
+	}
+	if (strcmp(argv[0],"eps_normal") == 0) {
+		info.theType = DoubleType;
+		return 5;
+	}
+	
+	if (strcmp(argv[0],"fc") == 0) {
+		info.theType = DoubleType;
+		return 6;
+	}
+	
+	
+	else
+		opserr << "WARNING: Could not set parameter in Shear Curve. " << endln;
+                
+	return -1;
 }
 
 

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.10 $
-// $Date: 2007-04-25 23:44:37 $
+// $Revision: 1.5 $
+// $Date: 2006-01-10 00:33:09 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/domain/partitioned/PartitionedDomain.h,v $
                                                                         
                                                                         
@@ -49,7 +49,6 @@ class  ArrayOfTaggedObjects;
 class  PartitionedDomainSubIter;
 class  PartitionedDomainEleIter;
 class SingleDomEleIter;
-class Parameter;
 
 class PartitionedDomain: public Domain
 {
@@ -70,11 +69,7 @@ class PartitionedDomain: public Domain
 
     virtual  bool addLoadPattern(LoadPattern *);            
     virtual  bool addSP_Constraint(SP_Constraint *); 
-    virtual  int  addSP_Constraint(int startTag, int axisDirn, double axisValue, 
-				   const ID &fixityCodes, double tol=1e-10);
     virtual  bool addSP_Constraint(SP_Constraint *, int loadPatternTag); 
-    virtual  bool addMP_Constraint(MP_Constraint *); 
-
     virtual  bool addNodalLoad(NodalLoad *, int loadPatternTag);
     virtual  bool addElementalLoad(ElementalLoad *, int loadPatternTag);
 
@@ -89,17 +84,15 @@ class PartitionedDomain: public Domain
     // methods to access the elements
     virtual  ElementIter       &getElements();
     virtual  Element           *getElement(int tag);
+    
     virtual  int 		getNumElements(void) const;
 
     // public methods to update the domain
-    virtual int hasDomainChanged(void);
-
     virtual  void setCommitTag(int newTag);    	
     virtual  void setCurrentTime(double newTime);    
     virtual  void setCommittedTime(double newTime);        
     virtual  void applyLoad(double pseudoTime);
     virtual  void setLoadConstant(void);    
-    virtual  int  setRayleighDampingFactors(double alphaM, double betaK, double betaK0, double betaKc);
 
     virtual  int commit(void);    
     virtual  int revertToLastCommit(void);        
@@ -112,13 +105,6 @@ class PartitionedDomain: public Domain
     virtual int  removeRecorders(void);
     
     virtual  void Print(OPS_Stream &s, int flag =0);    
-    virtual void Print(OPS_Stream &s, ID *nodeTags, ID *eleTags, int flag =0);
-
-    // methods dealing with Parameters
-    virtual  bool           addParameter(Parameter *);            
-    virtual  Parameter     *removeParameter(int tag);
-    virtual  int  updateParameter(int tag, int value);
-    virtual  int  updateParameter(int tag, double value);    
 
     // public member functions in addition to the standard domain
     virtual int setPartitioner(DomainPartitioner *thePartitioner);
@@ -132,11 +118,8 @@ class PartitionedDomain: public Domain
     virtual Graph &getSubdomainGraph(void);
 
     // nodal methods required in domain interface for parallel interprter
-    virtual const Vector *getNodeResponse(int nodeTag, NodeResponseType); 
     virtual double getNodeDisp(int nodeTag, int dof, int &errorFlag);
     virtual int setMass(const Matrix &mass, int nodeTag);
-
-    virtual int calculateNodalReactions(bool inclInertia);
     
     // friend classes
     friend class PartitionedDomainEleIter;

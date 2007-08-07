@@ -18,14 +18,16 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-04-25 23:45:02 $
+// $Revision: 1.6 $
+// $Date: 2005-11-30 23:47:00 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/subdomain/Subdomain.h,v $
                                                                         
                                                                         
 #ifndef Subdomain_h
 #define Subdomain_h
 
+// File: ~/domain/subdomain/Subdomain.h
+// 
 // Written: fmk 
 // Created:  11/96
 // Revision: A
@@ -98,7 +100,6 @@ class Subdomain: public Element, public Domain
 #endif
     
     virtual  void Print(OPS_Stream &s, int flag =0);
-    virtual void Print(OPS_Stream &s, ID *nodeTags, ID *eleTags, int flag =0);
     
     // Domain type methods unique to a Subdomain
     virtual NodeIter &getInternalNodeIter(void);
@@ -134,9 +135,6 @@ class Subdomain: public Element, public Domain
     virtual bool isSubdomain(void);    
     virtual int setRayleighDampingFactors(double alphaM, double betaK, double betaK0, double betaKc);
 
-    virtual  int  updateParameter(int tag, int value);
-    virtual  int  updateParameter(int tag, double value);    
-
     // Element type methods unique to a subdomain
     virtual int computeTang(void);
     virtual int computeResidual(void);
@@ -153,7 +151,7 @@ class Subdomain: public Element, public Domain
 			 FEM_ObjectBroker &theBroker);
 
     virtual double getCost(void);
-    virtual int addResistingForceToNodalReaction(bool inclInertia);
+
     
   protected:    
     virtual int buildMap(void);

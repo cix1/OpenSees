@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.13 $
-// $Date: 2007-04-13 22:27:55 $
+// $Revision: 1.11 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/KrylovNewton.cpp,v $
 
 // Written: MHS
@@ -48,7 +48,7 @@
 // Constructor
 KrylovNewton::KrylovNewton(int theTangentToUse, int maxDim)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_KrylovNewton),
- tangent(theTangentToUse),
+ theTest(0), tangent(theTangentToUse),
  v(0), Av(0), AvData(0), rData(0), work(0), lwork(0),
  numEqns(0), maxDimension(maxDim)
 {
@@ -58,7 +58,7 @@ KrylovNewton::KrylovNewton(int theTangentToUse, int maxDim)
 
 KrylovNewton::KrylovNewton(ConvergenceTest &theT, int theTangentToUse, int maxDim)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_KrylovNewton),
- tangent(theTangentToUse),
+ theTest(&theT), tangent(theTangentToUse),
  v(0), Av(0), AvData(0), rData(0), work(0), lwork(0),
  numEqns(0), maxDimension(maxDim)
 {
@@ -89,6 +89,13 @@ KrylovNewton::~KrylovNewton()
 
   if (work != 0)
     delete [] work;
+}
+
+int
+KrylovNewton::setConvergenceTest(ConvergenceTest *newTest)
+{
+  theTest = newTest;
+  return 0;
 }
 
 int 
@@ -232,31 +239,23 @@ KrylovNewton::solveCurrentStep(void)
   return result;
 }
 
+ConvergenceTest *
+KrylovNewton::getConvergenceTest(void)
+{
+  return theTest;
+}
+
 int
 KrylovNewton::sendSelf(int cTag, Channel &theChannel)
 {
-  static ID data(2);
-  data(0) = tangent;
-  data(1) = maxDimension;
-  if (theChannel.sendID(cTag, 0, data) < 0) {
-    opserr << "KrylovNewton::sendSelf() - failed\n";
-    return -1;
-  }
-  return 0;
+  return -1;
 }
 
 int
 KrylovNewton::recvSelf(int cTag, Channel &theChannel, 
 					   FEM_ObjectBroker &theBroker)
 {
-  static ID data(2);
-  if (theChannel.recvID(cTag, 0, data) <  0) {
-    opserr << "KrylovNewton::recvSelf() - failed\n";
-    return -1;
-  }
-  tangent = data(0);
-  maxDimension = data(1);
-  return 0;
+  return -1;
 }
 
 void

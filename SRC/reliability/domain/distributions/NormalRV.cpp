@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.7 $
+// $Date: 2004-08-27 17:51:50 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/NormalRV.cpp,v $
 
 
@@ -41,10 +41,12 @@ NormalRV::NormalRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_normal, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_normal)
 {
+	tag = passedTag ;
 	mju = passedMean;
 	sigma = passedStdv;
+	startValue = passedStartValue;
 }
 NormalRV::NormalRV(int passedTag, 
 		 double passedParameter1,
@@ -52,18 +54,22 @@ NormalRV::NormalRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_normal, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_normal)
 {
+	tag = passedTag ;
 	mju = passedParameter1;
 	sigma = passedParameter2;
+	startValue = passedStartValue;
 }
 NormalRV::NormalRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_normal, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_normal)
 {
+	tag = passedTag ;
 	mju = passedMean;
 	sigma = passedStdv;
+	startValue = getMean();
 }
 NormalRV::NormalRV(int passedTag, 
 		 double passedParameter1,
@@ -72,9 +78,10 @@ NormalRV::NormalRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_normal)
 {
+	tag = passedTag ;
 	mju = passedParameter1;
 	sigma = passedParameter2;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -138,17 +145,16 @@ NormalRV::getStdv()
 }
 
 
-double
-NormalRV::getParameter1()
+double 
+NormalRV::getStartValue()
 {
-  return mju;
+	return startValue;
 }
 
-double
-NormalRV::getParameter2()
-{
-  return sigma;
-}
+double NormalRV::getParameter1()  {return mju;}
+double NormalRV::getParameter2()  {return sigma;}
+double NormalRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double NormalRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
 
 
 double 

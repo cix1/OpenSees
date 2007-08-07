@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2006-09-05 20:51:38 $
+// $Revision: 1.8 $
+// $Date: 2005-02-17 01:15:27 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/pattern/EarthquakePattern.cpp,v $
                                                                         
 // Written: fmk 11/98
@@ -371,32 +371,29 @@ EarthquakePattern::getCopy(void)
 
 // AddingSensitivity:BEGIN ////////////////////////////////////
 int
-EarthquakePattern::setParameter(const char **argv, int argc, Parameter &param)
+EarthquakePattern::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 2)
-    return -1;
-
   // This is not general, yet
 
-  if (strstr(argv[0],"randomProcessDiscretizer") != 0) {
-    return theMotions[0]->setParameter(&argv[1], argc-1, param);
+  if (strcmp(argv[0],"-randomProcessDiscretizer") == 0) {
+    return theMotions[0]->setParameter(&argv[1], argc-1, info);
   }
-  else
-    return 0;
-
+  else {
+    opserr << "Unknown parameter in EarthquakePattern. " << endln;
+    return -1;
+  }
 }
 
 int
-EarthquakePattern::updateParameter(int pparameterID, Information &info)
+EarthquakePattern::updateParameter(int parameterID, Information &info)
 {
-  return theMotions[0]->updateParameter(pparameterID, info);
+  return theMotions[0]->updateParameter(parameterID,info);
 }
 
 int
 EarthquakePattern::activateParameter(int pparameterID)
 {
   parameterID = pparameterID;
-
   return theMotions[0]->activateParameter(pparameterID);
 }
 // AddingSensitivity:END ////////////////////////////////////

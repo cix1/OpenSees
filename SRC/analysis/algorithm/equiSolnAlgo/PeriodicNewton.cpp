@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.4 $
-// $Date: 2007-04-02 23:41:13 $
+// $Revision: 1.3 $
+// $Date: 2005-11-29 22:42:42 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/PeriodicNewton.cpp,v $
 
 // Written: MHS
@@ -44,7 +44,7 @@
 // Constructor
 PeriodicNewton::PeriodicNewton(int theTangentToUse, int mc)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_PeriodicNewton),
- tangent(theTangentToUse), maxCount(mc)
+ theTest(0), tangent(theTangentToUse), maxCount(mc)
 {
   
 }
@@ -52,7 +52,7 @@ PeriodicNewton::PeriodicNewton(int theTangentToUse, int mc)
 
 PeriodicNewton::PeriodicNewton(ConvergenceTest &theT, int theTangentToUse, int mc)
 :EquiSolnAlgo(EquiALGORITHM_TAGS_PeriodicNewton),
- tangent(theTangentToUse), maxCount(mc)
+ theTest(&theT), tangent(theTangentToUse), maxCount(mc)
 {
 
 }
@@ -61,6 +61,13 @@ PeriodicNewton::PeriodicNewton(ConvergenceTest &theT, int theTangentToUse, int m
 PeriodicNewton::~PeriodicNewton()
 {
 
+}
+
+int
+PeriodicNewton::setConvergenceTest(ConvergenceTest *newTest)
+{
+    theTest = newTest;
+    return 0;
 }
 
 int 
@@ -146,6 +153,12 @@ PeriodicNewton::solveCurrentStep(void)
     }
 
     return result;
+}
+
+ConvergenceTest *
+PeriodicNewton::getConvergenceTest(void)
+{
+  return theTest;
 }
 
 int

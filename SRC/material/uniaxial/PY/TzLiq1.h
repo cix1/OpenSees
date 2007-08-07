@@ -59,8 +59,7 @@ class TzLiq1 : public TzSimple1
 		 FEM_ObjectBroker &theBroker);
 
     //  Command for initiating vertConsolStress from TclUpdateMaterialStageCommand
-     int setParameter(const char **argv, int argc, Parameter &param);
-     int updateParameter(int snum, Information &eleInformation);
+	int updateParameter(int snum, Information &eleInformation);
     
     void Print(OPS_Stream &s, int flag =0);
 

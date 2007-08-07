@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.12 $
-// $Date: 2007-04-05 01:29:04 $
+// $Revision: 1.10 $
+// $Date: 2005-12-19 22:43:36 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/HHT.cpp,v $
 
 // Written: Andreas Schellenberg (andreas.schellenberg@gmx.net)
@@ -44,8 +44,8 @@
 
 HHT::HHT()
     : TransientIntegrator(INTEGRATOR_TAGS_HHT),
-    alpha(1.0), beta(0.0), gamma(0.0),
-    deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
+    alpha(1.0), beta(0.0), gamma(0.0), deltaT(0.0),
+    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0)
@@ -81,8 +81,8 @@ HHT::HHT(double _alpha,
 
 HHT::HHT(double _alpha, double _beta, double _gamma)
     : TransientIntegrator(INTEGRATOR_TAGS_HHT),
-    alpha(_alpha), beta(_beta), gamma(_gamma),
-    deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
+    alpha(_alpha), beta(_beta), gamma(_gamma), deltaT(0.0),
+    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0)
@@ -94,8 +94,8 @@ HHT::HHT(double _alpha, double _beta, double _gamma)
 HHT::HHT(double _alpha, double _beta, double _gamma,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_HHT),
-    alpha(_alpha), beta(_beta), gamma(_gamma),
-    deltaT(0.0), alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
+    alpha(_alpha), beta(_beta), gamma(_gamma), deltaT(0.0),
+    alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0)
@@ -142,7 +142,7 @@ int HHT::newStep(double _deltaT)
     }
 
     // get a pointer to the AnalysisModel
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     
     // set the constants
     c1 = 1.0;
@@ -159,6 +159,15 @@ int HHT::newStep(double _deltaT)
     (*Utdot) = *Udot;
     (*Utdotdot) = *Udotdot;
 
+    // increment the time to t+alpha*deltaT and apply the load
+    double time = theModel->getCurrentDomainTime();
+    time += alpha*deltaT;
+//    theModel->applyLoadDomain(time);
+    if (theModel->updateDomain(time, deltaT) < 0)  {
+        opserr << "HHT::newStep() - failed to update the domain\n";
+        return -4;
+    }
+
     // determine new velocities and accelerations at t+deltaT
     double a1 = (1.0 - gamma/beta);
     double a2 = deltaT*(1.0 - 0.5*gamma/beta);
@@ -172,18 +181,10 @@ int HHT::newStep(double _deltaT)
     (*Ualphadot) = *Utdot;
     Ualphadot->addVector((1.0-alpha), *Udot, alpha);
     
-    // set the trial response quantities
+    // set the trial response quantities for the nodes
     theModel->setVel(*Ualphadot);
     theModel->setAccel(*Udotdot);
         
-    // increment the time to t+alpha*deltaT and apply the load
-    double time = theModel->getCurrentDomainTime();
-    time += alpha*deltaT;
-    if (theModel->updateDomain(time, deltaT) < 0)  {
-        opserr << "HHT::newStep() - failed to update the domain\n";
-        return -4;
-    }
-
     return 0;
 }
 
@@ -231,8 +232,8 @@ int HHT::formNodTangent(DOF_Group *theDof)
 
 int HHT::domainChanged()
 {
-    AnalysisModel *myModel = this->getAnalysisModel();
-    LinearSOE *theLinSOE = this->getLinearSOE();
+    AnalysisModel *myModel = this->getAnalysisModelPtr();
+    LinearSOE *theLinSOE = this->getLinearSOEPtr();
     const Vector &x = theLinSOE->getX();
     int size = x.Size();
     
@@ -313,6 +314,7 @@ int HHT::domainChanged()
     // the DOF_Groups and getting the last committed velocity and accel
     DOF_GrpIter &theDOFs = myModel->getDOFs();
     DOF_Group *dofPtr;
+    
     while ((dofPtr = theDOFs()) != 0)  {
         const ID &id = dofPtr->getID();
         int idSize = id.Size();
@@ -349,7 +351,7 @@ int HHT::domainChanged()
 
 int HHT::update(const Vector &deltaU)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING HHT::update() - no AnalysisModel set\n";
         return -1;
@@ -395,7 +397,7 @@ int HHT::update(const Vector &deltaU)
 
 int HHT::commit(void)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING HHT::commit() - no AnalysisModel set\n";
         return -1;
@@ -403,10 +405,10 @@ int HHT::commit(void)
     
     // update the response at the DOFs
     theModel->setResponse(*U,*Udot,*Udotdot);
-    if (theModel->updateDomain() < 0)  {
-        opserr << "HHT::commit() - failed to update the domain\n";
-        return -4;
-    }
+//    if (theModel->updateDomain() < 0)  {
+//        opserr << "HHT::commit() - failed to update the domain\n";
+//        return -4;
+//    }
     
     // set the time to be t+deltaT
     double time = theModel->getCurrentDomainTime();
@@ -459,14 +461,14 @@ int HHT::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
 
 void HHT::Print(OPS_Stream &s, int flag)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel != 0)  {
         double currentTime = theModel->getCurrentDomainTime();
         s << "\t HHT - currentTime: " << currentTime << endln;
-        s << "  alpha: " << alpha << "  beta: " << beta  << "  gamma: " << gamma << endln;
-        s << "  c1: " << c1 << "  c2: " << c2 << "  c3: " << c3 << endln;
-        s << "  Rayleigh Damping - alphaM: " << alphaM << "  betaK: " << betaK;
-        s << "  betaKi: " << betaKi << "  betaKc: " << betaKc << endln;	    
+        s << "  alpha: " << alpha << " beta: " << beta  << " gamma: " << gamma << endln;
+        s << "  c1: " << c1 << " c2: " << c2 << " c3: " << c3 << endln;
+        s << "  Rayleigh Damping - alphaM: " << alphaM;
+        s << "  betaK: " << betaK << "   betaKi: " << betaKi << endln;	    
     } else 
         s << "\t HHT - no associated AnalysisModel\n";
 }

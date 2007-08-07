@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.10 $
-// $Date: 2007-04-30 20:03:42 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:45:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/gFunction/OpenSeesGFunEvaluator.h,v $
 
 
@@ -36,7 +36,6 @@
 
 #include <GFunEvaluator.h>
 #include <Vector.h>
-#include <Domain.h>
 #include <ReliabilityDomain.h>
 #include <tcl.h>
 
@@ -47,34 +46,32 @@ using std::ofstream;
 class OpenSeesGFunEvaluator : public GFunEvaluator
 {
 
- public:
-  OpenSeesGFunEvaluator(Tcl_Interp *passedTclInterp,
-			ReliabilityDomain *passedReliabilityDomain,
-			Domain *passedOpenSeesDomain,
-			TCL_Char *fileName);
-  OpenSeesGFunEvaluator(Tcl_Interp *passedTclInterp,
-			ReliabilityDomain *passedReliabilityDomain,
-			Domain *passedOpenSeesDomain,
-			int nsteps, double dt);
-  ~OpenSeesGFunEvaluator();
-  
-  int		runGFunAnalysis(const Vector &x);
-  int		tokenizeSpecials(TCL_Char *theExpression);
-  
-  void    setNsteps(int nsteps);
-  double  getDt();
-  
- protected:
-  
- private:
-  int createTclVariables();
-  int removeTclVariables();
-  int rec_nodeTclVariable(char *tempchar, char *variableName);
-  int rec_elementTclVariable(char *tempchar, char *variableName);
-  char fileName[256];
-  int nsteps;
-  double dt;
-  Domain *theOpenSeesDomain;
+public:
+	OpenSeesGFunEvaluator(Tcl_Interp *passedTclInterp,
+						ReliabilityDomain *passedReliabilityDomain,
+						TCL_Char *fileName);
+	OpenSeesGFunEvaluator(Tcl_Interp *passedTclInterp,
+						ReliabilityDomain *passedReliabilityDomain,
+						int nsteps, double dt);
+	~OpenSeesGFunEvaluator();
+
+	int		runGFunAnalysis(Vector x);
+	int		tokenizeSpecials(TCL_Char *theExpression);
+
+	void    setNsteps(int nsteps);
+	double  getDt();
+
+protected:
+
+private:
+	int createRecorders();
+	int removeRecorders();
+	char *rec_node_occurrence(char tempchar[100], bool createRecorders, int &line, int &column);
+	char *rec_element_occurrence(char tempchar[100], bool createRecorders, int &line, int &column);
+	char *fileName;
+	int nsteps;
+	double dt;
+
 };
 
 #endif

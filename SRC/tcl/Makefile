@@ -5,7 +5,7 @@ OBJS       = commands.o TclFeViewer.o TclVideoPlayer.o
 
 ifeq ($(GRAPHICS), NONE)
 
-OBJS       = commands.o TclFeViewer.o
+OBJS       = commands.o 
 
 endif
 

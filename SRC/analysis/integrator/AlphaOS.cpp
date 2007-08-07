@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.4 $
-// $Date: 2007-04-05 01:27:43 $
+// $Revision: 1.2 $
+// $Date: 2005-12-21 00:31:57 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/AlphaOS.cpp,v $
 
 // Written: Andreas Schellenberg (andreas.schellenberg@gmx.net)
@@ -32,7 +32,6 @@
 
 #include <AlphaOS.h>
 #include <FE_Element.h>
-#include <FE_EleIter.h>
 #include <LinearSOE.h>
 #include <AnalysisModel.h>
 #include <Vector.h>
@@ -41,13 +40,13 @@
 #include <AnalysisModel.h>
 #include <Channel.h>
 #include <FEM_ObjectBroker.h>
-
+#include <FE_EleIter.h>
 
 AlphaOS::AlphaOS()
     : TransientIntegrator(INTEGRATOR_TAGS_AlphaOS),
-    alpha(1.0), beta(0.0), gamma(0.0),
-    deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    updateCount(0), c1(0.0), c2(0.0), c3(0.0), 
+    alpha(1.0), beta(0.0), gamma(0.0), deltaT(0.0),
+    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
+    c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0), Upt(0), Uptdot(0)
 {
@@ -59,7 +58,7 @@ AlphaOS::AlphaOS(double _alpha)
     : TransientIntegrator(INTEGRATOR_TAGS_AlphaOS),
     alpha(_alpha), beta((2-_alpha)*(2-_alpha)*0.25), gamma(1.5-_alpha),
     deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    updateCount(0), c1(0.0), c2(0.0), c3(0.0),
+    c1(0.0), c2(0.0), c3(0.0),
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0), Upt(0), Uptdot(0)
 {
@@ -72,7 +71,7 @@ AlphaOS::AlphaOS(double _alpha,
     : TransientIntegrator(INTEGRATOR_TAGS_AlphaOS),
     alpha(_alpha), beta((2-_alpha)*(2-_alpha)*0.25), gamma(1.5-_alpha),  
     deltaT(0.0), alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
-    updateCount(0), c1(0.0), c2(0.0), c3(0.0),
+    c1(0.0), c2(0.0), c3(0.0),
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0), Upt(0), Uptdot(0)
 {
@@ -82,9 +81,9 @@ AlphaOS::AlphaOS(double _alpha,
 
 AlphaOS::AlphaOS(double _alpha, double _beta, double _gamma)
     : TransientIntegrator(INTEGRATOR_TAGS_AlphaOS),
-    alpha(_alpha), beta(_beta), gamma(_gamma),
-    deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    updateCount(0), c1(0.0), c2(0.0), c3(0.0),
+    alpha(_alpha), beta(_beta), gamma(_gamma), deltaT(0.0),
+    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
+    c1(0.0), c2(0.0), c3(0.0),
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0), Upt(0), Uptdot(0)
 {
@@ -95,9 +94,9 @@ AlphaOS::AlphaOS(double _alpha, double _beta, double _gamma)
 AlphaOS::AlphaOS(double _alpha, double _beta, double _gamma,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_AlphaOS),
-    alpha(_alpha), beta(_beta), gamma(_gamma),
-    deltaT(0.0), alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
-    updateCount(0), c1(0.0), c2(0.0), c3(0.0),
+    alpha(_alpha), beta(_beta), gamma(_gamma), deltaT(0.0),
+    alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
+    c1(0.0), c2(0.0), c3(0.0),
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
     Ualpha(0), Ualphadot(0), Upt(0), Uptdot(0)
 {
@@ -149,7 +148,7 @@ int AlphaOS::newStep(double _deltaT)
     }
     
     // get a pointer to the AnalysisModel
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     
     // set the constants
     c1 = 1.0;
@@ -174,17 +173,16 @@ int AlphaOS::newStep(double _deltaT)
     double a2 = deltaT*(1.0 - gamma);
     Udot->addVector(1.0, *Utdotdot, a2);
             
-    // determine the response at t+alpha*deltaT
+    // determine the displacements and velocities at t+alpha*deltaT
     (*Ualpha) = *Upt;
     Ualpha->addVector((1.0-alpha), *U, alpha);
     
-    (*Ualphadot) = *Utdot;
+    (*Ualphadot) = *Uptdot;
     Ualphadot->addVector((1.0-alpha), *Udot, alpha);
-
-    Udotdot->Zero();
         
-    // set the trial response quantities
-    theModel->setResponse(*Ualpha,*Ualphadot,*Udotdot);
+    // set the trial response quantities for the elements
+    theModel->setDisp(*Ualpha);
+    theModel->setVel(*Ualphadot);
     
     // increment the time to t+alpha*deltaT and apply the load
     double time = theModel->getCurrentDomainTime();
@@ -193,6 +191,16 @@ int AlphaOS::newStep(double _deltaT)
         opserr << "AlphaOS::newStep() - failed to update the domain\n";
         return -4;
     }
+
+    // determine the velocities and accelerations at t+alpha*deltaT
+    (*Ualphadot) = *Utdot;
+    Ualphadot->addVector((1.0-alpha), *Udot, alpha);
+
+    Udotdot->Zero();
+
+    // set the trial response quantities for the nodes
+    theModel->setVel(*Ualphadot);
+    theModel->setAccel(*Udotdot);
     
     return 0;
 }
@@ -236,8 +244,8 @@ int AlphaOS::formNodTangent(DOF_Group *theDof)
 
 int AlphaOS::domainChanged()
 {
-    AnalysisModel *myModel = this->getAnalysisModel();
-    LinearSOE *theLinSOE = this->getLinearSOE();
+    AnalysisModel *myModel = this->getAnalysisModelPtr();
+    LinearSOE *theLinSOE = this->getLinearSOEPtr();
     const Vector &x = theLinSOE->getX();
     int size = x.Size();
     
@@ -331,6 +339,7 @@ int AlphaOS::domainChanged()
     // the DOF_Groups and getting the last committed velocity and accel
     DOF_GrpIter &theDOFs = myModel->getDOFs();
     DOF_Group *dofPtr;
+    
     while ((dofPtr = theDOFs()) != 0)  {
         const ID &id = dofPtr->getID();
         int idSize = id.Size();
@@ -359,7 +368,7 @@ int AlphaOS::domainChanged()
                 (*Udotdot)(loc) = accel(i);
             }
         }
-    }
+    }    
     
     return 0;
 }
@@ -374,7 +383,7 @@ int AlphaOS::update(const Vector &deltaU)
         return -1;
     }
     
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING AlphaOS::update() - no AnalysisModel set\n";
         return -1;
@@ -406,10 +415,10 @@ int AlphaOS::update(const Vector &deltaU)
     
     // update the response at the DOFs
     theModel->setResponse(*U,*Udot,*Udotdot);
-    //if (theModel->updateDomain() < 0)  {
-    //    opserr << "AlphaOS::update() - failed to update the domain\n";
-    //    return -4;
-    //}
+//    if (theModel->updateDomain() < 0)  {
+//        opserr << "AlphaOS::update() - failed to update the domain\n";
+//        return -4;
+//    }
     
     return 0;
 }    
@@ -417,7 +426,7 @@ int AlphaOS::update(const Vector &deltaU)
 
 int AlphaOS::commit(void)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING AlphaOS::commit() - no AnalysisModel set\n";
         return -1;
@@ -474,14 +483,14 @@ int AlphaOS::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker
 
 void AlphaOS::Print(OPS_Stream &s, int flag)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel != 0)  {
         double currentTime = theModel->getCurrentDomainTime();
         s << "\t AlphaOS - currentTime: " << currentTime << endln;
-        s << "  alpha: " << alpha << "  beta: " << beta  << "  gamma: " << gamma << endln;
-        s << "  c1: " << c1 << "  c2: " << c2 << "  c3: " << c3 << endln;
-        s << "  Rayleigh Damping - alphaM: " << alphaM << "  betaK: " << betaK;
-        s << "  betaKi: " << betaKi << "  betaKc: " << betaKc << endln;	    
+        s << "  alpha: " << alpha << " beta: " << beta  << " gamma: " << gamma << endln;
+        s << "  c1: " << c1 << " c2: " << c2 << " c3: " << c3 << endln;
+        s << "  Rayleigh Damping - alphaM: " << alphaM;
+        s << "  betaK: " << betaK << "   betaKi: " << betaKi << endln;	    
     } else 
         s << "\t AlphaOS - no associated AnalysisModel\n";
 }
@@ -490,24 +499,36 @@ void AlphaOS::Print(OPS_Stream &s, int flag)
 int AlphaOS::formElementResidual(void)
 {
     // calculate Residual Force     
-    AnalysisModel *theModel = this->getAnalysisModel();
-    LinearSOE *theSOE = this->getLinearSOE();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
+    LinearSOE *theSOE = this->getLinearSOEPtr();
     
     // loop through the FE_Elements and add the residual
     FE_Element *elePtr;
+    
     int res = 0;    
+    
     FE_EleIter &theEles = theModel->getFEs();
     while((elePtr = theEles()) != 0)  {
+        // calculate R-F(d)
         if (theSOE->addB(elePtr->getResidual(this),elePtr->getID()) < 0)  {
-            opserr << "WARNING AlphaOS::formElementResidual -";
+            opserr << "WARNING IncrementalIntegrator::formElementResidual -";
             opserr << " failed in addB for ID " << elePtr->getID();
             res = -2;
         }        
-        if (theSOE->addB(elePtr->getKi_Force(*Ut-*Upt), elePtr->getID(), alpha-1.0) < 0)  {
+        // add Ki*d -> R-F(d)+Ki*d
+        double tmp_c2 = c2;
+        double tmp_c3 = c3;
+        alpha = alpha-1.0;
+        c2 = c3 = 0.0; // no contribution of C and M to tangent
+        const Vector Ki_d = elePtr->getTangForce(*Ut - *Upt);
+        if (theSOE->addB(Ki_d, elePtr->getID())<0)  {
             opserr << "WARNING AlphaOS::formElementResidual -";
             opserr << " failed in addB for ID " << elePtr->getID();
             res = -2;
         }
+        alpha = alpha+1.0;
+        c2 = tmp_c2;
+        c3 = tmp_c3;
     }
 
     return res;

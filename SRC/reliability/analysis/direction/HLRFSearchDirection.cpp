@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-07-11 23:51:29 $
+// $Revision: 1.5 $
+// $Date: 2003-03-04 00:39:04 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/direction/HLRFSearchDirection.cpp,v $
 
 
@@ -50,7 +50,7 @@ HLRFSearchDirection::~HLRFSearchDirection()
 
 
 
-const Vector&
+Vector
 HLRFSearchDirection::getSearchDirection()
 {
 	return searchDirection;
@@ -59,10 +59,11 @@ HLRFSearchDirection::getSearchDirection()
 
 
 int
-HLRFSearchDirection::computeSearchDirection(int stepNumber,
-					    const Vector &u, 
-					    double gFunctionValue, 
-					    const Vector &gradientInStandardNormalSpace )
+HLRFSearchDirection::computeSearchDirection(
+							int stepNumber,
+							Vector u, 
+							double gFunctionValue, 
+							Vector gradientInStandardNormalSpace )
 {
 
 	// Compute the norm of the gradient
@@ -78,19 +79,14 @@ HLRFSearchDirection::computeSearchDirection(int stepNumber,
 
 	
 	// Compute the alpha-vector
-	//Vector alpha = gradientInStandardNormalSpace * ( (-1) / normOfGradient );
-	Vector alpha(gradientInStandardNormalSpace);
-	alpha *= -1.0/normOfGradient;
+	Vector alpha = gradientInStandardNormalSpace * ( (-1) / normOfGradient );
 
 
 	// Compute the direction vector
 	double alpha_times_u = alpha ^ u ;
-	//Vector direction = alpha * ( gFunctionValue / normOfGradient + alpha_times_u ) - u;
+	Vector direction = alpha * ( gFunctionValue / normOfGradient + alpha_times_u ) - u;
 
-	//searchDirection = direction;
-
-	searchDirection = alpha;
-	searchDirection.addVector(gFunctionValue / normOfGradient + alpha_times_u, u, -1.0);
+	searchDirection = direction;
 
 	return 0;
 }

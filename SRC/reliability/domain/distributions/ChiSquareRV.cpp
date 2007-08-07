@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.6 $
+// $Date: 2003-03-04 00:44:33 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/ChiSquareRV.cpp,v $
 
 
@@ -42,28 +42,32 @@ ChiSquareRV::ChiSquareRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare)
 {
+	tag = passedTag ;
 	nu = 0.5*passedMean;
+	startValue = passedStartValue;
 }
-
 ChiSquareRV::ChiSquareRV(int passedTag, 
 		 double passedParameter1,
 		 double passedParameter2,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare)
 {
+	tag = passedTag ;
 	nu = passedParameter1;
+	startValue = passedStartValue;
 }
-
 ChiSquareRV::ChiSquareRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_chisquare)
 {
+	tag = passedTag ;
 	nu = 0.5*passedMean;
+	startValue = getMean();
 }
 ChiSquareRV::ChiSquareRV(int passedTag, 
 		 double passedParameter1,
@@ -72,8 +76,9 @@ ChiSquareRV::ChiSquareRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_chisquare)
 {
+	tag = passedTag ;
 	nu = passedParameter1;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -93,9 +98,10 @@ ChiSquareRV::getPDFvalue(double rvValue)
 {
 	double result;
 	if ( 0.0 < rvValue ) {
-		GammaRV aGammaRV(1, 0.0, 1.0, 0.0);
-		double a = aGammaRV.gammaFunction(0.5*nu);
+		GammaRV *aGammaRV = new GammaRV(1, 0.0, 1.0, 0.0);
+		double a = aGammaRV->gammaFunction(0.5*nu);
 		result = pow(0.5*rvValue,0.5*nu-1.0)*exp(-0.5*rvValue)/(2.0*a);
+		delete aGammaRV;
 	}
 	else {
 		result = 0.0;
@@ -109,10 +115,11 @@ ChiSquareRV::getCDFvalue(double rvValue)
 {
 	double result;
 	if ( 0.0 < rvValue ) {
-		GammaRV aGammaRV(1, 0.0, 1.0, 0.0);
-		double a = aGammaRV.incompleteGammaFunction(0.5*nu,0.5*rvValue);
-		double b = aGammaRV.gammaFunction(0.5*nu);
+		GammaRV *aGammaRV = new GammaRV(1, 0.0, 1.0, 0.0);
+		double a = aGammaRV->incompleteGammaFunction(0.5*nu,0.5*rvValue);
+		double b = aGammaRV->gammaFunction(0.5*nu);
 		result = a/b;
+		delete aGammaRV;
 	}
 	else {
 		result = 0.0;
@@ -149,8 +156,14 @@ ChiSquareRV::getStdv()
 	return sqrt(2*nu);
 }
 
-double
-ChiSquareRV::getParameter1()
+
+double 
+ChiSquareRV::getStartValue()
 {
-  return nu;
+	return startValue;
 }
+
+double ChiSquareRV::getParameter1()  {return nu;}
+double ChiSquareRV::getParameter2()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double ChiSquareRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double ChiSquareRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}

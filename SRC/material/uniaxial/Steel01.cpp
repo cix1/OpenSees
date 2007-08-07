@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.17 $
-// $Date: 2007-05-07 21:21:49 $
+// $Revision: 1.15 $
+// $Date: 2006-05-24 21:31:34 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/Steel01.cpp,v $
                                                                         
 // Written: MHS 
@@ -37,8 +37,6 @@
 #include <Matrix.h>
 #include <Channel.h>
 #include <Information.h>
-#include <Parameter.h>
-
 #include <math.h>
 #include <float.h>
 
@@ -483,33 +481,43 @@ void Steel01::Print (OPS_Stream& s, int flag)
 
 // AddingSensitivity:BEGIN ///////////////////////////////////
 int
-Steel01::setParameter(const char **argv, int argc, Parameter &param)
+Steel01::setParameter(const char **argv, int argc, Information &info)
 {
-  if (argc < 1)
-    return 0;
+	if (argc < 1)
+		return -1;
 
-  if (strcmp(argv[0],"sigmaY") == 0 || strcmp(argv[0],"fy") == 0)
-    return param.addObject(1, this);
-
-  if (strcmp(argv[0],"E") == 0)
-    return param.addObject(2, this);
-
-  if (strcmp(argv[0],"b") == 0)
-    return param.addObject(3, this);
-
-  if (strcmp(argv[0],"a1") == 0)
-    return param.addObject(4, this);
-
-  if (strcmp(argv[0],"a2") == 0)
-    return param.addObject(5, this);
-
-  if (strcmp(argv[0],"a3") == 0)
-    return param.addObject(6, this);
-
-  if (strcmp(argv[0],"a4") == 0)
-    return param.addObject(7, this);
-
-  return 0;
+	if (strcmp(argv[0],"sigmaY") == 0) {
+		info.theType = DoubleType;
+		return 1;
+	}
+	if (strcmp(argv[0],"E") == 0) {
+		info.theType = DoubleType;
+		return 2;
+	}
+	if (strcmp(argv[0],"b") == 0) {
+		info.theType = DoubleType;
+		return 3;
+	}
+	if (strcmp(argv[0],"a1") == 0) {
+		info.theType = DoubleType;
+		return 4;
+	}
+	if (strcmp(argv[0],"a2") == 0) {
+		info.theType = DoubleType;
+		return 5;
+	}
+	if (strcmp(argv[0],"a3") == 0) {
+		info.theType = DoubleType;
+		return 6;
+	}
+	if (strcmp(argv[0],"a4") == 0) {
+		info.theType = DoubleType;
+		return 7;
+	}
+	else
+		opserr << "WARNING: Could not set parameter in Steel01. " << endln;
+                
+	return -1;
 }
 
 

@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.3 $
-// $Date: 2007-07-11 23:51:29 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:45:42 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/direction/PolakHeSearchDirectionAndMeritFunction.cpp,v $
 
 
@@ -52,7 +52,7 @@ PolakHeSearchDirectionAndMeritFunction::~PolakHeSearchDirectionAndMeritFunction(
 
 
 
-const Vector&
+Vector
 PolakHeSearchDirectionAndMeritFunction::getSearchDirection()
 {
 	return searchDirection;
@@ -72,9 +72,9 @@ PolakHeSearchDirectionAndMeritFunction::setAlpha(double palpha)
 int
 PolakHeSearchDirectionAndMeritFunction::computeSearchDirection(
 							int stepNumber, 
-							const Vector &u, 
+							Vector u, 
 							double gFunctionValue, 
-							const Vector &gradientInStandardNormalSpace)
+							Vector gradientInStandardNormalSpace)
 {
 	// Advise the user if the start value of the limit-state function 
 	// is out of the 'ideal range' for the Polak-He algorithm
@@ -175,9 +175,7 @@ PolakHeSearchDirectionAndMeritFunction::computeSearchDirection(
 
 
 double 
-PolakHeSearchDirectionAndMeritFunction::getMeritFunctionValue(const Vector &u,
-							      double g,
-							      const Vector &grad_G)
+PolakHeSearchDirectionAndMeritFunction::getMeritFunctionValue(Vector u, double g, Vector grad_G)
 {
 	opserr << "WARNING: PolakHeSearchDirectionAndMeritFunction::getMeritFunctionValue() --" << endln
 		<< " no explicit merit function value is computed." << endln;
@@ -187,9 +185,7 @@ PolakHeSearchDirectionAndMeritFunction::getMeritFunctionValue(const Vector &u,
 
 
 int 
-PolakHeSearchDirectionAndMeritFunction::updateMeritParameters(const Vector &u,
-							      double g,
-							      const Vector &grad_G)
+PolakHeSearchDirectionAndMeritFunction::updateMeritParameters(Vector u, double g, Vector grad_G)
 {
 	opserr << "WARNING: PolakHeSearchDirectionAndMeritFunction::updateMeritParameters() --" << endln
 		<< " no explicit merit function value is computed." << endln;
@@ -201,12 +197,12 @@ PolakHeSearchDirectionAndMeritFunction::updateMeritParameters(const Vector &u,
 
 
 int
-PolakHeSearchDirectionAndMeritFunction::check(const Vector &u_old, 
-					      double g_old, 
-					      const Vector &grad_G_old, 
-					      double stepSize,
-					      const Vector &stepDirection,
-					      double g_new)
+PolakHeSearchDirectionAndMeritFunction::check(Vector u_old, 
+											  double g_old, 
+											  Vector grad_G_old, 
+											  double stepSize,
+											  Vector stepDirection,
+											  double g_new)
 {
 	// New point in standard normal space
 	Vector u_new = u_old + stepSize*stepDirection;

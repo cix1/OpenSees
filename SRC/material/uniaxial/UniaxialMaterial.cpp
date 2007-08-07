@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.17 $
-// $Date: 2007-02-02 23:43:03 $
+// $Revision: 1.14 $
+// $Date: 2006-08-04 18:17:04 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/UniaxialMaterial.cpp,v $
                                                                         
                                                                         
@@ -108,8 +108,7 @@ UniaxialMaterial::getCopy(SectionForceDeformation *s)
 }
 
 Response* 
-UniaxialMaterial::setResponse(const char **argv, int argc,
-			      OPS_Stream &theOutput)
+UniaxialMaterial::setResponse(const char **argv, int argc, Information &matInfo, OPS_Stream &theOutput)
 {
   Response *theResponse = 0;
 
@@ -141,14 +140,6 @@ UniaxialMaterial::setResponse(const char **argv, int argc,
     theOutput.tag("ResponseType", "eps11");
     theResponse =  new MaterialResponse(this, 4, Vector(2));
   }
-	    
-  else if ((strcmp(argv[0],"stressStrainTangent") == 0) || 
-	   (strcmp(argv[0],"stressANDstrainANDtangent") == 0)) {
-    theOutput.tag("ResponseType", "sig11");
-    theOutput.tag("ResponseType", "eps11");
-	theOutput.tag("ResponseType", "C11");
-    theResponse =  new MaterialResponse(this, 5, Vector(3));
-  }
 
   theOutput.endTag();
   return theResponse;
@@ -159,7 +150,6 @@ int
 UniaxialMaterial::getResponse(int responseID, Information &matInfo)
 {
   static Vector stressStrain(2);
-  static Vector stressStrainTangent(3);
   // each subclass must implement its own stuff    
   switch (responseID) {
     case 1:
@@ -180,12 +170,6 @@ UniaxialMaterial::getResponse(int responseID, Information &matInfo)
       matInfo.setVector(stressStrain);
       return 0;
       
-	  case 5:
-      stressStrainTangent(0) = this->getStress();
-      stressStrainTangent(1) = this->getStrain();
-	  stressStrainTangent(2) = this->getTangent();
-      matInfo.setVector(stressStrainTangent);
-	  return 0;
   default:      
     return -1;
   }
@@ -193,6 +177,24 @@ UniaxialMaterial::getResponse(int responseID, Information &matInfo)
 
 
 // AddingSensitivity:BEGIN ////////////////////////////////////////
+int
+UniaxialMaterial::setParameter(const char **argv, int argc, Information &info)
+{
+    return -1;
+}
+
+int
+UniaxialMaterial::updateParameter(int parameterID, Information &info)
+{
+    return -1;
+}
+
+int
+UniaxialMaterial::activateParameter(int parameterID)
+{
+    return -1;
+}
+
 double
 UniaxialMaterial::getStressSensitivity(int gradNumber, bool conditional)
 {

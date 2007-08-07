@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.2 $
-// $Date: 2006-09-05 22:57:36 $
+// $Revision: 1.1 $
+// $Date: 2006-01-18 22:11:05 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/forceBeamColumn/DistHingeIntegration.cpp,v $
 
 #include <DistHingeIntegration.h>
@@ -30,7 +30,6 @@
 #include <Channel.h>
 #include <FEM_ObjectBroker.h>
 #include <Information.h>
-#include <Parameter.h>
 
 DistHingeIntegration::DistHingeIntegration(double lpi,
 					   double lpj,
@@ -141,22 +140,19 @@ DistHingeIntegration::recvSelf(int cTag, Channel &theChannel,
 }
 
 int
-DistHingeIntegration::setParameter(const char **argv, int argc,
-				   Parameter &param)
+DistHingeIntegration::setParameter(const char **argv,
+				     int argc, Information &info)
 {
-  if (argc < 1)
+  if (strcmp(argv[0],"lpI") == 0) {
+    info.theType = DoubleType;
+    return 1;
+  }
+  else if (strcmp(argv[0],"lpJ") == 0) {
+    info.theType = DoubleType;
+    return 2;
+  }
+  else 
     return -1;
-
-  if (strcmp(argv[0],"lpI") == 0)
-    return param.addObject(1, this);
-
-  if (strcmp(argv[0],"lpJ") == 0)
-    return param.addObject(2, this);
-
-  if (strcmp(argv[0],"lp") == 0)
-    return param.addObject(3, this);
-
-  return -1;
 }
 
 int
@@ -169,9 +165,6 @@ DistHingeIntegration::updateParameter(int parameterID, Information &info)
   case 2:
     lpJ = info.theDouble;
     return 0;
-  case 3:
-    lpI = lpJ = info.theDouble;
-    return 0;
   default:
     return -1;
   }
@@ -182,6 +175,7 @@ DistHingeIntegration::activateParameter(int paramID)
 {
   parameterID = paramID;
 
+  // For Terje to do
   return 0;
 }
 
@@ -199,7 +193,7 @@ DistHingeIntegration::Print(OPS_Stream &s, int flag)
 
 void 
 DistHingeIntegration::getLocationsDeriv(int numSections, double L,
-					double dLdh, double *dptsdh)
+					  double dLdh, double *dptsdh)
 {
   int numPerHinge = numSections/2;
 

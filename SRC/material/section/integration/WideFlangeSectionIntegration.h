@@ -18,12 +18,14 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.4 $
-// $Date: 2007-01-25 19:53:17 $
+// $Revision: 1.1 $
+// $Date: 2006-08-11 18:32:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/integration/WideFlangeSectionIntegration.h,v $
 
 #ifndef WideFlangeSectionIntegration_h
 #define WideFlangeSectionIntegration_h
+
+#define SECTION_INTEGRATION_TAG_WideFlange 1976
 
 #include <SectionIntegration.h>
 
@@ -39,7 +41,7 @@ class WideFlangeSectionIntegration : public SectionIntegration
 
   int getNumFibers(void);
 
-  void getFiberLocations(int nFibers, double *yi, double *zi = 0);
+  void getFiberLocations(int nFibers, double *xi);
   void getFiberWeights(int nFibers, double *wt);
 
   SectionIntegration *getCopy(void);
@@ -51,8 +53,8 @@ class WideFlangeSectionIntegration : public SectionIntegration
   int updateParameter(int parameterID, Information &info);
   int activateParameter(int parameterID);
 
-  void getLocationsDeriv(int nFibers, double *dyidh, double *dzidh = 0);
-  void getWeightsDeriv(int nFibers, double *dwtdh);
+  void getLocationsDeriv(int nFibers, double *dptsdh);
+  void getWeightsDeriv(int nFibers, double *dwtsdh);
 
   void Print(OPS_Stream &s, int flag = 0);
 

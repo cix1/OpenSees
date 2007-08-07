@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-06-26 20:13:25 $
+// $Revision: 1.7 $
+// $Date: 2004-11-24 23:58:15 $
 // $Source: /usr/local/cvs/OpenSees/SRC/tcl/TclFeViewer.h,v $
                                                                         
                                                                         
@@ -43,6 +43,7 @@ class ColorMap;
 
 extern "C" {
 #include <tcl.h>
+#include <tk.h>
 }
 
 class TclFeViewer : public Recorder
@@ -55,8 +56,7 @@ class TclFeViewer : public Recorder
     TclFeViewer(const char *title, int xLoc, int yLoc, int width, int height, const char *fileName,
 		Domain &theDomain, 
 		Tcl_Interp *interp);
-
-    TclFeViewer();
+    
     ~TclFeViewer();    
 
     int buildFE_Model(void);
@@ -89,10 +89,6 @@ class TclFeViewer : public Recorder
     int clearImage(void);
     int saveImage(const char *fileName);
     int saveImage(const char *imageName, const char *fileName);
-
-    int sendSelf(int commitTag, Channel &theChannel);  
-    int recvSelf(int commitTag, Channel &theChannel, 
-		 FEM_ObjectBroker &theBroker);
 
   protected:
 

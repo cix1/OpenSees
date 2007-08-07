@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:04:39 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/LognormalRV.cpp,v $
 
 
@@ -42,7 +42,7 @@ LognormalRV::LognormalRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal)
 {
 	if (passedMean<0.0) {
 		isPositive = false;
@@ -52,8 +52,10 @@ LognormalRV::LognormalRV(int passedTag,
 		isPositive = true;
 	}
 
+	tag = passedTag ;
 	zeta = sqrt(   log(   1+(passedStdv/passedMean)*(passedStdv/passedMean)   )   );
 	lambda = log(passedMean) - 0.5*zeta*zeta;
+	startValue = passedStartValue;
 }
 
 
@@ -64,7 +66,7 @@ LognormalRV::LognormalRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal)
 {
 	if (passedParameter2<0.0) {
 		isPositive = false;
@@ -74,8 +76,10 @@ LognormalRV::LognormalRV(int passedTag,
 		isPositive = true;
 	}
 
+	tag = passedTag ;
 	lambda = passedParameter1;
 	zeta = passedParameter2;
+	startValue = passedStartValue;
 }
 
 
@@ -83,7 +87,7 @@ LognormalRV::LognormalRV(int passedTag,
 LognormalRV::LognormalRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_lognormal)
 {
 	if (passedMean<0.0) {
 		isPositive = false;
@@ -93,8 +97,10 @@ LognormalRV::LognormalRV(int passedTag,
 		isPositive = true;
 	}
 
+	tag = passedTag ;
 	zeta = sqrt(   log(   1+(passedStdv/passedMean)*(passedStdv/passedMean)   )   );
 	lambda = log(passedMean) - 0.5*zeta*zeta;
+	startValue = getMean();
 }
 LognormalRV::LognormalRV(int passedTag, 
 		 double passedParameter1,
@@ -111,9 +117,10 @@ LognormalRV::LognormalRV(int passedTag,
 		isPositive = true;
 	}
 
+	tag = passedTag ;
 	lambda = passedParameter1;
 	zeta = passedParameter2;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -261,14 +268,16 @@ LognormalRV::getStdv()
 }
 
 
-double
-LognormalRV::getParameter1()  
+double 
+LognormalRV::getStartValue()
 {
-  return lambda;
+	return startValue;
 }
 
-double
-LognormalRV::getParameter2()  
+
+double LognormalRV::getParameter1()  {return lambda;}
+
+double LognormalRV::getParameter2()  
 {
 	if (isPositive) {
 		return zeta;
@@ -277,3 +286,7 @@ LognormalRV::getParameter2()
 		return -zeta;
 	}
 }
+
+double LognormalRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+
+double LognormalRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}

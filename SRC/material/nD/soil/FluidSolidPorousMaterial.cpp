@@ -1,5 +1,5 @@
-// $Revision: 1.23 $
-// $Date: 2007-03-30 01:52:10 $
+// $Revision: 1.21 $
+// $Date: 2006-08-04 18:29:48 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/nD/soil/FluidSolidPorousMaterial.cpp,v $
                                                                         
 // Written: ZHY
@@ -15,7 +15,6 @@
 #include <MaterialResponse.h>
 #include <ID.h>
 #include <FEM_ObjectBroker.h>
-#include <Parameter.h>
 
 int* FluidSolidPorousMaterial::loadStagex = 0;
 int* FluidSolidPorousMaterial::ndmx = 0;
@@ -240,39 +239,13 @@ const Vector & FluidSolidPorousMaterial::getStress (void)
 }
 
 
-int FluidSolidPorousMaterial::setParameter(const char **argv, int argc, Parameter &param)
-{
-  if (argc < 1)
-    return -1;
-  
-  if (strcmp(argv[0],"updateMaterialStage") == 0) {
-    if (argc < 2)
-      return -1;
-    int matTag = atoi(argv[1]);
-    if (this->getTag() == matTag)
-      return param.addObject(1, this);  
-    else
-      return -1;
-  }
-
-  else if (strcmp(argv[0],"combinedBulkModulus") == 0)
-    return param.addObject(11, this);  
-
-  return -1;
-}
-
 int FluidSolidPorousMaterial::updateParameter(int responseID, Information &info)
 {
-  /*
-  if (responseID<10)
-    loadStagex[matN] = responseID;
-  */
-
-  if (responseID == 1)
-    loadStagex[matN] = info.theInt;
-
-  else if (responseID==11) 
-    combinedBulkModulusx[matN]=info.theDouble;
+	if (responseID<10)
+		loadStagex[matN] = responseID;
+	else {
+		if (responseID==11) combinedBulkModulusx[matN]=info.theDouble;
+	}
 
   return 0;
 }
@@ -487,7 +460,7 @@ int FluidSolidPorousMaterial::recvSelf(int commitTag, Channel &theChannel,
 
 
 Response*
-FluidSolidPorousMaterial::setResponse (const char **argv, int argc, OPS_Stream &output)
+FluidSolidPorousMaterial::setResponse (const char **argv, int argc, Information &matInfo, OPS_Stream &output)
 {
   if (strcmp(argv[0],"stress") == 0 || strcmp(argv[0],"stresses") == 0)
     return new MaterialResponse(this, 1, this->getCommittedStress());
@@ -499,7 +472,7 @@ FluidSolidPorousMaterial::setResponse (const char **argv, int argc, OPS_Stream &
     return new MaterialResponse(this, 3, this->getTangent());
   
   else if (strcmp(argv[0],"backbone") == 0)
-    return theSoilMaterial->setResponse(argv, argc, output);
+    return theSoilMaterial->setResponse(argv, argc, matInfo, output);
   
   else if (strcmp(argv[0],"pressure") == 0)
     return new MaterialResponse(this, 5, this->getCommittedPressure());

@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-02-08 01:25:47 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:04:38 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/components/LimitStateFunction.cpp,v $
 
 
@@ -40,58 +40,28 @@ LimitStateFunction::LimitStateFunction(	int passedTag,
 									    TCL_Char *passedExpression)
 :ReliabilityDomainComponent(passedTag, LIMIT_STATE_FUNCTION)
 {
+	originalExpression = new char[500];
 	strcpy(originalExpression,passedExpression);
 
+	expressionWithAddition = new char[500];
 	strcpy(expressionWithAddition,passedExpression);
 
+	tokenizedExpression = new char[500];
 	tokenizeIt(passedExpression);
-
-	this->initializeFORMAnalysis();
-	this->initializeSimulationAnalysis();
-	this->initializeSORMAnalysis();
 }
 
-void
-LimitStateFunction::initializeFORMAnalysis(void)
-{
-  GFunValueAtStartPt = 0.0;
-  GFunValueAtEndPt = 0.0;
-  FORMReliabilityIndexBeta = 0.0;
-  FORMProbabilityOfFailure_pf1 = 0.0;
-  //Vector designPoint_x_inOriginalSpace;
-  //Vector designPoint_u_inStdNormalSpace;
-  //Vector normalizedNegativeGradientVectorAlpha;
-  //Vector importanceVectorGamma;
-  numberOfStepsToFindDesignPointAlgorithm = 0;
-}
-
-void
-LimitStateFunction::initializeSimulationAnalysis(void)
-{
-  SimulationReliabilityIndexBeta = 0.0;
-  SimulationProbabilityOfFailure_pfsim = 0.0;
-  CoefficientOfVariationOfPfFromSimulation = 0.0;
-  NumberOfSimulations = 0;
-}
-
-void
-LimitStateFunction::initializeSORMAnalysis(void)
-{
-  SORMCurvatureFittingBetaBreitung = 0.0;
-  SORMCurvatureFittingPf2Breitung = 0.0;
-  SORMPointFittingBetaBreitung = 0.0;
-  SORMPointFittingPf2Breitung = 0.0;
-  SORMUsingSearchBetaBreitung = 0.0;
-  SORMUsingSearchPf2Breitung = 0.0;
-  //Vector lastSearchDirection;
-  numberOfCurvatauresUsed = 0;
-  //Vector secondLast_u;
-  //Vector secondLastAlpha;
-}
 
 LimitStateFunction::~LimitStateFunction()
 {
-  
+	if (originalExpression != 0) {
+		delete [] originalExpression;
+	}
+	if (expressionWithAddition != 0) {
+		delete [] expressionWithAddition;
+	}
+	if (tokenizedExpression != 0) {
+		delete [] tokenizedExpression;
+	}
 }
 
 
@@ -140,7 +110,7 @@ int
 LimitStateFunction::tokenizeIt(TCL_Char *originalExpression)
 {
 	// Also store the tokenized expression (with dollar signs in front of variable names)
-	char lsf_forTokenizing[500];
+	char *lsf_forTokenizing = new char[500];
 	char separators[5] = "}{";
 	char *dollarSign = "$";
 	strcpy(lsf_forTokenizing,originalExpression);
@@ -181,6 +151,7 @@ LimitStateFunction::tokenizeIt(TCL_Char *originalExpression)
 		}
 		tokenPtr2 = strtok( NULL, separators);
 	}
+	delete [] lsf_forTokenizing;
 
 	strcpy(tokenizedExpression,lsf_expression);
 

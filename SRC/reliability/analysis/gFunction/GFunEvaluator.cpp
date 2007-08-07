@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-16 20:10:48 $
+// $Revision: 1.4 $
+// $Date: 2003-10-27 23:45:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/gFunction/GFunEvaluator.cpp,v $
 
 
@@ -76,7 +76,7 @@ GFunEvaluator::getNumberOfEvaluations()
 
 
 int 
-GFunEvaluator::evaluateG(const Vector &x)
+GFunEvaluator::evaluateG(Vector x)
 {
 	numberOfEvaluations++;
 
@@ -123,10 +123,7 @@ GFunEvaluator::evaluateG(const Vector &x)
 			int rvNum;
 			sscanf(tempchar,"x_%i",&rvNum);
 			sprintf(tclAssignment , "set x_%d  %15.5f", rvNum, x(rvNum-1) );
-			if (Tcl_Eval(theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR GFunEvaluator -- Tcl_Eval returned error in limit state function" << endln;
-			  return -1;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
 		}
 		else if ( strncmp(tokenPtr, "file",4) == 0) {
 			int rowNum = 0;
@@ -149,7 +146,7 @@ GFunEvaluator::evaluateG(const Vector &x)
 				opserr << "Could not open file with quantities for limit-state function." << endln;
 			}
 			for (i=1; i<rowNum; i++) {
-				inputFile.getline(buf,120,'\n');
+				inputFile.getline(buf,120);
 			}
 			for (i=1; i<=colNum; i++) {
 				inputFile >> temp;
@@ -162,22 +159,17 @@ GFunEvaluator::evaluateG(const Vector &x)
 			inputFile.close();
 			sprintf(tclAssignment , "set file_%s_%d_%d  %15.5f",fileName,rowNum,colNum,fileValue);
 
-			if (Tcl_Eval(theTclInterp, tclAssignment) == TCL_ERROR) {
-			  opserr << "ERROR GFunEvaluator -- Tcl_Eval returned error in limit state function" << endln;
-			  return -1;
-			}
+			Tcl_Eval( theTclInterp, tclAssignment);
 		}
-
+		
 		tokenPtr = strtok( NULL, separators);
 	}
 
 	// Compute value of g-function
 	char *theTokenizedExpression = theLimitStateFunction->getTokenizedExpression();
 	g = 0.0;
-	if (Tcl_ExprDouble(theTclInterp, theTokenizedExpression, &g) == TCL_ERROR) {
-	  opserr << "ERROR GFunEvaluator -- Tcl_ExprDouble returned error in limit state function" << endln;
-	  return -1;
-	}
+	Tcl_ExprDouble( theTclInterp, theTokenizedExpression, &g );
+
 
 	return 0;
 }

@@ -1,11 +1,5 @@
 include ../../Makefile.def
 
-ifeq ($(GRAPHICS), NONE)
-GRAPHIC_OBJECTS = 
-else
-GRAPHIC_OBJECTS = FilePlotter.o AlgorithmIncrements.o 
-endif
-
 OBJS       = Recorder.o \
 	DatastoreRecorder.o \
 	ElementRecorder.o \
@@ -13,16 +7,16 @@ OBJS       = Recorder.o \
 	EnvelopeElementRecorder.o \
 	EnvelopeNodeRecorder.o \
 	TclRecorderCommands.o \
+	FilePlotter.o \
+	AlgorithmIncrements.o \
 	DriftRecorder.o \
 	EnvelopeDriftRecorder.o \
 	PatternRecorder.o \
-	DamageRecorder.o $(GRAPHIC_OBJECTS)
-
-
+	DamageRecorder.o
 
 # Compilation control
 
-all:      $(OBJS) $(GRAPHIC_OBJECTS)
+all:         $(OBJS)
 	@$(CD) $(FE)/recorder/response; $(MAKE);
 
 # Miscellaneous

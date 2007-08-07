@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.10 $
-// $Date: 2007-05-03 21:24:31 $
+// $Revision: 1.8 $
+// $Date: 2006-08-03 23:24:56 $
 // $Source: /usr/local/cvs/OpenSees/SRC/handler/FileStream.cpp,v $
 
 
@@ -38,7 +38,7 @@ using std::setiosflags;
 
 FileStream::FileStream(int indent)
   :OPS_Stream(OPS_STREAM_TAGS_FileStream), 
-   fileOpen(0), fileName(0), indentSize(indent), sendSelfCount(0)
+   fileOpen(0), fileName(0), indentSize(indent)
 {
   if (indentSize < 1) indentSize = 1;
   indentString = new char[indentSize+1];
@@ -49,13 +49,13 @@ FileStream::FileStream(int indent)
 
 FileStream::FileStream(const char *name, openMode mode, int indent)
   :OPS_Stream(OPS_STREAM_TAGS_FileStream), 
-   fileOpen(0), fileName(0), indentSize(indent), sendSelfCount(0)
+   fileOpen(0), fileName(0), indentSize(indent)
 {
   if (indentSize < 1) indentSize = 1;
   indentString = new char[indentSize+1];
   for (int i=0; i<indentSize; i++)
     strcpy(indentString, " ");
-  
+
   this->setFile(name, mode);
 }
 
@@ -67,9 +67,6 @@ FileStream::~FileStream()
   
   if (fileName != 0)
     delete [] fileName;
-
-  if (indentString != 0)
-    delete [] indentString;
 }
 
 int 
@@ -86,9 +83,8 @@ FileStream::setFile(const char *name, openMode mode)
       delete [] fileName;
     fileName = 0;
   }
-
   if (fileName == 0) {
-    fileName = new char[strlen(name)+5];
+    fileName = new char[strlen(name)+1];
     if (fileName == 0) {
       std::cerr << "FileStream::setFile() - out of memory copying name: " << name << std::endl;
       return -1;
@@ -104,7 +100,6 @@ FileStream::setFile(const char *name, openMode mode)
     fileOpen = 0;
   }
 
-  /* *************************************************************
   if (mode == OVERWRITE) 
     theFile.open(fileName, ios::out);
   else
@@ -117,7 +112,6 @@ FileStream::setFile(const char *name, openMode mode)
     return -1;
   } else
     fileOpen = 1;
-  *************************************************************** */
 
   if (mode == 0)
     theOpenMode = OVERWRITE;
@@ -141,23 +135,12 @@ FileStream::open(void)
     return 0;
   }
 
-  if (sendSelfCount != 0) {
-    int fileNameLength = strlen(fileName);
-    sprintf(&fileName[fileNameLength],".%d",1);
-  }
-
-
-  if (theOpenMode == OVERWRITE) 
-    theFile.open(fileName, ios::out);
-  else
-    theFile.open(fileName, ios::out| ios::app);
-
-  theOpenMode = APPEND;
-
+  // open file
+  theFile.open(fileName, ios::out| ios::app);
   if (theFile.bad()) {
-    std::cerr << "WARNING - FileStream::setFile()";
+    std::cerr << "WARNING - FileStream::open()";
     std::cerr << " - could not open file " << fileName << std::endl;
-    fileOpen = 0;
+
     return -1;
   } else
     fileOpen = 1;
@@ -170,7 +153,6 @@ FileStream::close(void)
 {
   if (fileOpen != 0)
     theFile.close();
-
   fileOpen = 0;
   return 0;
 }
@@ -179,9 +161,6 @@ FileStream::close(void)
 int 
 FileStream::setPrecision(int prec)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << std::setprecision(prec);
 
@@ -191,9 +170,6 @@ FileStream::setPrecision(int prec)
 int 
 FileStream::setFloatField(floatField field)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (field == FIXEDD) {
     if (fileOpen != 0)
       theFile << setiosflags(ios::fixed);
@@ -210,9 +186,6 @@ FileStream::setFloatField(floatField field)
 int 
 FileStream::tag(const char *tagName)
 {
-  if (fileOpen == 0)
-    this->open();
-
   // output the xml for it to the file
   this->indent();
   (*this) << tagName << endln;
@@ -225,9 +198,6 @@ FileStream::tag(const char *tagName)
 int 
 FileStream::tag(const char *tagName, const char *value)
 {
-  if (fileOpen == 0)
-    this->open();
-
   // output the xml for it to the file
   numIndent++;
   this->indent();
@@ -250,9 +220,6 @@ FileStream::endTag()
 int 
 FileStream::attr(const char *name, int value)
 {
-  if (fileOpen == 0)
-    this->open();
-
   this->indent();
   (*this) << name << " = " << value << endln;
   
@@ -262,9 +229,6 @@ FileStream::attr(const char *name, int value)
 int 
 FileStream::attr(const char *name, double value)
 {
-  if (fileOpen == 0)
-    this->open();
-
   this->indent();
   (*this) << name << " = " << value << endln;
 
@@ -274,9 +238,6 @@ FileStream::attr(const char *name, double value)
 int 
 FileStream::attr(const char *name, const char *value)
 {
-  if (fileOpen == 0)
-    this->open();
-
   this->indent();
   (*this) << name << " = " << value << endln;
 
@@ -286,9 +247,6 @@ FileStream::attr(const char *name, const char *value)
 int 
 FileStream::write(Vector &data)
 {
-  if (fileOpen == 0)
-    this->open();
-
   this->indent();
   (*this) << data << endln;  
 
@@ -300,9 +258,6 @@ FileStream::write(Vector &data)
 OPS_Stream& 
 FileStream::write(const char *s,int n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile.write(s, n);
 
@@ -312,9 +267,6 @@ FileStream::write(const char *s,int n)
 OPS_Stream& 
 FileStream::write(const unsigned char*s,int n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile.write((const char *) s, n);
 
@@ -323,9 +275,6 @@ FileStream::write(const unsigned char*s,int n)
 OPS_Stream& 
 FileStream::write(const signed char*s,int n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile.write((const char *) s, n);
 
@@ -334,9 +283,6 @@ FileStream::write(const signed char*s,int n)
 OPS_Stream& 
 FileStream::write(const void *s, int n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile.write((const char *) s, n);
 
@@ -345,9 +291,6 @@ FileStream::write(const void *s, int n)
 OPS_Stream& 
 FileStream::operator<<(char c)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << c;
 
@@ -355,10 +298,7 @@ FileStream::operator<<(char c)
 }
 OPS_Stream& 
 FileStream::operator<<(unsigned char c)
-{  
-  if (fileOpen == 0)
-    this->open();
-
+{
   if (fileOpen != 0)
     theFile << c;
 
@@ -367,9 +307,6 @@ FileStream::operator<<(unsigned char c)
 OPS_Stream& 
 FileStream::operator<<(signed char c)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << c;
 
@@ -378,9 +315,6 @@ FileStream::operator<<(signed char c)
 OPS_Stream& 
 FileStream::operator<<(const char *s)
 {
-  if (fileOpen == 0)
-    this->open();
-
   // note that we do the flush so that a "/n" before
   // a crash will cause a flush() - similar to what 
   if (fileOpen != 0) {
@@ -393,9 +327,6 @@ FileStream::operator<<(const char *s)
 OPS_Stream& 
 FileStream::operator<<(const unsigned char *s)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << s;
 
@@ -404,9 +335,6 @@ FileStream::operator<<(const unsigned char *s)
 OPS_Stream& 
 FileStream::operator<<(const signed char *s)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << s;
 
@@ -424,9 +352,6 @@ FileStream::operator<<(const void *p)
 OPS_Stream& 
 FileStream::operator<<(int n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << 1.0*n;
 
@@ -434,10 +359,7 @@ FileStream::operator<<(int n)
 }
 OPS_Stream& 
 FileStream::operator<<(unsigned int n)
-{  
-  if (fileOpen == 0)
-    this->open();
-
+{
   if (fileOpen != 0)
     theFile << 1.0*n;
 
@@ -491,9 +413,6 @@ FileStream::operator<<(bool b)
 OPS_Stream& 
 FileStream::operator<<(double n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << n;
 
@@ -502,9 +421,6 @@ FileStream::operator<<(double n)
 OPS_Stream& 
 FileStream::operator<<(float n)
 {
-  if (fileOpen == 0)
-    this->open();
-
   if (fileOpen != 0)
     theFile << n;
 
@@ -539,8 +455,6 @@ FileStream::sendSelf(int commitTag, Channel &theChannel)
       return -1;
     }
   }
-
-  sendSelfCount++;
 
   return 0;
 }

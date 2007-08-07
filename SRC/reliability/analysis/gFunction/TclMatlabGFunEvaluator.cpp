@@ -30,7 +30,7 @@ TclMatlabGFunEvaluator::~TclMatlabGFunEvaluator()
 
 
 int
-TclMatlabGFunEvaluator::evaluate_g(const Vector &x)
+TclMatlabGFunEvaluator::evaluate_g(Vector x)
 {
 
 	// "Download" limit-state function from reliability domain
@@ -51,10 +51,8 @@ TclMatlabGFunEvaluator::evaluate_g(const Vector &x)
 		// Execute a Tcl file called 'tclgfun.tcl' (remember to "reset" analysis!)
 		char theTclCommand[30];
 		sprintf(theTclCommand,"source tclgfun.tcl");
-		if (Tcl_Eval(theTclInterp, theTclCommand) == TCL_ERROR) {
-		  opserr << "ERROR TclMatlabGFunEvaluator -- error in sourcing tclgfun.tcl" << endln;
-		  return -1;
-		}
+		Tcl_Eval( theTclInterp, theTclCommand );
+
 		
 		// Start a Matlab engine
 		Engine *ep;

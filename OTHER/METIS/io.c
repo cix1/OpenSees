@@ -8,13 +8,14 @@
  * Started 8/28/94
  * George
  *
- * $Id: io.c,v 1.2 2007-05-17 05:23:30 fmk Exp $
+ * $Id: io.c,v 1.1.1.1 2000-09-15 08:23:12 fmk Exp $
  *
  */
 
 #include "multilevel.h"
 
 extern int IsWeighted;	/* main.c */
+extern timer IOTmr;	/* main.c */
 
 /*************************************************************************
 * This function reads the spd matrix
@@ -28,6 +29,9 @@ void readgraph(CoarseGraphType *graph, char *filename)
   int lastedge;
   int readew, readvw; 
   int error;
+
+
+  starttimer(&IOTmr);
 
   error = 0;
   InitGraph(graph);
@@ -133,6 +137,7 @@ void readgraph(CoarseGraphType *graph, char *filename)
   if (lastedge != graph->nedges)
     errexit("readgraph: Something wrong with the edges from input file %d %d",graph->nedges, lastedge);
 
+  stoptimer(&IOTmr);
 }
 
 
@@ -150,6 +155,7 @@ void ReadGraphSKIT(int *xadj, int *adjncy, char *filename)
   int node;
 
 
+  starttimer(&IOTmr);
   fpin = GKfopen(filename, "r", "ReadGraphSKIT: failed to open file");
 
   fgets(line, MAXLINE, fpin);
@@ -185,6 +191,7 @@ void ReadGraphSKIT(int *xadj, int *adjncy, char *filename)
 
   GKfclose(fpin);
 
+  stoptimer(&IOTmr);
 }
 
 
@@ -257,6 +264,8 @@ void WriteOrder(char *fname, int *perm, int n)
   int i;
   char filename[256];
 
+  starttimer(&IOTmr);
+
   sprintf(filename, "%s.perm", fname);
 
   fpout = GKfopen(filename, "w", "Problems in opening the permutation file");
@@ -266,6 +275,7 @@ void WriteOrder(char *fname, int *perm, int n)
 
   GKfclose(fpout);
 
+  stoptimer(&IOTmr);
 }
 
 
@@ -279,6 +289,8 @@ void WritePartition(char *fname, int *part, int n, int nparts)
   int i;
   char filename[256];
 
+  starttimer(&IOTmr);
+
   sprintf(filename,"%s.part.%d",fname, nparts);
 
   fpout = GKfopen(filename, "w", "Problems in opening the partition file");
@@ -287,6 +299,8 @@ void WritePartition(char *fname, int *part, int n, int nparts)
     fprintf(fpout,"%d\n",part[i]);
 
   fclose(fpout);
+
+  stoptimer(&IOTmr);
 }
 
 

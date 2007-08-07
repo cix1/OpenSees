@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-04-02 23:41:13 $
+// $Revision: 1.8 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/KrylovNewton.h,v $
                                                                         
 #ifndef KrylovNewton_h
@@ -47,6 +47,8 @@ class KrylovNewton: public EquiSolnAlgo
     ~KrylovNewton();
 
     int solveCurrentStep(void);    
+    int setConvergenceTest(ConvergenceTest *theNewTest);
+    ConvergenceTest *getConvergenceTest(void);     
     
     virtual int sendSelf(int commitTag, Channel &theChannel);
     virtual int recvSelf(int commitTag, Channel &theChannel, 
@@ -56,6 +58,7 @@ class KrylovNewton: public EquiSolnAlgo
   protected:
     
   private:
+    ConvergenceTest *theTest;
     int tangent;
 
     // Storage for update vectors

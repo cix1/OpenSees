@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.5 $
+// $Date: 2006-08-14 13:45:57 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/NewElement.h,v $
                                                                         
 #ifndef NewElement_h
@@ -34,7 +34,6 @@
 
 #include <Element.h>
 #include <Matrix.h>
-#include <Vector.h>
 
 class Channel;
 class UniaxialMaterial;
@@ -81,10 +80,10 @@ class NewElement : public Element
     int displaySelf(Renderer &theViewer, int displayMode, float fact);    
     void Print(OPS_Stream &s, int flag =0);    
 
-    Response *setResponse(const char **argv, int argc, OPS_Stream &);
+    Response *setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &);
     int getResponse(int responseID, Information &eleInformation);
 
-    int setParameter (const char **argv, int argc, Parameter &param);
+    int setParameter (const char **argv, int argc, Information &info);
     int updateParameter (int parameterID, Information &info);
 
   protected:

@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-02-24 01:21:08 $
+// $Revision: 1.3 $
+// $Date: 2003-10-27 23:45:43 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/gFunction/TclGFunEvaluator.cpp,v $
 
 
@@ -37,7 +37,6 @@
 #include <ReliabilityDomain.h>
 #include <LimitStateFunction.h>
 #include <RandomVariablePositioner.h>
-#include <RandomVariablePositionerIter.h>
 //#include <fstream>
 #include <tcl.h>
 #include <string.h>
@@ -48,18 +47,20 @@ TclGFunEvaluator::TclGFunEvaluator(Tcl_Interp *passedTclInterp,
 					TCL_Char *passed_fileName)
 :GFunEvaluator(passedTclInterp, passedReliabilityDomain)
 {
+	fileName = new char[256];
 	strcpy(fileName,passed_fileName);
 }
 
 
 TclGFunEvaluator::~TclGFunEvaluator()
 {
-
+	if (fileName != 0)
+		delete [] fileName;
 }
 
 
 int
-TclGFunEvaluator::runGFunAnalysis(const Vector &x)
+TclGFunEvaluator::runGFunAnalysis(Vector x)
 {	
 	// Initial declarations
 	char theCommand[100];
@@ -70,20 +71,17 @@ TclGFunEvaluator::runGFunAnalysis(const Vector &x)
 
 	// Zero out the response in the structural domain to make ready for next analysis
 	char theRevertToStartCommand[10] = "reset";
-	if (Tcl_Eval(theTclInterp, theRevertToStartCommand) == TCL_ERROR) {
-	  opserr << "ERROR TclGFunEvaluator -- error in Tcl_Eval for the reset command" << endln;
-	  return -1;
-	}
+	Tcl_Eval( theTclInterp, theRevertToStartCommand );
 
 
 	// Put random variables into the structural domain according to the RandomVariablePositioners
+	int numberOfRandomVariablePositioners = theReliabilityDomain->getNumberOfRandomVariablePositioners();
+	RandomVariablePositioner *theRandomVariablePositioner;
 	int rvNumber;
-	RandomVariablePositionerIter &rvPosIter =
-	  theReliabilityDomain->getRandomVariablePositioners();
-	RandomVariablePositioner *theRVPos;
-	while ((theRVPos = rvPosIter()) != 0) {
-	  rvNumber = theRVPos->getRvNumber();
-	  theRVPos->update(x(rvNumber-1));
+	for ( i=1 ; i<=numberOfRandomVariablePositioners ; i++ )  {
+		theRandomVariablePositioner = theReliabilityDomain->getRandomVariablePositionerPtr(i);
+		rvNumber				= theRandomVariablePositioner->getRvNumber();
+		theRandomVariablePositioner->update(x(rvNumber-1));
 	}
 
 //////////////////////////////////////////////////////////////////////////
@@ -92,19 +90,13 @@ TclGFunEvaluator::runGFunAnalysis(const Vector &x)
 	// Set values of random variables in the Tcl intepreter
 	for (i=0; i<x.Size(); i++) {
 		sprintf(theCommand,"set x_%d %20.12e",(i+1),x(i));
-		if (Tcl_Eval(theTclInterp, theCommand) == TCL_ERROR) {
-		  opserr << "ERROR TclGFunEvaluator -- error in Tcl_Eval" << endln;
-		  return -1;
-		}
+		Tcl_Eval( theTclInterp, theCommand );
 	}
 
 
 	// Source the code file that the user has provided
 	sprintf(theCommand,"source %s",fileName);
-	if (Tcl_Eval(theTclInterp, theCommand) == TCL_ERROR) {
-	  opserr << "ERROR TclGFunEvaluator -- error in Tcl_Eval" << endln;
-	  return -1;
-	}
+	Tcl_Eval( theTclInterp, theCommand );
 
 
 	return 0;

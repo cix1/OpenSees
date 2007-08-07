@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-07-03 18:55:37 $
+// $Revision: 1.3 $
+// $Date: 2006-09-01 00:49:09 $
 // $Source: /usr/local/cvs/OpenSees/SRC/tcl/mpiMain.cpp,v $
 
 /* 
@@ -35,7 +35,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: mpiMain.cpp,v 1.6 2007-07-03 18:55:37 fmk Exp $
+ * RCS: @(#) $Id: mpiMain.cpp,v 1.3 2006-09-01 00:49:09 fmk Exp $
  */
 
 extern "C" {
@@ -53,7 +53,7 @@ extern "C" {
  */
 
 #ifdef _KAI
-//extern "C" int matherr();
+extern "C" int matherr();
 #endif
 
 #ifdef _UNIX
@@ -111,7 +111,7 @@ extern void g3TclMain(int argc, char **argv, Tcl_AppInitProc *appInitProc, int r
 #include <MPI_MachineBroker.h>
 #include <ShadowSubdomain.h>
 #include <ActorSubdomain.h>
-#include <FEM_ObjectBrokerAllClasses.h>
+#include <FEM_ObjectBroker.h>
 
 extern PartitionedDomain theDomain;
 
@@ -128,7 +128,7 @@ MPI_MachineBroker *theMachineBroker = 0;
 int
 main(int argc, char **argv)
 {
-  FEM_ObjectBrokerAllClasses theBroker;
+  FEM_ObjectBroker theBroker;
   MPI_MachineBroker theMachine(&theBroker, argc, argv);
   theMachineBroker = &theMachine;
 
@@ -143,15 +143,16 @@ main(int argc, char **argv)
     //
     // on slave processes we spin waiting to create & run actors
     //
-    fprintf(stderr, "Slave Process Running %d\n", rank);
+    fprintf(stderr, "Slave Process Running\n");
     theMachine.runActors();
+    fprintf(stderr, "Slave Process DONE %d\n", rank);
 
   } else {
 
     //
     // on process 0 we create some ShadowSubdomains & then start the OpenSees interpreter
     //
-    fprintf(stderr, "Master Process Running OpenSees Interpreter %d\n", rank);   
+    fprintf(stderr, "Master Process Running OpenSees Interpreter\n");   
 
     //
     // set some global parameters
@@ -218,6 +219,7 @@ main(int argc, char **argv)
   //
   // mpi clean up
   //
+  
 
   fprintf(stderr, "Process Terminating %d\n", rank);
   

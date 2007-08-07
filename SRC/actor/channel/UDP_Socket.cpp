@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2006-11-03 18:58:09 $
+// $Revision: 1.3 $
+// $Date: 2003-10-15 00:31:47 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/channel/UDP_Socket.cpp,v $
                                                                         
                                                                         
@@ -39,6 +39,7 @@
 #include <SocketAddress.h>
 #include <MovableObject.h>
 
+
 static int GetHostAddr(char *host, char *IntAddr);
 static void inttoa(unsigned int no, char *string, int *cnt);
 
@@ -49,9 +50,6 @@ static void inttoa(unsigned int no, char *string, int *cnt);
 UDP_Socket::UDP_Socket() 
   :sockfd(0), connectType(0), shadow_inetAddr(0), shadow_port(0) 
 {
-  // initilaize sockets
-  startup_sockets();
-
     // set up my_Addr 
     my_Addr.addr_in.sin_family = AF_INET;
     my_Addr.addr_in.sin_addr.s_addr = htonl(INADDR_ANY); 
@@ -81,9 +79,6 @@ UDP_Socket::UDP_Socket()
 UDP_Socket::UDP_Socket(unsigned int port) 
   :sockfd(0), connectType(0), shadow_inetAddr(0), shadow_port(0)
 {
-  // initilaize sockets
-  startup_sockets();
-
     // set up my_Addr.addr_in 
     my_Addr.addr_in.sin_family = AF_INET;
     my_Addr.addr_in.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -115,9 +110,6 @@ UDP_Socket::UDP_Socket(unsigned int port)
 UDP_Socket::UDP_Socket(unsigned int other_Port, char *other_InetAddr) 
 :sockfd(0), connectType(1), shadow_inetAddr(other_InetAddr), shadow_port(other_Port)
 {
-  // initilaize sockets
-  startup_sockets();
-
     // set up my_Addr.addr_in 
     my_Addr.addr_in.sin_family = AF_INET;
     my_Addr.addr_in.sin_addr.s_addr = htonl(INADDR_ANY); 
@@ -145,12 +137,7 @@ UDP_Socket::UDP_Socket(unsigned int other_Port, char *other_InetAddr)
 
 UDP_Socket::~UDP_Socket()
 {
-  // initilaize sockets
-  cleanup_sockets();
-
-  close(sockfd);
-
-  cleanup_sockets();
+    close(sockfd);
 }
 
 

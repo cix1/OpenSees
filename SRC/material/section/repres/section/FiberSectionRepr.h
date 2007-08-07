@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2007-07-27 17:56:53 $
+// $Revision: 1.3 $
+// $Date: 2003-02-14 23:01:37 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/repres/section/FiberSectionRepr.h,v $
                                                                         
                                                                         
@@ -61,7 +61,6 @@ class FiberSectionRepr: public SectionRepres
     int  addPatch          (const Patch & aPatch);
     int  addReinfLayer     (const ReinfLayer & aReinfLayer);
     int  addFiber(Fiber &theFiber);    
-    int  addHFiber(Fiber &theFiber);    
 
     // inquiring functions
     int  getType(void) const;
@@ -69,12 +68,9 @@ class FiberSectionRepr: public SectionRepres
     int          getNumPatches     (void) const;
     int          getNumReinfLayers (void) const;
     int          getNumFibers(void) const;    
-    int          getNumHFibers(void) const;    
-
     Patch      **getPatches        (void) const;     
     ReinfLayer **getReinfLayers    (void) const;
     Fiber     **getFibers(void) const;
-    Fiber     **getHFibers(void) const;
     
     void Print(OPS_Stream &s, int flag =0);
     friend OPS_Stream &operator<<(OPS_Stream &s, FiberSectionRepr &fiberSectionRepr);    
@@ -97,12 +93,6 @@ class FiberSectionRepr: public SectionRepres
     Fiber **theFibers;   // array of pointers to fibers
                          // that form the section
     int sizeFibers;      // size of the fibers array
-
-	int numHFibers;       // number of fibers in the section
-    Fiber **theHFibers;   // array of pointers to fibers
-                         // that form the section
-    int sizeHFibers;      // size of the fibers array
-
 };
 
 

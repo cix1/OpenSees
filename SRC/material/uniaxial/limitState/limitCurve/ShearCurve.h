@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.2 $
-// $Date: 2006-09-05 22:39:58 $
+// $Revision: 1.1 $
+// $Date: 2006-02-07 23:15:55 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/limitState/limitCurve/ShearCurve.h,v $
                                                                         
 // Written: kje
@@ -72,7 +72,7 @@ class ShearCurve : public LimitCurve
 	double findLimit(double input);
 
 	int revertToStart(void);        
-	int setParameter(const char **argv, int argc, Parameter &param);
+	int    setParameter             (const char **argv, int argc, Information &info);
 	int    updateParameter          (int parameterID, Information &info);
 
 

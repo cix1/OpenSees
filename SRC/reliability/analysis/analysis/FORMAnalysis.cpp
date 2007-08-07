@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.10 $
-// $Date: 2007-03-01 17:56:09 $
+// $Revision: 1.7 $
+// $Date: 2003-10-27 23:45:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/analysis/FORMAnalysis.cpp,v $
 
 
@@ -63,6 +63,7 @@ FORMAnalysis::FORMAnalysis(ReliabilityDomain *passedReliabilityDomain,
 	theReliabilityDomain = passedReliabilityDomain;
 	theFindDesignPointAlgorithm = passedFindDesignPointAlgorithm;
 	theProbabilityTransformation = passedProbabilityTransformation;
+	fileName = new char[256];
 	strcpy(fileName,passedFileName);
 	relSensTag = p_relSensTag;
 }
@@ -70,7 +71,8 @@ FORMAnalysis::FORMAnalysis(ReliabilityDomain *passedReliabilityDomain,
 
 FORMAnalysis::~FORMAnalysis()
 {
-
+	if (fileName != 0)
+		delete [] fileName;
 }
 
 
@@ -84,9 +86,16 @@ FORMAnalysis::analyze(void)
 
 
 	// Declare variables used in this method
+	Vector xStar;
+	Vector uStar;
+	Vector alpha;
+	Vector gamma;
 	double stdv,mean;
 	int i;
 	double Go, Glast;
+	Vector uSecondLast;
+	Vector alphaSecondLast;
+	Vector lastSearchDirection;
 	double beta;
 	double pf1;
 	int numberOfEvaluations;
@@ -95,10 +104,18 @@ FORMAnalysis::analyze(void)
 	int numLsf = theReliabilityDomain->getNumberOfLimitStateFunctions();
 	RandomVariable *aRandomVariable;
 	LimitStateFunction *theLimitStateFunction;
-	NormalRV aStdNormRV(1,0.0,1.0,0.0);
+	NormalRV *aStdNormRV=0;
+	aStdNormRV = new NormalRV(1,0.0,1.0,0.0);
 	Vector delta(numRV); 
 	Vector eta(numRV);
 	Vector kappa(numRV);
+
+
+	// Check if computer ran out of memory
+	if (aStdNormRV==0) {
+		opserr << "FORMAnalysis::analyze() - out of memory while instantiating internal objects." << endln;
+		return -1;
+	}
 
 
 	// Open output file
@@ -139,68 +156,39 @@ FORMAnalysis::analyze(void)
 			outputFile << "#  No convergence!                                                    #" << endln;
 			outputFile << "#                                                                     #" << endln;
 			outputFile << "#######################################################################" << endln << endln << endln;
-
-			// Get results from the "find desingn point algorithm"
-			const Vector &xStar = theFindDesignPointAlgorithm->get_x();
-			const Vector &uStar = theFindDesignPointAlgorithm->get_u();
-			const Vector &alpha = theFindDesignPointAlgorithm->get_alpha();
-			const Vector &gamma = theFindDesignPointAlgorithm->get_gamma();
-			i					= theFindDesignPointAlgorithm->getNumberOfSteps();
-			Go					= theFindDesignPointAlgorithm->getFirstGFunValue();
-			Glast				= theFindDesignPointAlgorithm->getLastGFunValue();
-			const Vector &uSecondLast = theFindDesignPointAlgorithm->getSecondLast_u();
-			const Vector &alphaSecondLast = theFindDesignPointAlgorithm->getSecondLast_alpha();
-			const Vector &lastSearchDirection = theFindDesignPointAlgorithm->getLastSearchDirection();
-			numberOfEvaluations	= theFindDesignPointAlgorithm->getNumberOfEvaluations();
-
-			// Postprocessing
-			beta = alpha ^ uStar;
-			pf1 = 1.0 - aStdNormRV.getCDFvalue(beta);
-
-			// Store key results in the limit-state functions
-			theLimitStateFunction->FORMReliabilityIndexBeta = beta;
-			theLimitStateFunction->FORMProbabilityOfFailure_pf1 = pf1;
-			theLimitStateFunction->designPoint_x_inOriginalSpace = xStar;
-			theLimitStateFunction->designPoint_u_inStdNormalSpace= uStar;
-			theLimitStateFunction->normalizedNegativeGradientVectorAlpha = alpha;
-			theLimitStateFunction->importanceVectorGamma = gamma;
-			theLimitStateFunction->numberOfStepsToFindDesignPointAlgorithm	= i;
-			theLimitStateFunction->GFunValueAtStartPt = Go;
-			theLimitStateFunction->GFunValueAtEndPt = Glast;
-			theLimitStateFunction->secondLast_u = uSecondLast;
-			theLimitStateFunction->secondLastAlpha	= alphaSecondLast;
-			theLimitStateFunction->lastSearchDirection = lastSearchDirection;
 		}
 		else {
+		
 			// Get results from the "find desingn point algorithm"
-			const Vector &xStar = theFindDesignPointAlgorithm->get_x();
-			const Vector &uStar = theFindDesignPointAlgorithm->get_u();
-			const Vector &alpha = theFindDesignPointAlgorithm->get_alpha();
-			const Vector &gamma = theFindDesignPointAlgorithm->get_gamma();
+			xStar				= theFindDesignPointAlgorithm->get_x();
+			uStar				= theFindDesignPointAlgorithm->get_u();
+			alpha				= theFindDesignPointAlgorithm->get_alpha();
+			gamma				= theFindDesignPointAlgorithm->get_gamma();
 			i					= theFindDesignPointAlgorithm->getNumberOfSteps();
 			Go					= theFindDesignPointAlgorithm->getFirstGFunValue();
 			Glast				= theFindDesignPointAlgorithm->getLastGFunValue();
-			const Vector &uSecondLast = theFindDesignPointAlgorithm->getSecondLast_u();
-			const Vector &alphaSecondLast = theFindDesignPointAlgorithm->getSecondLast_alpha();
-			const Vector &lastSearchDirection = theFindDesignPointAlgorithm->getLastSearchDirection();
+			uSecondLast			= theFindDesignPointAlgorithm->getSecondLast_u();
+			alphaSecondLast		= theFindDesignPointAlgorithm->getSecondLast_alpha();
+			lastSearchDirection	= theFindDesignPointAlgorithm->getLastSearchDirection();
 			numberOfEvaluations	= theFindDesignPointAlgorithm->getNumberOfEvaluations();
+
 
 			// Postprocessing
 			beta = alpha ^ uStar;
-			pf1 = 1.0 - aStdNormRV.getCDFvalue(beta);
+			pf1 = 1.0 - aStdNormRV->getCDFvalue(beta);
 
 
 			// Reliability sensitivity analysis wrt. mean/stdv
 			if (relSensTag == 1) {
+				Vector DuStarDmean;
+				Vector DuStarDstdv; 
 				double dBetaDmean;
 				double dBetaDstdv;
-				Vector DuStarDmean(numRV);
-				Vector DuStarDstdv(numRV);
 
 				for ( int j=1; j<=numRV; j++ )
 				{
-				  DuStarDmean = theProbabilityTransformation->meanSensitivityOf_x_to_u(xStar,j);
-				  DuStarDstdv = theProbabilityTransformation->stdvSensitivityOf_x_to_u(xStar,j);
+					DuStarDmean = theProbabilityTransformation->meanSensitivityOf_x_to_u(xStar,j);
+					DuStarDstdv = theProbabilityTransformation->stdvSensitivityOf_x_to_u(xStar,j);
 					dBetaDmean = alpha^DuStarDmean;
 					dBetaDstdv = alpha^DuStarDstdv;
 					aRandomVariable = theReliabilityDomain->getRandomVariablePtr(j);
@@ -322,6 +310,7 @@ FORMAnalysis::analyze(void)
 
 	// Clean up
 	outputFile.close();
+	delete aStdNormRV;
 
 	// Print summary of results to screen (more here!!!)
 	opserr << "FORMAnalysis completed." << endln;

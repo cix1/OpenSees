@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-06-06 22:39:22 $
+// $Revision: 1.8 $
+// $Date: 2005-11-29 23:36:47 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/analysis/DirectIntegrationAnalysis.cpp,v $
                                                                         
                                                                         
@@ -84,10 +84,10 @@ DirectIntegrationAnalysis::DirectIntegrationAnalysis(Domain &the_Domain,
   // first we set up the links needed by the elements in the 
   // aggregation
   theAnalysisModel->setLinks(the_Domain, theHandler);
-  theConstraintHandler->setLinks(the_Domain, theModel, theTransientIntegrator);
+  theConstraintHandler->setLinks(the_Domain,theModel,theTransientIntegrator);
   theDOF_Numberer->setLinks(theModel);
-  theIntegrator->setLinks(theModel, theLinSOE, theTest);
-  theAlgorithm->setLinks(theModel, theTransientIntegrator, theLinSOE, theTest);
+  theIntegrator->setLinks(theModel,theLinSOE);
+  theAlgorithm->setLinks(theModel,theTransientIntegrator,theLinSOE);
 
   if (theTest != 0)
     theAlgorithm->setConvergenceTest(theTest);
@@ -176,7 +176,6 @@ DirectIntegrationAnalysis::analyze(int numSteps, double dT)
   Domain *the_Domain = this->getDomainPtr();
 
     for (int i=0; i<numSteps; i++) {
-
       if (theAnalysisModel->newStepDomain(dT) < 0) {
 	opserr << "DirectIntegrationAnalysis::analyze() - the AnalysisModel failed";
 	opserr << " at time " << the_Domain->getCurrentTime() << endln;
@@ -235,6 +234,8 @@ DirectIntegrationAnalysis::analyze(int numSteps, double dT)
 	theIntegrator->revertToLastStep();
 	return -4;
       } 
+      
+      // opserr << "DirectIntegrationAnalysis - time: " << the_Domain->getCurrentTime() << endln;
     }    
     return result;
 }
@@ -253,14 +254,37 @@ DirectIntegrationAnalysis::domainChanged(void)
     // now we invoke handle() on the constraint handler which
     // causes the creation of FE_Element and DOF_Group objects
     // and their addition to the AnalysisModel.
-    theConstraintHandler->handle();
 
+    theConstraintHandler->handle();
     // we now invoke number() on the numberer which causes
     // equation numbers to be assigned to all the DOFs in the
     // AnalysisModel.
+
+    // opserr << theAnalysisModel->getDOFGroupGraph();
+
+    /*
+    DOF_GrpIter &theDOFs = theAnalysisModel->getDOFs();
+    DOF_Group *dofPtr;
+    while ((dofPtr = theDOFs()) != 0) 
+      opserr << dofPtr->getID();
+    */
+
     theDOF_Numberer->numberDOF();
 
+
     theConstraintHandler->doneNumberingDOF();
+
+    /*
+    DOF_GrpIter &theDOFs1 = theAnalysisModel->getDOFs();
+    while ((dofPtr = theDOFs1()) != 0) 
+      opserr << dofPtr->getID();
+
+
+    FE_EleIter &theEles = theAnalysisModel->getFEs();    
+    FE_Element *elePtr;
+    while((elePtr = theEles()) != 0)     
+       opserr << elePtr->getID();
+    */
 
     // we invoke setGraph() on the LinearSOE which
     // causes that object to determine its size
@@ -270,6 +294,7 @@ DirectIntegrationAnalysis::domainChanged(void)
     // we invoke domainChange() on the integrator and algorithm
     theIntegrator->domainChanged();
     theAlgorithm->domainChanged();
+
 
     return 0;
 }    
@@ -297,6 +322,8 @@ DirectIntegrationAnalysis::setSensitivityAlgorithm(SensitivityAlgorithm *passedS
 int 
 DirectIntegrationAnalysis::setNumberer(DOF_Numberer &theNewNumberer) 
 {
+    int result = 0;
+
     // invoke the destructor on the old one
     if (theDOF_Numberer != 0)
 	delete theDOF_Numberer;
@@ -306,7 +333,15 @@ DirectIntegrationAnalysis::setNumberer(DOF_Numberer &theNewNumberer)
     theDOF_Numberer->setLinks(*theAnalysisModel);
 
     // invoke domainChanged() either indirectly or directly
-    domainStamp = 0;
+    Domain *the_Domain = this->getDomainPtr();
+    int stamp = the_Domain->hasDomainChanged();
+    domainStamp = stamp;
+    result = this->domainChanged();    
+    if (result < 0) {
+      opserr << "StaticAnalysis::setNumberer() - setNumberer() failed";
+      return -1;
+    }	
+
     return 0;
 }
 
@@ -315,21 +350,34 @@ DirectIntegrationAnalysis::setNumberer(DOF_Numberer &theNewNumberer)
 int 
 DirectIntegrationAnalysis::setAlgorithm(EquiSolnAlgo &theNewAlgorithm) 
 {
-  // invoke the destructor on the old one
-  if (theAlgorithm != 0)
-    delete theAlgorithm;
-  
-  // first set the links needed by the Algorithm
-  theAlgorithm = &theNewAlgorithm;
+    // invoke the destructor on the old one
+    if (theAlgorithm != 0)
+	delete theAlgorithm;
 
-  if (theAnalysisModel != 0 && theIntegrator != 0 && theSOE != 0)
-    theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
-  // invoke domainChanged() either indirectly or directly
-  // domainStamp = 0;
-  if (domainStamp != 0)
-    theAlgorithm->domainChanged();
+    // first set the links needed by the Algorithm
+    theAlgorithm = &theNewAlgorithm;
+    theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
 
-  return 0;
+    // invoke domainChanged() either indirectly or directly
+    Domain *the_Domain = this->getDomainPtr();
+    // check if domain has undergone change
+    int stamp = the_Domain->hasDomainChanged();
+    if (stamp != domainStamp) {
+	domainStamp = stamp;	    
+	if (this->domainChanged() < 0) {
+	    opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	    opserr << "domainChanged failed";
+	    return -1;
+	}	
+    } else {
+	if (theAlgorithm->domainChanged() < 0) {
+	    opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	    opserr << "algorithm::domainChanged() failed";
+	    return -2;
+	}
+    }
+
+    return 0;
 }
 
 
@@ -339,14 +387,27 @@ DirectIntegrationAnalysis::setIntegrator(TransientIntegrator &theNewIntegrator)
   // set the links needed by the other objects in the aggregation
   Domain *the_Domain = this->getDomainPtr();
   theIntegrator = &theNewIntegrator;
-  theIntegrator->setLinks(*theAnalysisModel, *theSOE, theTest);
-  theConstraintHandler->setLinks(*the_Domain, *theAnalysisModel, *theIntegrator);
-  theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
+  theIntegrator->setLinks(*theAnalysisModel,*theSOE);
+  theConstraintHandler->setLinks(*the_Domain,*theAnalysisModel,*theIntegrator);
+  theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
 
-  // cause domainChanged to be invoked on next analyze
-  //  domainStamp = 0;
-  if (domainStamp != 0)
-    theIntegrator->domainChanged();
+  // invoke domainChanged() either indirectly or directly
+    int stamp = the_Domain->hasDomainChanged();
+    if (stamp != domainStamp) {
+	domainStamp = stamp;	    
+	if (this->domainChanged() < 0) {
+	  opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	  opserr << "domainChanged failed";
+	  return -1;
+      }	
+  }
+  else {
+      if (theIntegrator->domainChanged() < 0) {
+	  opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	  opserr << "Integrator::domainChanged failed";
+	  return -1;
+      }	
+  }
    
   return 0;
 }
@@ -359,11 +420,27 @@ DirectIntegrationAnalysis::setLinearSOE(LinearSOE &theNewSOE)
 
   // set the links needed by the other objects in the aggregation
   theSOE = &theNewSOE;
-  theIntegrator->setLinks(*theAnalysisModel,*theSOE, theTest);
-  theAlgorithm->setLinks(*theAnalysisModel, *theIntegrator, *theSOE, theTest);
+  theIntegrator->setLinks(*theAnalysisModel,*theSOE);
+  theAlgorithm->setLinks(*theAnalysisModel,*theIntegrator,*theSOE);
 
-  // cause domainChanged to be invoked on next analyze
-  domainStamp = 0;
+  // set the size either indirectly or directly
+  Domain *the_Domain = this->getDomainPtr();
+  int stamp = the_Domain->hasDomainChanged();
+  if (stamp != domainStamp) {
+      domainStamp = stamp;	    
+      if (this->domainChanged() < 0) {
+	  opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	  opserr << "domainChanged failed";
+	  return -1;
+      }	
+  } else {
+      Graph &theGraph = theAnalysisModel->getDOFGraph();
+      if (theSOE->setSize(theGraph) < 0) {
+	  opserr << "DirectIntegrationAnalysis::setAlgorithm() - ";
+	  opserr << "LinearSOE::setSize() failed";
+	  return -2;	
+      }
+  }
   
   return 0;
 }
@@ -378,12 +455,7 @@ DirectIntegrationAnalysis::setConvergenceTest(ConvergenceTest &theNewTest)
   
   // set the links needed by the other objects in the aggregation
   theTest = &theNewTest;
-
-  if (theIntegrator != 0)
-    theIntegrator->setLinks(*theAnalysisModel, *theSOE, theTest);
-
-  if (theAlgorithm != 0)
-    theAlgorithm->setConvergenceTest(theTest);
+  theAlgorithm->setConvergenceTest(theTest);
   
   return 0;
 }
@@ -412,12 +484,6 @@ EquiSolnAlgo *
 DirectIntegrationAnalysis::getAlgorithm(void)
 {
   return theAlgorithm;
-}
-
-AnalysisModel *
-DirectIntegrationAnalysis::getModel(void)
-{
-  return theAnalysisModel;
 }
 
 

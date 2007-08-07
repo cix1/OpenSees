@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-07-03 19:31:48 $
+// $Revision: 1.5 $
+// $Date: 2003-03-04 00:39:26 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/misc/MatrixOperations.cpp,v $
 
 
@@ -38,7 +38,7 @@
 #include <string.h>
 
 
-MatrixOperations::MatrixOperations(const Matrix &passedMatrix)
+MatrixOperations::MatrixOperations(Matrix passedMatrix)
 {
 	int rows = passedMatrix.noRows();
 	int cols = passedMatrix.noCols();
@@ -71,7 +71,7 @@ MatrixOperations::~MatrixOperations()
 
 
 int
-MatrixOperations::setMatrix(const Matrix &passedMatrix)
+MatrixOperations::setMatrix(Matrix passedMatrix)
 {
 	int rows = passedMatrix.noRows();
 	int cols = passedMatrix.noCols();
@@ -97,14 +97,14 @@ MatrixOperations::setMatrix(const Matrix &passedMatrix)
 }
 
 
-const Matrix& 
+Matrix 
 MatrixOperations::getMatrix()
 {
 	return (*theMatrix);
 }
 
 
-const Matrix& 
+Matrix 
 MatrixOperations::getLowerCholesky()
 {
 	if (theLowerCholesky == 0) {
@@ -117,7 +117,7 @@ MatrixOperations::getLowerCholesky()
 }
 
 
-const Matrix&
+Matrix 
 MatrixOperations::getInverseLowerCholesky()
 {
 	if (theInverseLowerCholesky == 0) {
@@ -130,7 +130,7 @@ MatrixOperations::getInverseLowerCholesky()
 }
 
 
-const Matrix& 
+Matrix 
 MatrixOperations::getInverse()
 {
 	if (theInverse == 0) {
@@ -143,7 +143,7 @@ MatrixOperations::getInverse()
 }
 
 
-const Matrix& 
+Matrix 
 MatrixOperations::getTranspose()
 {
 	if (theTranspose == 0) {
@@ -156,7 +156,7 @@ MatrixOperations::getTranspose()
 }
 
 
-const Matrix& 
+Matrix 
 MatrixOperations::getSquareRoot()
 {
 	if (theSquareRoot == 0) {
@@ -186,7 +186,7 @@ MatrixOperations::getTrace()
 int
 MatrixOperations::computeLowerCholesky()
 {
-	const Matrix &passedMatrix = (*theMatrix);
+	Matrix passedMatrix = (*theMatrix);
 
 	// This algorithm is more or less like given in Professor Der Kiureghians
 	// handout/brief in CE193 on Cholesky decomposition.
@@ -197,8 +197,7 @@ MatrixOperations::computeLowerCholesky()
 	int i, j, k;
 	double sumOfLambda_i_k_squared = 0;
 	double sumOfLambda_i_kLambda_j_k = 0;
-	//Matrix lambda( sizeOfPassedMatrix , sizeOfPassedMatrix );
-	Matrix &lambda = *theLowerCholesky;
+	Matrix lambda( sizeOfPassedMatrix , sizeOfPassedMatrix );
 
 	for ( i=0 ; i<sizeOfPassedMatrix ; i++ ) 
 	{
@@ -238,7 +237,7 @@ MatrixOperations::computeLowerCholesky()
 		}
 	}
 
-	//(*theLowerCholesky) = lambda;
+	(*theLowerCholesky) = lambda;
 
 	return 0;
 }
@@ -249,7 +248,7 @@ MatrixOperations::computeLowerCholesky()
 int
 MatrixOperations::computeInverseLowerCholesky()
 {
-	const Matrix &passedMatrix = (*theMatrix);
+	Matrix passedMatrix = (*theMatrix);
 
 	// This algorithm is more or less like given in Professor Der Kiureghians
 	// handout/brief in CE193 on Cholesky decomposition.
@@ -259,10 +258,9 @@ MatrixOperations::computeInverseLowerCholesky()
 	int sizeOfPassedMatrix = passedMatrix.noCols();
 	
 	this->computeLowerCholesky();
-	const Matrix &lambda = this->getLowerCholesky();
+	Matrix lambda = this->getLowerCholesky();
 
-	//Matrix gamma( sizeOfPassedMatrix , sizeOfPassedMatrix );
-	Matrix &gamma = *theInverseLowerCholesky;
+	Matrix gamma( sizeOfPassedMatrix , sizeOfPassedMatrix );
 	int i, j, k;
 	double sumOfLambda_i_kGamma_k_j = 0;
 	for ( i=0 ; i<sizeOfPassedMatrix ; i++ ) 
@@ -294,7 +292,7 @@ MatrixOperations::computeInverseLowerCholesky()
 		}
 	}
 
-	//(*theInverseLowerCholesky) = gamma;
+	(*theInverseLowerCholesky) = gamma;
 
 	return 0;
 }
@@ -303,7 +301,7 @@ MatrixOperations::computeInverseLowerCholesky()
 int
 MatrixOperations::computeCholeskyAndItsInverse()
 {
-	const Matrix &passedMatrix = (*theMatrix);
+	Matrix &passedMatrix = (*theMatrix);
 
 	// This algorithm is more or less like given in Professor Der Kiureghians
 	// handout/brief in CE193 on Cholesky decomposition.
@@ -314,10 +312,8 @@ MatrixOperations::computeCholeskyAndItsInverse()
 	double sumOfLambda_i_k_squared = 0.0;
 	double sumOfLambda_i_kLambda_j_k = 0.0;
 	double sumOfLambda_i_kGamma_k_j = 0.0;
-	//Matrix lambda( sizeOfPassedMatrix , sizeOfPassedMatrix );
-	//Matrix gamma( sizeOfPassedMatrix , sizeOfPassedMatrix );
-	Matrix &lambda = *theLowerCholesky;
-	Matrix &gamma = *theInverseLowerCholesky;
+	Matrix lambda( sizeOfPassedMatrix , sizeOfPassedMatrix );
+	Matrix gamma( sizeOfPassedMatrix , sizeOfPassedMatrix );
 	int i, j, k;
 
 	// Lower Cholesky
@@ -389,8 +385,8 @@ MatrixOperations::computeCholeskyAndItsInverse()
 		}
 	}
 
-	//(*theLowerCholesky) = lambda;
-	//(*theInverseLowerCholesky) = gamma;
+	(*theLowerCholesky) = lambda;
+	(*theInverseLowerCholesky) = gamma;
 
 	return 0;
 }
@@ -403,12 +399,11 @@ MatrixOperations::computeCholeskyAndItsInverse()
 int
 MatrixOperations::computeTranspose()
 {
-	const Matrix &A = (*theMatrix);
+	Matrix &A = (*theMatrix);
 
 	int sizeOfA = A.noCols();
 
-	//Matrix B(sizeOfA,sizeOfA);
-	Matrix &B = *theTranspose;
+	Matrix B(sizeOfA,sizeOfA);
 
 	for (int i=0; i<sizeOfA; i++) {
 		for (int j=0; j<sizeOfA; j++) {
@@ -416,7 +411,7 @@ MatrixOperations::computeTranspose()
 		}
 	}
 
-	//(*theTranspose) = B;
+	(*theTranspose) = B;
 
 	return 0;
 }
@@ -428,12 +423,11 @@ MatrixOperations::computeTranspose()
 int
 MatrixOperations::computeSquareRoot()
 {
-	const Matrix &A = (*theMatrix);
+	Matrix &A = (*theMatrix);
 
 	int sizeOfA = A.noCols();
 
-	//Matrix B(sizeOfA,sizeOfA);
-	Matrix &B = *theSquareRoot;
+	Matrix B(sizeOfA,sizeOfA);
 
 	for (int i=0; i<sizeOfA; i++) {
 		for (int j=0; j<sizeOfA; j++) {
@@ -441,7 +435,7 @@ MatrixOperations::computeSquareRoot()
 		}
 	}
 
-	//(*theSquareRoot) = B;
+	(*theSquareRoot) = B;
 
 	return 0;
 }
@@ -451,9 +445,7 @@ MatrixOperations::computeSquareRoot()
 int
 MatrixOperations::computeInverse()
 {
-  return theMatrix->Invert(*theInverse);
 
-  /*
 	Matrix &A = (*theMatrix);
 
 	// Return the invers matrix B such that A*B=I
@@ -535,7 +527,6 @@ MatrixOperations::computeInverse()
 	(*theInverse) = B;
 	
 	return 0;
-  */
 }
 
 
@@ -543,7 +534,7 @@ MatrixOperations::computeInverse()
 int
 MatrixOperations::computeMatrixNorm()
 {
-	const Matrix &passedMatrix = (*theMatrix);
+	Matrix &passedMatrix = (*theMatrix);
 
 	int numberOfColumns = passedMatrix.noCols();
 	int numberOfRows = passedMatrix.noRows();
@@ -565,7 +556,7 @@ MatrixOperations::computeMatrixNorm()
 int
 MatrixOperations::computeTrace()
 {
-	const Matrix &passedMatrix = (*theMatrix);
+	Matrix &passedMatrix = (*theMatrix);
 
 	int numberOfColumns = passedMatrix.noCols();
 	int numberOfRows = passedMatrix.noRows();

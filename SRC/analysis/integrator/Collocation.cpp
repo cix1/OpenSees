@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-04-05 01:29:04 $
+// $Revision: 1.1 $
+// $Date: 2005-12-19 22:39:21 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/Collocation.cpp,v $
 
 // Written: Andreas Schellenberg (andreas.schellenberg@gmx.net)
@@ -45,7 +45,7 @@
 
 Collocation::Collocation()
     : TransientIntegrator(INTEGRATOR_TAGS_Collocation),
-    theta(1.0), beta(0.0), gamma(0.0), deltaT(0.0),
+    theta(1.0), gamma(0.0), beta(0.0), deltaT(0.0),
     alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0)
@@ -56,7 +56,7 @@ Collocation::Collocation()
 
 Collocation::Collocation(double _theta)
     : TransientIntegrator(INTEGRATOR_TAGS_Collocation),
-    theta(_theta), beta(0.0), gamma(0.5), deltaT(0.0),
+    theta(_theta), gamma(0.5), beta(0.0), deltaT(0.0),
     alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0)
@@ -77,7 +77,7 @@ Collocation::Collocation(double _theta)
 Collocation::Collocation(double _theta,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_Collocation),
-    theta(_theta), beta(0.0), gamma(0.5), deltaT(0.0),
+    theta(_theta), gamma(0.5), beta(0.0), deltaT(0.0),
     alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0)
@@ -97,7 +97,7 @@ Collocation::Collocation(double _theta,
 
 Collocation::Collocation(double _theta, double _beta, double _gamma)
     : TransientIntegrator(INTEGRATOR_TAGS_Collocation),
-    theta(_theta), beta(_beta), gamma(_gamma), deltaT(0.0),
+    theta(_theta), gamma(_gamma), beta(_beta), deltaT(0.0),
     alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0)
@@ -109,7 +109,7 @@ Collocation::Collocation(double _theta, double _beta, double _gamma)
 Collocation::Collocation(double _theta, double _beta, double _gamma,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_Collocation),
-    theta(_theta), beta(_beta), gamma(_gamma), deltaT(0.0),
+    theta(_theta), gamma(_gamma), beta(_beta), deltaT(0.0),
     alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
     c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0)
@@ -152,7 +152,7 @@ int Collocation::newStep(double _deltaT)
     }
     
     // get a pointer to the AnalysisModel
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
 
     // set the constants
     c1 = 1.0;
@@ -168,6 +168,15 @@ int Collocation::newStep(double _deltaT)
     (*Ut) = *U;
     (*Utdot) = *Udot;
     (*Utdotdot) = *Udotdot;
+
+    // increment the time to t+theta*deltaT and apply the load
+    double time = theModel->getCurrentDomainTime();
+    time += theta*deltaT;
+//    theModel->applyLoadDomain(time);
+    if (theModel->updateDomain(time, deltaT) < 0)  {
+        opserr << "Collocation::newStep() - failed to update the domain\n";
+        return -4;
+    }
     
     // determine new velocities and accelerations at t+theta*deltaT
     double a1 = (1.0 - gamma/beta); 
@@ -178,18 +187,10 @@ int Collocation::newStep(double _deltaT)
     double a4 = 1.0 - 0.5/beta;
     Udotdot->addVector(a4, *Utdot, a3);
     
-    // set the trial response quantities
+    // set the trial response quantities for the nodes
     theModel->setVel(*Udot);
     theModel->setAccel(*Udotdot);
     
-    // increment the time to t+theta*deltaT and apply the load
-    double time = theModel->getCurrentDomainTime();
-    time += theta*deltaT;
-    if (theModel->updateDomain(time, deltaT) < 0)  {
-        opserr << "Collocation::newStep() - failed to update the domain\n";
-        return -4;
-    }
-
     return 0;
 }
 
@@ -237,8 +238,8 @@ int Collocation::formNodTangent(DOF_Group *theDof)
 
 int Collocation::domainChanged()
 {
-    AnalysisModel *myModel = this->getAnalysisModel();
-    LinearSOE *theLinSOE = this->getLinearSOE();
+    AnalysisModel *myModel = this->getAnalysisModelPtr();
+    LinearSOE *theLinSOE = this->getLinearSOEPtr();
     const Vector &x = theLinSOE->getX();
     int size = x.Size();
     
@@ -306,6 +307,7 @@ int Collocation::domainChanged()
     // the DOF_Groups and getting the last committed velocity and accel
     DOF_GrpIter &theDOFs = myModel->getDOFs();
     DOF_Group *dofPtr;
+    
     while ((dofPtr = theDOFs()) != 0)  {
         const ID &id = dofPtr->getID();
         int idSize = id.Size();
@@ -342,7 +344,7 @@ int Collocation::domainChanged()
 
 int Collocation::update(const Vector &deltaU)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING Collocation::update() - no AnalysisModel set\n";
         return -1;
@@ -381,7 +383,8 @@ int Collocation::update(const Vector &deltaU)
 
 int Collocation::commit(void)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING Collocation::commit() - no AnalysisModel set\n";
         return -1;
@@ -405,12 +408,12 @@ int Collocation::commit(void)
 
     // update the response at the DOFs
     theModel->setResponse(*U,*Udot,*Udotdot);        
-    if (theModel->updateDomain() < 0)  {
-        opserr << "Collocation::commit() - failed to update the domain\n";
-        return -4;
-    }
+//    if (theModel->updateDomain() < 0)  {
+//        opserr << "Collocation::commit() - failed to update the domain\n";
+//        return -4;
+//    }
     
-    // set the time to be t+deltaT
+    // set the time to be t+delta t
     double time = theModel->getCurrentDomainTime();
     time += (1.0-theta)*deltaT;
     theModel->setCurrentDomainTime(time);
@@ -421,14 +424,12 @@ int Collocation::commit(void)
 
 int Collocation::sendSelf(int cTag, Channel &theChannel)
 {
-    Vector data(7);
+    static Vector data(5);
     data(0) = theta;
-    data(1) = beta;
-    data(2) = gamma;
-    data(3) = alphaM;
-    data(4) = betaK;
-    data(5) = betaKi;
-    data(6) = betaKc;
+    data(1) = alphaM;
+    data(2) = betaK;
+    data(3) = betaKi;
+    data(4) = betaKc;
     
     if (theChannel.sendVector(this->getDbTag(), cTag, data) < 0)  {
         opserr << "WARNING Collocation::sendSelf() - failed to send the data\n";
@@ -441,19 +442,17 @@ int Collocation::sendSelf(int cTag, Channel &theChannel)
 
 int Collocation::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
 {
-    Vector data(7);
+    Vector data(5);
     if (theChannel.recvVector(this->getDbTag(), cTag, data) < 0)  {
         opserr << "WARNING Collocation::recvSelf() - could not receive data\n";
         return -1;
     }
     
     theta  = data(0);
-    beta   = data(1);
-    gamma  = data(2);
-    alphaM = data(3);
-    betaK  = data(4);
-    betaKi = data(5);
-    betaKc = data(6);
+    alphaM = data(1);
+    betaK  = data(2);
+    betaKi = data(3);
+    betaKc = data(4);
     
     return 0;
 }
@@ -461,14 +460,13 @@ int Collocation::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBr
 
 void Collocation::Print(OPS_Stream &s, int flag)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel != 0)  {
         double currentTime = theModel->getCurrentDomainTime();
         s << "\t Collocation - currentTime: " << currentTime << endln;
         s << "  theta: " << theta << endln;
-        s << "  c1: " << c1 << "  c2: " << c2 << "  c3: " << c3 << endln;
-        s << "  Rayleigh Damping - alphaM: " << alphaM << "  betaK: " << betaK;
-        s << "  betaKi: " << betaKi << "  betaKc: " << betaKc << endln;	    
+        s << "  Rayleigh Damping - alphaM: " << alphaM;
+        s << "  betaK: " << betaK << "  betaKi: " << betaKi << endln;	    
     } else 
         s << "\t Collocation - no associated AnalysisModel\n";
 }

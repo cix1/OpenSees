@@ -1,12 +1,12 @@
 include ../../../../Makefile.def
 
 OBJS       = 	CorrelationCoefficient.o \
-		LimitStateFunction.o LimitStateFunctionIter.o \
-		RandomVariable.o RandomVariableIter.o \
-		RandomVariablePositioner.o RandomVariablePositionerIter.o \
+		LimitStateFunction.o \
+		RandomVariable.o \
+		RandomVariablePositioner.o \
 		ReliabilityDomainComponent.o \
 		ReliabilityDomain.o \
-		ParameterPositioner.o ParameterPositionerIter.o
+		ParameterPositioner.o
 
 # Compilation control
 

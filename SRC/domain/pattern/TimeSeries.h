@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2006-09-05 20:48:25 $
+// $Revision: 1.3 $
+// $Date: 2003-03-04 00:48:12 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/pattern/TimeSeries.h,v $
                                                                         
                                                                         
@@ -62,7 +62,10 @@ class TimeSeries : public MovableObject
     virtual void Print(OPS_Stream &s, int flag = 0) = 0;        
 
     // AddingSensitivity:BEGIN //////////////////////////////////////////
-    virtual double getFactorSensitivity(double pseudoTime) {return 0.0;}
+    virtual int setParameter(const char **argv, int argc, Information &info);
+    virtual int updateParameter(int parameterID, Information &info);
+    virtual int activateParameter(int parameterID);
+    virtual double getFactorSensitivity(double pseudoTime);
     // AddingSensitivity:BEGIN //////////////////////////////////////////
 
   protected:

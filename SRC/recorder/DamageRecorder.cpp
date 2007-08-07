@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2007-02-02 03:00:35 $
+// $Revision: 1.3 $
+// $Date: 2006-08-04 22:33:53 $
 // $Source: /usr/local/cvs/OpenSees/SRC/recorder/DamageRecorder.cpp,v $
                                                                         
 // Written: Arash Altoontash, Gregory Deierlein, 
@@ -83,6 +83,7 @@ DamageRecorder::DamageRecorder( int elemid, ID &secIDs, int dofid, DamageModel *
   }
   
   // Get the element	
+  Information eleInfo(1.0);
   Element *theEle = theDomainPtr.getElement(eleID);
   if ( theEle == NULL ) {
     opserr << "WARNING DamageRecorder::DamageRecorder() - no element with tag: "
@@ -108,7 +109,7 @@ DamageRecorder::DamageRecorder( int elemid, ID &secIDs, int dofid, DamageModel *
     sprintf(argv[1],"%d",sectionTags(j));
     // itoa( sectionTags(j) , argv[1] , 10);
     
-    theResponses[j] = theEle->setResponse( ( const char**)argv, argc, *theOutput);
+    theResponses[j] = theEle->setResponse( ( const char**)argv, argc, eleInfo, *theOutput);
     if (theResponses[j] == 0) {
       opserr << "DamageRecorder::DamageRecorder - out of memory creating deformation response ";
       exit(-1);
@@ -121,7 +122,7 @@ DamageRecorder::DamageRecorder( int elemid, ID &secIDs, int dofid, DamageModel *
     sectionTags(j) = secIDs(j);
     sprintf(argv[1],"%d",sectionTags(j));
     //_itoa( sectionTags(j) , argv[1] , 10);
-    theResponses[j+numSec] = theEle->setResponse( ( const char**) argv, argc, *theOutput);
+    theResponses[j+numSec] = theEle->setResponse( ( const char**) argv, argc, eleInfo, *theOutput);
     if (theResponses[j+numSec] == 0) {
       opserr << "DamageRecorder::DamageRecorder - out of memory creating force response ";
       exit(-1);
@@ -133,7 +134,7 @@ DamageRecorder::DamageRecorder( int elemid, ID &secIDs, int dofid, DamageModel *
     sectionTags(j) = secIDs(j);
     sprintf(argv[1],"%d",sectionTags(j));
     // _itoa( sectionTags(j) , argv[1] , 10);
-    theResponses[j+2*numSec] = theEle->setResponse( ( const char**) argv, argc, *theOutput);
+    theResponses[j+2*numSec] = theEle->setResponse( ( const char**) argv, argc, eleInfo, *theOutput);
     if (theResponses[j+2*numSec] == 0) {
       opserr << "DamageRecorder::DamageRecorder - out of memory creating tanegnt response ";
       exit(-1);

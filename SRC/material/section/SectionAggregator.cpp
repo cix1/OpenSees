@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.16 $
-// $Date: 2007-07-12 21:15:04 $
+// $Revision: 1.12 $
+// $Date: 2006-08-04 18:31:30 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/SectionAggregator.cpp,v $
                                                                         
                                                                         
@@ -805,10 +805,10 @@ SectionAggregator::Print(OPS_Stream &s, int flag)
 }
 
 Response*
-SectionAggregator::setResponse(const char **argv, int argc, OPS_Stream &output)
+SectionAggregator::setResponse(const char **argv, int argc, Information &info, OPS_Stream &output)
 {
   // See if the response is one of the defaults
-  Response *res = SectionForceDeformation::setResponse(argv, argc, output);
+  Response *res = SectionForceDeformation::setResponse(argv, argc, info, output);
   if (res != 0)
     return res;
   
@@ -817,7 +817,7 @@ SectionAggregator::setResponse(const char **argv, int argc, OPS_Stream &output)
   // don't need anything more from them than stress, strain, and stiffness, 
   // which are covered in base class method ... can change if need arises
   else if (theSection != 0)
-    return theSection->setResponse(argv, argc, output);
+    return theSection->setResponse(argv, argc, info,output);
   
   else
     return 0;
@@ -881,131 +881,4 @@ SectionAggregator::getVariable(int variableID, double &info)
   default:
     return -1;
   }
-}
-
-// AddingSensitivity:BEGIN ////////////////////////////////////
-int
-SectionAggregator::setParameter(const char **argv, int argc, Parameter &param)
-{
-  if (argc < 1)
-    return -1;
-
-  // Check if the parameter belongs to only an aggregated material
-  if (strstr(argv[0],"addition") != 0) {
-    
-    if (argc < 3)
-      return -1;
-
-    // Get the tag of the material
-    int materialTag = atoi(argv[1]);
-    
-    // Loop to find the right material
-    int ok = 0;
-    for (int i = 0; i < numMats; i++)
-      if (materialTag == theAdditions[i]->getTag())
-	ok += theAdditions[i]->setParameter(&argv[2], argc-2, param);
-
-    return ok;
-  } 
-  
-  // Check if the parameter belongs to only the section
-  else if (strstr(argv[0],"section") != 0) {
-    
-    if (argc < 2) {
-      opserr << "SectionAggregator::setParameter() - insufficient argc < 2 for section option. " << endln;
-      return -1;
-    }
-
-    return theSection->setParameter(&argv[1], argc-1, param);
-  } 
-
-  else { // Default -- send to everything
-    int ok = 0;
-    for (int i = 0; i < numMats; i++)
-      ok += theAdditions[i]->setParameter(argv, argc, param);
-    if (theSection != 0)
-      ok += theSection->setParameter(argv, argc, param);
-    return ok;
-  }
-}
-
-const Vector &
-SectionAggregator::getSectionDeformationSensitivity(int gradNumber)
-{
-  s->Zero();
-
-  return *s;
-}
-
-const Vector &
-SectionAggregator::getStressResultantSensitivity(int gradNumber,
-						 bool conditional)
-{
-  int i = 0;
-
-  int theSectionOrder = 0;
-    
-  if (theSection) {
-    const Vector &dsdh = theSection->getStressResultantSensitivity(gradNumber,
-								   conditional);
-    theSectionOrder = theSection->getOrder();
-    
-    for (i = 0; i < theSectionOrder; i++)
-      (*s)(i) = dsdh(i);
-  }
-  
-  int order = theSectionOrder + numMats;
-
-  for ( ; i < order; i++)
-    (*s)(i) = theAdditions[i-theSectionOrder]->getStressSensitivity(gradNumber,
-								    conditional);
-  
-  return *s;
-}
-
-const Matrix &
-SectionAggregator::getSectionTangentSensitivity(int gradNumber)
-{
-  ks->Zero();
-  
-  return *ks;
-}
-
-int
-SectionAggregator::commitSensitivity(const Vector& defSens,
-				     int gradNumber, int numGrads)
-{
-  int ret = 0;
-  int i = 0;
-
-  dedh = defSens;
-
-  int theSectionOrder = 0;
-
-  if (theSection) {
-    theSectionOrder = theSection->getOrder();
-    Vector dedh(workArea, theSectionOrder);
-    
-    for (i = 0; i < theSectionOrder; i++)
-      dedh(i) = defSens(i);
-    
-    ret = theSection->commitSensitivity(dedh, gradNumber, numGrads);
-  }
-
-  int order = theSectionOrder + numMats;
-  
-  for ( ; i < order; i++)
-    ret += theAdditions[i-theSectionOrder]->commitSensitivity(defSens(i),
-							      gradNumber,
-							      numGrads);
-  
-  return ret;
-}
-
-// AddingSensitivity:END ///////////////////////////////////
-
-const Vector&
-SectionAggregator::getdedh(void)
-{
-  return dedh;
 }

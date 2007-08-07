@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.29 $
-// $Date: 2007-08-03 00:29:19 $
+// $Revision: 1.26 $
+// $Date: 2006-08-07 22:18:06 $
 // $Source: /usr/local/cvs/OpenSees/SRC/recorder/NodeRecorder.cpp,v $
                                                                         
 // Written: fmk 
@@ -34,7 +34,6 @@
 #include <NodeRecorder.h>
 #include <Domain.h>
 #include <Node.h>
-#include <NodeIter.h>
 #include <Vector.h>
 #include <ID.h>
 #include <Matrix.h>
@@ -56,7 +55,7 @@ NodeRecorder::NodeRecorder()
 }
 
 NodeRecorder::NodeRecorder(const ID &dofs, 
-			   const ID *nodes, 
+			   const ID &nodes, 
 			   int psensitivity,
 			   const char *dataToStore,
 			   Domain &theDom,
@@ -65,7 +64,7 @@ NodeRecorder::NodeRecorder(const ID &dofs,
 			   bool timeFlag)
 :Recorder(RECORDER_TAGS_NodeRecorder),
  theDofs(0), theNodalTags(0), theNodes(0), 
- response(0), 
+ response(1 + nodes.Size()*dofs.Size()), 
  theDomain(&theDom), theOutputHandler(&theOutputHandler),
  echoTimeFlag(timeFlag), dataFlag(0), 
  deltaT(dT), nextTimeStampToRecord(0.0), 
@@ -97,22 +96,23 @@ NodeRecorder::NodeRecorder(const ID &dofs,
   }
 
   // 
-  // create memory to hold nodal ID's
+  // create memory to hold nodal ID's (neeed parallel)
   //
 
-  if (nodes != 0) {
-    int numNode = nodes->Size();
-    if (numNode != 0) {
-      theNodalTags = new ID(*nodes);
-      if (theNodalTags == 0 || theNodalTags->Size() != nodes->Size()) {
-	opserr << "NodeRecorder::NodeRecorder - out of memory\n";
-      }
+  int numNode = nodes.Size();
+  if (numNode != 0) {
+    theNodalTags = new ID(nodes);
+    
+    if (theNodalTags == 0) {
+      opserr << "NodeRecorder::NodeRecorder - out of memory\n";
     }
-  } 
+  }
 
   //
   // set the data flag used as a switch to get the response in a record
   //
+  
+
 
   if (dataToStore == 0 || (strcmp(dataToStore, "disp") == 0)) {
     dataFlag = 0;
@@ -126,14 +126,11 @@ NodeRecorder::NodeRecorder(const ID &dofs,
     dataFlag = 4;
   } else if ((strcmp(dataToStore, "unbalance") == 0)) {
     dataFlag = 5;
-  } else if ((strcmp(dataToStore, "unbalanceInclInertia") == 0) ||
-	     (strcmp(dataToStore, "unbalanceIncInertia") == 0) ||
-	     (strcmp(dataToStore, "unbalanceIncludingInertia") == 0))  {
+  } else if ((strcmp(dataToStore, "unbalanceInclInertia") == 0)) {
     dataFlag = 6;
   } else if ((strcmp(dataToStore, "reaction") == 0)) {
     dataFlag = 7;
   } else if (((strcmp(dataToStore, "reactionIncInertia") == 0))
-	     || ((strcmp(dataToStore, "reactionInclInertia") == 0))
 	     || ((strcmp(dataToStore, "reactionIncludingInertia") == 0))) {
     dataFlag = 8;
   } else if ((strncmp(dataToStore, "eigen",5) == 0)) {
@@ -190,7 +187,7 @@ NodeRecorder::~NodeRecorder()
 int 
 NodeRecorder::record(int commitTag, double timeStamp)
 {
-  if (theDomain == 0 || theDofs == 0) {
+  if (theDomain == 0 || theNodalTags == 0 || theDofs == 0) {
     return 0;
   }
 
@@ -570,13 +567,12 @@ NodeRecorder::recvSelf(int commitTag, Channel &theChannel,
 
 
   static Vector data(2);
+  data(0) = deltaT;
+  data(1) = nextTimeStampToRecord;
   if (theChannel.recvVector(0, commitTag, data) < 0) {
     opserr << "NodeRecorder::sendSelf() - failed to receive data\n";
     return -1;
   }
-  deltaT = data(0);
-  nextTimeStampToRecord = data(1);
-
 
   if (theOutputHandler != 0)
     delete theOutputHandler;
@@ -600,12 +596,10 @@ NodeRecorder::recvSelf(int commitTag, Channel &theChannel,
 int
 NodeRecorder::initialize(void)
 {
-
-  if (theDofs == 0 || theDomain == 0) {
+  if (theDofs == 0 || theNodalTags == 0 || theDomain == 0) {
     opserr << "NodeRecorder::initialize() - either nodes, dofs or domain has not been set\n";
     return -1;
   }
-
 
   theOutputHandler->tag("OpenSeesOutput");
 
@@ -623,40 +617,32 @@ NodeRecorder::initialize(void)
     delete [] theNodes;
   
   numValidNodes = 0;
-
-  if (theNodalTags != 0) {
-    int numNode = theNodalTags->Size();
-    theNodes = new Node *[numNode];
-    if (theNodes == 0) {
-      opserr << "NodeRecorder::domainChanged - out of memory\n";
-      return -1;
-    }
-
-    for (int i=0; i<numNode; i++) {
-      int nodeTag = (*theNodalTags)(i);
-      Node *theNode = theDomain->getNode(nodeTag);
-      if (theNode != 0) {
-	theNodes[numValidNodes] = theNode;
-	numValidNodes++;
-      }
-    }
-
-  } else {
-    int numNodes = theDomain->getNumNodes();
-    theNodes = new Node *[numNodes];
-    if (theNodes == 0) {
-      opserr << "NodeRecorder::domainChanged - out of memory\n";
-      return -1;
-    }
-    NodeIter &theDomainNodes = theDomain->getNodes();
-    Node *theNode;
-    numValidNodes = 0;
-    while (((theNode = theDomainNodes()) != 0) && (numValidNodes < numNodes)) {
-      theNodes[numValidNodes] = theNode;
+  int i;
+  int numNode = theNodalTags->Size();
+  for (i=0; i<numNode; i++) {
+    int nodeTag = (*theNodalTags)(i);
+    Node *theNode = theDomain->getNode(nodeTag);
+    if (theNode != 0) {
       numValidNodes++;
     }
   }
 
+  theNodes = new Node *[numValidNodes];
+  if (theNodes == 0) {
+    opserr << "NodeRecorder::domainChanged - out of memory\n";
+    return -1;
+  }
+
+  int count = 0;
+  for (i=0; i<numNode; i++) {
+    int nodeTag = (*theNodalTags)(i);
+    Node *theNode = theDomain->getNode(nodeTag);
+    if (theNode != 0) {
+      theNodes[count] = theNode;
+      count++;
+    }
+  }
+  
   //
   // resize the response vector
   //
@@ -724,7 +710,7 @@ NodeRecorder::initialize(void)
   char nodeCrdData[20];
   sprintf(nodeCrdData,"coord");
 
-  for (int i=0; i<numValidNodes; i++) {
+  for (i=0; i<numValidNodes; i++) {
     int nodeTag = theNodes[i]->getTag();
     const Vector &nodeCrd = theNodes[i]->getCrds();
     int numCoord = nodeCrd.Size();

@@ -31,13 +31,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 //
 
+#ifndef PlasticFlow_CPP
+#define PlasticFlow_CPP
+
 #include "PlasticFlow.h"
 
+// Leave it blank, do not remove this file, may add lines later.
 
-// putting one method here, if don't want it remove the file
-PlasticFlow::~PlasticFlow()
-{
-  
-}
-
+#endif
 

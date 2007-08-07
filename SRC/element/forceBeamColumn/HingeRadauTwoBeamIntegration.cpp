@@ -18,19 +18,9 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-02-15 23:43:56 $
+// $Revision: 1.1 $
+// $Date: 2006-01-17 21:32:35 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/forceBeamColumn/HingeRadauTwoBeamIntegration.cpp,v $
-
-/*
- * Reference
-
-Scott, M. H. and G. L. Fenves. "Plastic Hinge Integration Methods for
-Force-Based Beam-Column Elements." Journal of Structural Engineering,
-132(2):244-252, February 2006.
-
- *
- */
 
 #include <HingeRadauTwoBeamIntegration.h>
 #include <ElementalLoad.h>
@@ -40,7 +30,6 @@ Force-Based Beam-Column Elements." Journal of Structural Engineering,
 #include <Channel.h>
 #include <FEM_ObjectBroker.h>
 #include <Information.h>
-#include <Parameter.h>
 
 HingeRadauTwoBeamIntegration::HingeRadauTwoBeamIntegration(double lpi,
 							   double lpj):
@@ -142,22 +131,23 @@ HingeRadauTwoBeamIntegration::recvSelf(int cTag, Channel &theChannel,
 }
 
 int
-HingeRadauTwoBeamIntegration::setParameter(const char **argv, int argc,
-					   Parameter &param)
+HingeRadauTwoBeamIntegration::setParameter(const char **argv,
+					   int argc, Information &info)
 {
-  if (argc < 1)
+  if (strcmp(argv[0],"lpI") == 0) {
+    info.theType = DoubleType;
+    return 1;
+  }
+  else if (strcmp(argv[0],"lpJ") == 0) {
+    info.theType = DoubleType;
+    return 2;
+  }
+  else if (strcmp(argv[0],"lp") == 0) {
+    info.theType = DoubleType;
+    return 3;
+  }
+  else 
     return -1;
-
-  if (strcmp(argv[0],"lpI") == 0)
-    return param.addObject(1, this);
-
-  if (strcmp(argv[0],"lpJ") == 0)
-    return param.addObject(2, this);
-
-  if (strcmp(argv[0],"lp") == 0)
-    return param.addObject(3, this);
-
-  return -1;
 }
 
 int
@@ -184,6 +174,7 @@ HingeRadauTwoBeamIntegration::activateParameter(int paramID)
 {
   parameterID = paramID;
 
+  // For Terje to do
   return 0;
 }
 

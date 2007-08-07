@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.4 $
-// $Date: 2006-12-13 05:02:00 $
+// $Revision: 1.2 $
+// $Date: 2003-10-27 23:04:38 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/components/ParameterPositioner.h,v $
 
 
@@ -35,34 +35,31 @@
 #define ParameterPositioner_h
 
 #include <ReliabilityDomainComponent.h>
-#include <Parameter.h>
-
-class DomainComponent;
+#include <Information.h>
+#include <DomainComponent.h>
 
 class ParameterPositioner : public ReliabilityDomainComponent
 {
 
 public:
 
-	ParameterPositioner(int tag, DomainComponent *theObject,
-			    const char **argv, int argc);
-	ParameterPositioner(int tag, Parameter &param);
+	ParameterPositioner(int tag, DomainComponent *theObject, const char **argv, int argc);
 	~ParameterPositioner();
 
 	void Print(OPS_Stream &s, int flag =0);
 
-	int update(int newValue); 
-	int update(double newValue); 
+	int update (double newValue); 
 	int activate(bool active);
-
-	void setGradNumber(int gradNum) {gradNumber = gradNum; return;}
-	int getGradNumber(void) {return gradNumber;}
 
 protected:
 
 private:
-	Parameter theParameter;
-	int gradNumber;
+	Information theInfo;
+	DomainComponent *theObject;
+	int parameterID;
+
+
 };
 
 #endif
+

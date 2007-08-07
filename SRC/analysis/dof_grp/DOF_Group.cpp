@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.17 $
-// $Date: 2007-02-14 18:44:43 $
+// $Revision: 1.13 $
+// $Date: 2005-11-29 23:31:10 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/dof_grp/DOF_Group.cpp,v $
                                                                         
                                                                         
@@ -286,14 +286,6 @@ DOF_Group::getID(void) const
 
 
 int
-DOF_Group::doneID(void)
-{
-    return 0;
-}
-
-
-
-int
 DOF_Group::getNumDOF(void) const
 {
     return numDOF;
@@ -313,7 +305,7 @@ DOF_Group::getNumFreeDOF(void) const
 {
     int numFreeDOF = numDOF;
     for (int i=0; i<numDOF; i++)
-	if (myID(i) == -1 || myID(i) == -4)
+	if (myID(i) == -1)
 	    numFreeDOF--;
     
     return numFreeDOF;
@@ -812,65 +804,62 @@ DOF_Group::getAccSensitivity(int gradNumber)
 	
 
 int 
-DOF_Group::saveDispSensitivity(const Vector &v, int gradNum, int numGrads)
+DOF_Group::saveSensitivity(Vector *v,Vector *vdot,Vector *vdotdot,int gradNum,int numGrads)
 {
-  Vector &dudh = *unbalance;
-
-  for (int i = 0; i < numDOF; i++) {
-    int loc = myID(i);
-    if (loc >= 0)
-      dudh(i) = v(loc);
-    else
-      dudh(i) = 0.0;
-  }
-
-  return myNode->saveDispSensitivity(dudh, gradNum, numGrads);
-}
-
-int 
-DOF_Group::saveVelSensitivity(const Vector &v, int gradNum, int numGrads)
-{
-  Vector &dudh = *unbalance;
-
-  for (int i = 0; i < numDOF; i++) {
-    int loc = myID(i);
-    if (loc >= 0)
-      dudh(i) = v(loc);
-    else
-      dudh(i) = 0.0;
-  }
-
-  return myNode->saveVelSensitivity(dudh, gradNum, numGrads);
-}
-
-int 
-DOF_Group::saveAccSensitivity(const Vector &v, int gradNum, int numGrads)
-{
-  Vector &dudh = *unbalance;
-
-  for (int i = 0; i < numDOF; i++) {
-    int loc = myID(i);
-    if (loc >= 0)
-      dudh(i) = v(loc);
-    else
-      dudh(i) = 0.0;
-  }
-
-  return myNode->saveAccelSensitivity(dudh, gradNum, numGrads);
-}
+	// Initial declarations
+	int i;
 
 
-int 
-DOF_Group::saveSensitivity(const Vector &v, const Vector &vdot,
-			   const Vector &vdotdot, int gradNum, int numGrads)
-{
-  int ok;
+    // Get sensitivities for my dof out of vectors
+    Vector *myV = 0;
+	Vector *myVdot = 0;
+	Vector *myVdotdot = 0;
 
-  ok += this->saveDispSensitivity(v, gradNum, numGrads);
-  ok += this->saveVelSensitivity(vdot, gradNum, numGrads);
-  ok += this->saveAccSensitivity(vdotdot, gradNum, numGrads);
 
-  return ok;
+	// Displacement sensitivities
+	myV = new Vector(numDOF);
+    for (i=0; i<numDOF; i++) {
+		int loc = myID(i);	    			
+		if (loc >= 0) {
+			(*myV)(i) = (*v)(loc);  
+		}
+		else {
+			(*myV)(i) = 0.0;  
+		}
+    }
+
+
+	// Vel and Acc sensitivities only if they are being delivered
+	if ( (vdot != 0) && (vdotdot != 0) ) {
+		myVdot = new Vector(numDOF);
+		for (i=0; i<numDOF; i++) {
+			int loc = myID(i);	    			
+			if (loc >= 0) {
+				(*myVdot)(i) = (*vdot)(loc);  
+			}
+			else {
+				(*myVdot)(i) = 0.0;  
+			}
+		}
+		myVdotdot = new Vector(numDOF);
+		for (i=0; i<numDOF; i++) {
+			int loc = myID(i);	    			
+			if (loc >= 0) {
+				(*myVdotdot)(i) = (*vdotdot)(loc);  
+			}
+			else {
+				(*myVdotdot)(i) = 0.0;  
+			}
+		}
+	}
+
+    myNode->saveSensitivity(myV, myVdot, myVdotdot, gradNum, numGrads);
+
+	delete myV;
+	delete myVdot;
+	delete myVdotdot;
+
+	return 0;
 }
 
 void  

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-04-02 23:41:13 $
+// $Revision: 1.5 $
+// $Date: 2005-11-29 22:42:41 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/algorithm/equiSolnAlgo/EquiSolnAlgo.h,v $
                                                                         
                                                                         
@@ -55,26 +55,16 @@ class EquiSolnAlgo: public SolutionAlgorithm
     virtual ~EquiSolnAlgo();
 
     // public functions defined for subclasses
-    virtual void setLinks(AnalysisModel &theModel, 
+    void setLinks(AnalysisModel &theModel, 
 		  IncrementalIntegrator &theIntegrator,
-		  LinearSOE &theSOE,
-		  ConvergenceTest *theTest);
+		  LinearSOE &theSOE);
     
     // virtual functions
     virtual int solveCurrentStep(void) =0;
-    virtual int setConvergenceTest(ConvergenceTest *theNewTest);    
+    virtual int setConvergenceTest(ConvergenceTest *theNewTest) =0;    
     virtual ConvergenceTest *getConvergenceTest(void);     
-
     virtual void Print(OPS_Stream &s, int flag =0) =0;    
 
-    virtual int getNumFactorizations(void) {return 0;}
-    virtual double getTotalTimeCPU(void)   {return 0.0;}
-    virtual double getTotalTimeReal(void)  {return 0.0;}
-    virtual double getSolveTimeCPU(void)   {return 0.0;}
-    virtual double getSolveTimeReal(void)  {return 0.0;}
-    virtual double getAccelTimeCPU(void)   {return 0.0;}
-    virtual double getAccelTimeReal(void)  {return 0.0;}
- 
     // the following are not protected as convergence test
     // may need access to them
     AnalysisModel           *getAnalysisModelPtr(void) const;
@@ -82,12 +72,12 @@ class EquiSolnAlgo: public SolutionAlgorithm
     LinearSOE	            *getLinearSOEptr(void) const;
 
   protected:
-    ConvergenceTest *theTest;
     
   private:
     AnalysisModel 	  *theModel;
     IncrementalIntegrator *theIntegrator;
     LinearSOE 		  *theSysOfEqn;
+    
 };
 
 #endif

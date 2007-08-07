@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.20 $
-// $Date: 2007-06-06 19:38:22 $
+// $Revision: 1.18 $
+// $Date: 2006-08-07 22:15:49 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/zeroLength/ZeroLength.cpp,v $
                                                                         
                                                                         
@@ -821,7 +821,7 @@ ZeroLength::Print(OPS_Stream &s, int flag)
 }
 
 Response*
-ZeroLength::setResponse(const char **argv, int argc, OPS_Stream &output)
+ZeroLength::setResponse(const char **argv, int argc, Information &eleInformation, OPS_Stream &output)
 {
   Response *theResponse = 0;
 
@@ -871,7 +871,7 @@ ZeroLength::setResponse(const char **argv, int argc, OPS_Stream &output)
     if (argc > 2) {
       int matNum = atoi(argv[1]);
       if (matNum >= 1 && matNum <= numMaterials1d)
-	theResponse =  theMaterial1d[matNum-1]->setResponse(&argv[2], argc-2, output);
+	theResponse =  theMaterial1d[matNum-1]->setResponse(&argv[2], argc-2, eleInformation, output);
     }
   }
 
@@ -925,37 +925,6 @@ ZeroLength::getResponse(int responseID, Information &eleInformation)
     return -1;
   }
 }
-
-int
-ZeroLength::setParameter(const char **argv, int argc, Parameter &param)
-{
-  int result = -1;  
-
-  if (argc < 1)
-    return -1;
-
-
-  for (int i=0; i<numMaterials1d; i++) {
-    int res = theMaterial1d[i]->setParameter(argv, argc, param);
-    if (res != -1)
-      result = res;
-  }  
-  return result;
-}
-
-int
-ZeroLength::updateParameter (int parameterID, Information &info)
-{
-  return 0;
-}
-
-int
-ZeroLength::activateParameter(int passedParameterID)
-{
-  
-  return 0;
-}
-
 
 
 // Private methods

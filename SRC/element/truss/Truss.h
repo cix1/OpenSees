@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.16 $
-// $Date: 2007-02-02 01:35:22 $
+// $Revision: 1.14 $
+// $Date: 2006-08-04 19:13:02 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/truss/Truss.h,v $
                                                                         
                                                                         
@@ -92,12 +92,12 @@ class Truss : public Element
     int displaySelf(Renderer &theViewer, int displayMode, float fact);    
     void Print(OPS_Stream &s, int flag =0);    
 
-    Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &s);
     int getResponse(int responseID, Information &eleInformation);
 
     // AddingSensitivity:BEGIN //////////////////////////////////////////
     int		   addInertiaLoadSensitivityToUnbalance(const Vector &accel, bool tag);
-    int setParameter(const char **argv, int argc, Parameter &param);
+    int            setParameter(const char **argv, int argc, Information &info);
     int            updateParameter(int parameterID, Information &info);
     int            activateParameter(int parameterID);
     const Vector & getResistingForceSensitivity(int gradNumber);

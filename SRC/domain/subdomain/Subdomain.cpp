@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-04-25 23:45:02 $
+// $Revision: 1.8 $
+// $Date: 2006-04-13 20:12:08 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/subdomain/Subdomain.cpp,v $
                                                                         
 // Written: fmk 
@@ -48,7 +48,6 @@
 #include <classTags.h>
 #include <PartitionedModelBuilder.h>
 #include <DOF_Group.h>
-#include <ElementIter.h>
 
 #include <EquiSolnAlgo.h>
 #include <IncrementalIntegrator.h>
@@ -272,7 +271,6 @@ Subdomain::getNodePtrs(void)
   return 0;
 }
 
-
 Node *
 Subdomain::getNode(int tag) 
 {
@@ -389,27 +387,6 @@ Subdomain::Print(OPS_Stream &s, int flag)
 }
 
 
-void Subdomain::Print(OPS_Stream &s, ID *nodeTags, ID *eleTags, int flag)
-{
-  if (nodeTags != 0) {
-    int numNodes = nodeTags->Size();
-    for (int i=0; i<numNodes; i++) {
-      int nodeTag = (*nodeTags)(i);
-      TaggedObject *theNode = internalNodes->getComponentPtr(nodeTag);
-      if (theNode != 0)
-	theNode->Print(s, flag);
-      else {
-	TaggedObject *theNode = externalNodes->getComponentPtr(nodeTag);
-	if (theNode != 0)
-	  theNode->Print(s, flag);
-      }
-    }
-  }
-
-  this->Domain::Print(s, 0, eleTags, flag);
-}
-
-
 
 NodeIter &
 Subdomain::getInternalNodeIter(void)
@@ -450,7 +427,6 @@ Subdomain::setAnalysisAlgorithm(EquiSolnAlgo &theAlgorithm)
 {
   if (theAnalysis != 0)
     return theAnalysis->setAlgorithm(theAlgorithm);
-
   return 0;
 }
 
@@ -467,7 +443,6 @@ Subdomain::setAnalysisLinearSOE(LinearSOE &theSOE)
 {
   if (theAnalysis != 0)
     return theAnalysis->setLinearSOE(theSOE);
-
   return 0;
 }
 
@@ -903,21 +878,4 @@ DomainDecompositionAnalysis *
 Subdomain::getDDAnalysis(void)
 {
   return theAnalysis;
-}
-
-int 
-Subdomain::addResistingForceToNodalReaction(bool inclInertia)
-{
-  return 0;
-}
-
-int  
-Subdomain::updateParameter(int tag, int value){
-  return this->Domain::updateParameter(tag, value);
-}
-
-int  
-Subdomain::updateParameter(int tag, double value)
-{
-  return this->Domain::updateParameter(tag, value);
 }

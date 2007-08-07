@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.11 $
+// $Date: 2006-08-04 19:08:07 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/elasticBeamColumn/ElasticBeam2d.h,v $
                                                                         
                                                                         
@@ -83,10 +83,10 @@ class ElasticBeam2d : public Element
     void Print(OPS_Stream &s, int flag = 0);    
     int displaySelf(Renderer &theViewer, int displayMode, float fact);
 
-    Response *setResponse (const char **argv, int argc, OPS_Stream &s);
+    Response *setResponse (const char **argv, int argc, Information &info, OPS_Stream &s);
     int getResponse (int responseID, Information &info);
  
-    int setParameter (const char **argv, int argc, Parameter &param);
+    int setParameter (const char **argv, int argc, Information &info);
     int updateParameter (int parameterID, Information &info);
 
   private:

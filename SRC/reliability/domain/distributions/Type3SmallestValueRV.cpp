@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.6 $
+// $Date: 2003-03-04 00:44:37 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/Type3SmallestValueRV.cpp,v $
 
 
@@ -42,7 +42,7 @@ Type3SmallestValueRV::Type3SmallestValueRV(int passedTag,
 		 double passedMean,
 		 double passedStdv,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue)
 {
 	// Note: this constructor is void.
 	opserr << "WARNING: This type of random variable is not uniquely defined by mean and stdv." << endln;
@@ -53,16 +53,18 @@ Type3SmallestValueRV::Type3SmallestValueRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue)
 {
+	tag = passedTag ;
 	epsilon = passedParameter1;
 	u = passedParameter2;
 	k = passedParameter3;
+	startValue = passedStartValue;
 }
 Type3SmallestValueRV::Type3SmallestValueRV(int passedTag, 
 		 double passedMean,
 		 double passedStdv)
-:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue, passedMean)
+:RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue)
 {
 	// Note: this constructor is void.
 	opserr << "WARNING: This type of random variable is not uniquely defined by mean and stdv." << endln;
@@ -74,10 +76,11 @@ Type3SmallestValueRV::Type3SmallestValueRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_type3smallestvalue)
 {
+	tag = passedTag ;
 	epsilon = passedParameter1;
 	u = passedParameter2;
 	k = passedParameter3;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -138,8 +141,9 @@ double
 Type3SmallestValueRV::getMean()
 {
 	double result;
-	GammaRV aGammaRV(1, 0.0, 1.0, 0.0);
-	result = epsilon + (u-epsilon) * aGammaRV.gammaFunction(1.0+1.0/k);
+	GammaRV *aGammaRV = new GammaRV(1, 0.0, 1.0, 0.0);
+	result = epsilon + (u-epsilon) * aGammaRV->gammaFunction(1.0+1.0/k);
+	delete aGammaRV;
 	return result;
 }
 
@@ -148,27 +152,24 @@ Type3SmallestValueRV::getMean()
 double 
 Type3SmallestValueRV::getStdv()
 {
-	GammaRV aGammaRV(1, 0.0, 1.0, 0.0);
-	double a = aGammaRV.gammaFunction(1.0+2.0/k);
-	double b = aGammaRV.gammaFunction(1.0+1.0/k);
+	GammaRV *aGammaRV = new GammaRV(1, 0.0, 1.0, 0.0);
+	double a = aGammaRV->gammaFunction(1.0+2.0/k);
+	double b = aGammaRV->gammaFunction(1.0+1.0/k);
+	delete aGammaRV;
 	return (u-epsilon) * sqrt(a-b*b);
 }
 
 
-double
-Type3SmallestValueRV::getParameter1()
+double 
+Type3SmallestValueRV::getStartValue()
 {
-  return epsilon;
+	return startValue;
 }
 
-double
-Type3SmallestValueRV::getParameter2()
-{
-  return u;
-}
 
-double
-Type3SmallestValueRV::getParameter3() 
-{
-  return k;
-}
+double Type3SmallestValueRV::getParameter1()  {return epsilon;}
+double Type3SmallestValueRV::getParameter2()  {return u;}
+double Type3SmallestValueRV::getParameter3()  {return k;}
+double Type3SmallestValueRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+
+

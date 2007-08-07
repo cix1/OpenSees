@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.21 $
-// $Date: 2007-02-02 01:30:47 $
+// $Revision: 1.18 $
+// $Date: 2006-08-04 18:43:04 $
 // $Source: /usr/local/cvs/OpenSees/SRC/element/Element.cpp,v $
                                                                         
                                                                         
@@ -181,7 +181,7 @@ const Matrix &
 Element::getDamp(void) 
 {
   if (index  == -1) {
-    this->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
+    this->setRayleighDampingFactors(0.0, 0.0, 0.0, 0.0);
   }
 
   // now compute the damping matrix
@@ -206,7 +206,7 @@ const Matrix &
 Element::getMass(void)
 {
   if (index  == -1) {
-    this->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
+    this->setRayleighDampingFactors(0.0, 0.0, 0.0, 0.0);
   }
 
   // zero the matrix & return it
@@ -219,7 +219,7 @@ const Vector &
 Element::getResistingForceIncInertia(void) 
 {
   if (index == -1) {
-    this->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
+    this->setRayleighDampingFactors(0.0, 0.0, 0.0, 0.0);
   }
 
   Matrix *theMatrix = theMatrices[index]; 
@@ -286,7 +286,7 @@ Element::getRayleighDampingForces(void)
 {
 
   if (index == -1) {
-    this->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
+    this->setRayleighDampingFactors(0.0, 0.0, 0.0, 0.0);
   }
 
   Matrix *theMatrix = theMatrices[index]; 
@@ -381,7 +381,7 @@ Element::isSubdomain(void)
 }
 
 Response*
-Element::setResponse(const char **argv, int argc, OPS_Stream &output)
+Element::setResponse(const char **argv, int argc, Information &eleInfo, OPS_Stream &output)
 {
   Response *theResponse = 0;
 
@@ -422,14 +422,22 @@ Element::getResponse(int responseID, Information &eleInfo)
   }
 }
 
-int
-Element::getResponseSensitivity(int responseID, int gradNumber,
-				Information &eleInfo)
-{
-  return -1;
-}
-
 // AddingSensitivity:BEGIN //////////////////////////////////////////
+int
+Element::setParameter     (const char **argv, int argc, Information &info)
+{
+	return -1;
+}
+int
+Element::updateParameter  (int parameterID, Information &info)
+{
+	return -1;
+}
+int
+Element::activateParameter(int parameterID)
+{
+	return -1;
+}
 const Vector &
 Element::getResistingForceSensitivity(int gradNumber)
 {
@@ -472,7 +480,7 @@ const Matrix &
 Element::getDampSensitivity(int gradNumber) 
 {
   if (index  == -1) {
-    this->setRayleighDampingFactors(alphaM, betaK, betaK0, betaKc);
+    this->setRayleighDampingFactors(0.0, 0.0, 0.0, 0.0);
   }
 
   // now compute the damping matrix
@@ -490,7 +498,7 @@ Element::getDampSensitivity(int gradNumber)
   }
   if (betaKc != 0.0) {
     theMatrix->addMatrix(1.0, *Kc, 0.0);      // Don't use this and DDM   
-    opserr << "Rayleigh damping with non-zero betaCommittedTangent is not compatible with DDM sensitivity analysis" << endln;
+	opserr << "Rayleigh damping with non-zero betaCommittedTangent is not compatible with DDM sensitivity analysis" << endln;
   }
 
   // return the computed matrix

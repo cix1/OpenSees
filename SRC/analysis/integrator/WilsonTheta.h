@@ -17,14 +17,17 @@
 **   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
 **                                                                    **
 ** ****************************************************************** */
-
-// $Revision: 1.5 $
-// $Date: 2007-04-05 01:22:20 $
+                                                                        
+// $Revision: 1.4 $
+// $Date: 2003-02-14 23:00:49 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/WilsonTheta.h,v $
-
+                                                                        
+                                                                        
 #ifndef WilsonTheta_h
 #define WilsonTheta_h
 
+// File: ~/analysis/integrator/WilsonTheta.h
+// 
 // Written: fmk 
 // Created: 11/98
 // Revision: A
@@ -43,47 +46,38 @@ class Vector;
 
 class WilsonTheta : public TransientIntegrator
 {
-public:
-    // constructors
+  public:
     WilsonTheta();
     WilsonTheta(double theta);
-    WilsonTheta(double theta,
-        double alphaM, double betaK, double betaKi, double betaKc);
-
-    // destructor
+    WilsonTheta(double theta, double alphaM, double betaK, double betaKi, double betaKc);    
     ~WilsonTheta();
-    
+
     // methods which define what the FE_Element and DOF_Groups add
     // to the system of equation object.
     int formEleTangent(FE_Element *theEle);
     int formNodTangent(DOF_Group *theDof);        
-    
+
     int domainChanged(void);    
-    int newStep(double deltaT);
-    int revertToLastStep(void);
+    int newStep(double deltaT);    
     int update(const Vector &deltaU);
     int commit(void);
-    
+
     virtual int sendSelf(int commitTag, Channel &theChannel);
-    virtual int recvSelf(int commitTag, Channel &theChannel, FEM_ObjectBroker &theBroker);
+    virtual int recvSelf(int commitTag, Channel &theChannel, 
+			 FEM_ObjectBroker &theBroker);
+
+    void Print(OPS_Stream &s, int flag =0);        
     
-    void Print(OPS_Stream &s, int flag = 0);        
+  protected:
     
-protected:
-    
-private:
+  private:
     double theta;    
     double deltaT;
-    
-    // rayleigh damping factors
-    double alphaM;
-    double betaK;
-    double betaKi;
-    double betaKc;
 
-    double c1, c2, c3;              // some constants we need to keep
-    Vector *Ut, *Utdot, *Utdotdot;  // response quantities at time t
-    Vector *U, *Udot, *Udotdot;     // response quantities at time t+deltaT
+    double alphaM, betaK, betaKi, betaKc;
+    double c1, c2, c3;  // some constants we need to keep
+    Vector *Ut, *Utdot, *Utdotdot; // response quantities at time t
+    Vector *U, *Udot, *Udotdot; // response quantities at time t+deltat
 };
 
 #endif

@@ -2,14 +2,11 @@ include ../../../Makefile.def
 
  OBJS       = UniaxialMaterial.o \
 	ElasticMaterial.o \
-	Elastic2Material.o \
         ElasticPPMaterial.o \
 	ParallelMaterial.o \
         HardeningMaterial.o \
 	Concrete01.o \
 	Concrete04.o \
-	Concrete06.o \
-	Concrete07.o \
 	Steel01.o \
         HystereticMaterial.o \
 	EPPGapMaterial.o \
@@ -35,10 +32,6 @@ include ../../../Makefile.def
 	TclNewUnixialMaterial.o \
 	ReinforcingSteel.o \
 	TclReinforcingSteel.o\
-	Concrete01WithSITC.o \
-	Concrete05.o \
-	ECC01.o \
-	ShearPanelMaterial.o \
         TclModelBuilderUniaxialMaterialCommand.o
 
 all:         $(OBJS)

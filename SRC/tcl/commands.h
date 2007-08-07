@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.18 $
-// $Date: 2007-07-19 21:19:08 $
+// $Revision: 1.14 $
+// $Date: 2006-05-26 00:17:12 $
 // $Source: /usr/local/cvs/OpenSees/SRC/tcl/commands.h,v $
                                                                         
                                                                         
@@ -106,6 +106,11 @@ playbackAlgorithmRecorders(ClientData clientData, Tcl_Interp *interp, int argc, 
 
 int 
 groundExcitation(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
+int 
+rigidLink(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
+
+int 
+rigidDiaphragm(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 
 int 
 eigenAnalysis(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
@@ -117,13 +122,7 @@ int
 removeObject(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 
 int 
-eleForce(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-int 
 nodeDisp(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-int 
-nodeEigenvector(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 
 int 
 nodeCoord(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
@@ -131,20 +130,9 @@ nodeCoord(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 int 
 nodeBounds(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
 
+// AddingSensitivity:BEGIN /////////////////////////////////////////////////
 int 
 nodeVel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-int 
-nodeAccel(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-int 
-nodeResponse(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-int 
-calculateNodalReactions(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);
-
-// AddingSensitivity:BEGIN /////////////////////////////////////////////////
-
 
 int 
 computeGradients(ClientData clientData, Tcl_Interp *interp, int argc, TCL_Char **argv);

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-05-04 06:59:08 $
+// $Revision: 1.6 $
+// $Date: 2006-08-04 22:37:15 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/objectBroker/FEM_ObjectBroker.h,v $
                                                                         
                                                                         
@@ -49,7 +49,6 @@ class LoadPattern;
 class TimeSeries;
 class TimeSeriesIntegrator;
 
-
 class Matrix;
 class Vector;
 class ID;
@@ -58,7 +57,6 @@ class ConstraintHandler;
 class DOF_Numberer;   
 class AnalysisModel;    
 class EquiSolnAlgo;
-class LineSearch;
 class DomainDecompAlgo;
 class StaticIntegrator;
 class TransientIntegrator;
@@ -84,7 +82,6 @@ class SectionForceDeformation;
 class GroundMotion;
 class OPS_Stream;
 class Recorder;
-class Parameter;
 
 class Actor;
 
@@ -142,7 +139,6 @@ class FEM_ObjectBroker
     virtual DOF_Numberer        *getNewNumberer(int classTag);
     virtual AnalysisModel       *getNewAnalysisModel(int classTag);
     virtual EquiSolnAlgo        *getNewEquiSolnAlgo(int classTag);
-    virtual LineSearch          *getLineSearch(int classTag);
     virtual DomainDecompAlgo    *getNewDomainDecompAlgo(int classTag);
     virtual StaticIntegrator    *getNewStaticIntegrator(int classTag);
     virtual TransientIntegrator *getNewTransientIntegrator(int classTag);
@@ -160,7 +156,6 @@ class FEM_ObjectBroker
 
     virtual Subdomain  *getSubdomainPtr(int classTag);
 
-    virtual Parameter *getParameter(int classTag);
 
     virtual int addUniaxialMaterial(int classTag, const char *lib, const char *funcName, UniaxialMaterial *(*)(void));
     

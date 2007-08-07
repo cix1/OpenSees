@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.3 $
-// $Date: 2006-12-06 22:32:23 $
+// $Revision: 1.2 $
+// $Date: 2003-04-28 20:51:25 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/analysis/analysis/MVFOSMAnalysis.cpp,v $
 
 
@@ -62,13 +62,15 @@ MVFOSMAnalysis::MVFOSMAnalysis(ReliabilityDomain *passedReliabilityDomain,
 	theGFunEvaluator		= passedGFunEvaluator;
 	theGradGEvaluator = passedGradGEvaluator;
 	theTclInterp			= passedTclInterp;
+	fileName = new char[256];
 	strcpy(fileName,passedFileName);
 }
 
 
 MVFOSMAnalysis::~MVFOSMAnalysis()
 {
-
+	if (fileName != 0)
+	delete [] fileName;
 }
 
 

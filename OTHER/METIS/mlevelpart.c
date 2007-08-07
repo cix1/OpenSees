@@ -9,7 +9,7 @@
  * Started 10/5/94
  * George
  *
- * $Id: mlevelpart.c,v 1.3 2007-05-17 05:23:30 fmk Exp $
+ * $Id: mlevelpart.c,v 1.2 2001-10-05 00:51:05 fmk Exp $
  *
  */
 
@@ -23,6 +23,10 @@ CtrlType *__Ctrl; 	/* Stores Control Information */
 /*************************************************************************
 * External Global Variables
 **************************************************************************/
+#ifndef METISLIB
+extern timer SplitTmr;		/* main.c */
+#endif
+
 
 /*************************************************************************
 * This function is called recursively to partition the graph
@@ -191,6 +195,8 @@ void SplitGraphPart(CoarseGraphType *graph, CoarseGraphType *lgraph, CoarseGraph
   VertexType *oldvtx;
   int nedges, ewgtsum;
 
+  starttimer(&SplitTmr);
+
   InitGraph(lgraph);
   InitGraph(rgraph);
 
@@ -275,6 +281,7 @@ void SplitGraphPart(CoarseGraphType *graph, CoarseGraphType *lgraph, CoarseGraph
     }
   }
 
+  stoptimer(&SplitTmr);
 }
 
 
@@ -294,6 +301,8 @@ void SplitGraphPart1_2(CoarseGraphType *graph, CoarseGraphType *rgraph)
   int ri;		/* rgraph indices */
   VertexType *oldvtx;
   int nedges, ewgtsum;
+
+  starttimer(&SplitTmr);
 
   InitGraph(rgraph);
 
@@ -344,6 +353,7 @@ void SplitGraphPart1_2(CoarseGraphType *graph, CoarseGraphType *rgraph)
     }
   }
 
+  stoptimer(&SplitTmr);
 }
 
 

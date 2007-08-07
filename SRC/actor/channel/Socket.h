@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.12 $
-// $Date: 2007-05-29 23:19:50 $
+// $Revision: 1.6 $
+// $Date: 2005-11-23 23:43:47 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/channel/Socket.h,v $
                                                                         
 // Written: fmk 11/95
@@ -38,25 +38,10 @@ extern "C" {
 #ifdef _WIN32
   #include <winsock2.h>
 #else
-  #include <netinet/in.h>
-
-#ifdef _NETINET_PROBLEMS_INTEL
-#undef htons
-#undef ntohs
-#undef htonl
-#undef ntohl
-#define htons(x) __bswap_constant_16(x)
-#define ntohs(x) __bswap_constant_16(x)
-#define htonl(x) __bswap_constant_32(x)
-#define ntohl(x) __bswap_constant_32(x)
-#endif
-
-  #include <netinet/tcp.h>
-
   #include <sys/socket.h>
   #include <sys/types.h>
-  #include <sys/ioctl.h>
-
+  #include <netinet/in.h>
+  #include <netinet/tcp.h>
   #include <arpa/inet.h>
   #include <netdb.h>
   #include <unistd.h>
@@ -74,16 +59,28 @@ extern "C" {
   typedef SOCKET socket_type;
   typedef int socklen_type;
   #define bzero(s,n) memset((s),0,(n))
-  #define bcopy(s,d,len) memcpy((d),(s),(len))
   #define bcmp(s1,s2,n) memcmp((s1),(s2),(n))
 #else
   typedef int socket_type;
   typedef socklen_t socklen_type;
 #endif
 
-extern int startup_sockets(void);
-extern void cleanup_sockets(void);
-extern int httpGet(const char *URL, const char *page, unsigned int port, char **dataPtr);
+inline bool startup_socket()
+{
+  #ifdef _WIN32
+    WSADATA wsaData;
+    return WSAStartup(0x0002, &wsaData) == 0;
+  #else
+    return true;
+  #endif
+} 
+
+inline void cleanup_socket()
+{
+  #ifdef _WIN32
+    WSACleanup();
+  #endif
+}
 
 #endif 
 

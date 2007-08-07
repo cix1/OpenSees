@@ -22,8 +22,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.7 $
-// $Date: 2007-02-17 21:27:23 $
+// $Revision: 1.6 $
+// $Date: 2003-03-04 00:44:34 $
 // $Source: /usr/local/cvs/OpenSees/SRC/reliability/domain/distributions/RayleighRV.cpp,v $
 
 
@@ -43,9 +43,11 @@ RayleighRV::RayleighRV(int passedTag,
 		 double passedParameter3,
 		 double passedParameter4,
 		 double passedStartValue)
-:RandomVariable(passedTag, RANDOM_VARIABLE_rayleigh, passedStartValue)
+:RandomVariable(passedTag, RANDOM_VARIABLE_rayleigh)
 {
+	tag = passedTag ;
 	u = passedParameter1;
+	startValue = passedStartValue;
 }
 RayleighRV::RayleighRV(int passedTag, 
 		 double passedParameter1,
@@ -54,8 +56,9 @@ RayleighRV::RayleighRV(int passedTag,
 		 double passedParameter4)
 :RandomVariable(passedTag, RANDOM_VARIABLE_rayleigh)
 {
+	tag = passedTag ;
 	u = passedParameter1;
-	this->setStartValue(getMean());
+	startValue = getMean();
 }
 
 
@@ -129,10 +132,14 @@ RayleighRV::getStdv()
 }
 
 
-
-
-double
-RayleighRV::getParameter1()  
+double 
+RayleighRV::getStartValue()
 {
-  return u;
+	return startValue;
 }
+
+
+double RayleighRV::getParameter1()  {return u;}
+double RayleighRV::getParameter2()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double RayleighRV::getParameter3()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}
+double RayleighRV::getParameter4()  {opserr<<"No such parameter in r.v. #"<<tag<<endln; return 0.0;}

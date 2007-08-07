@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.16 $
-// $Date: 2007-05-04 23:40:24 $
+// $Revision: 1.14 $
+// $Date: 2006-09-01 01:08:45 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/uniaxial/HystereticMaterial.cpp,v $
 
 // Written: MHS
@@ -72,6 +72,9 @@ mom1n(m1n), rot1n(r1n), mom2n(m2n), rot2n(r2n), mom3n(m3n), rot3n(r3n)
 	  opserr << "HystereticMaterial::HystereticMaterial -- input backbone is not unique (one-to-one)\n";
 	  exit(-1);
 	}		
+
+	opserr << mom1p << " " << mom2p << " " << mom3p << " " << rot1p << " " << rot2p << " " << rot3p << endln;
+	opserr << pinchX << " " << pinchY << " " << endln;
 
 	energyA = 0.5 * (rot1p*mom1p + (rot2p-rot1p)*(mom2p+mom1p) + (rot3p-rot2p)*(mom3p+mom2p) +
 		rot1n*mom1n + (rot2n-rot1n)*(mom2n+mom1n) + (rot3n-rot2n)*(mom3n+mom2n));
@@ -526,7 +529,6 @@ HystereticMaterial::recvSelf(int commitTag, Channel &theChannel,
     damfc1 = data(15);
     damfc2 = data(16);
     beta = data(17);
-
     CrotMax = data(18);
     CrotMin = data(19);
     CrotPu = data(20);
@@ -546,11 +548,9 @@ HystereticMaterial::recvSelf(int commitTag, Channel &theChannel,
     TloadIndicator = CloadIndicator;
     Tstress = Cstress;
     Tstrain = Cstrain;
+
   }
 
-  // Set envelope slopes
-  this->setEnvelope();
-  
   return 0;
 }
     

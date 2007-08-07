@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
 
-// $Revision: 1.3 $
-// $Date: 2007-04-05 01:29:04 $
+// $Revision: 1.1 $
+// $Date: 2005-12-19 22:39:21 $
 // $Source: /usr/local/cvs/OpenSees/SRC/analysis/integrator/HHTHybridSimulation.cpp,v $
 
 // Written: Andreas Schellenberg (andreas.schellenberg@gmx.net)
@@ -45,74 +45,68 @@
 
 HHTHybridSimulation::HHTHybridSimulation()
     : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
-    alphaI(1.0), alphaF(1.0), beta(0.0), gamma(0.0), polyOrder(1),
+    alphaI(1.0), alphaF(1.0),
+    beta(0.0), gamma(0.0), deltaT(0.0),
+    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
+    theTest(0), rFact(1.0), c1(0.0), c2(0.0), c3(0.0),
+    Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
+    Ualpha(0), Ualphadot(0), Ualphadotdot(0)
+{
+
+}
+
+
+HHTHybridSimulation::HHTHybridSimulation(double _rhoInf, ConvergenceTest &theT)
+    : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
+    alphaI((2.0-_rhoInf)/(1.0+_rhoInf)), alphaF(1.0/(1.0+_rhoInf)),
+    beta(1.0/(1.0+_rhoInf)/(1.0+_rhoInf)), gamma(0.5*(3.0-_rhoInf)/(1.0+_rhoInf)),
     deltaT(0.0), alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    c1(0.0), c2(0.0), c3(0.0), x(1.0),
+    theTest(&theT), rFact(1.0), c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
-    Ualpha(0), Ualphadot(0), Ualphadotdot(0),
-    Utm1(0), Utm2(0), scaledDeltaU(0)
+    Ualpha(0), Ualphadot(0), Ualphadotdot(0)
 {
 
 }
 
 
-HHTHybridSimulation::HHTHybridSimulation(double _rhoInf, int polyorder)
-    : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
-    alphaI((2.0-_rhoInf)/(1.0+_rhoInf)), alphaF(1.0/(1.0+_rhoInf)),
-    beta(1.0/(1.0+_rhoInf)/(1.0+_rhoInf)), gamma(0.5*(3.0-_rhoInf)/(1.0+_rhoInf)),
-    polyOrder(polyorder), deltaT(0.0),
-    alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    c1(0.0), c2(0.0), c3(0.0), x(1.0),
-    Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
-    Ualpha(0), Ualphadot(0), Ualphadotdot(0),
-    Utm1(0), Utm2(0), scaledDeltaU(0)
-{
-
-}
-
-
-HHTHybridSimulation::HHTHybridSimulation(double _rhoInf, int polyorder,
+HHTHybridSimulation::HHTHybridSimulation(double _rhoInf, ConvergenceTest &theT,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
     alphaI((2.0-_rhoInf)/(1.0+_rhoInf)), alphaF(1.0/(1.0+_rhoInf)),
     beta(1.0/(1.0+_rhoInf)/(1.0+_rhoInf)), gamma(0.5*(3.0-_rhoInf)/(1.0+_rhoInf)),
-    polyOrder(polyorder), deltaT(0.0),
-    alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
-    c1(0.0), c2(0.0), c3(0.0), x(1.0),
+    deltaT(0.0), alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
+    theTest(&theT), rFact(1.0), c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
-    Ualpha(0), Ualphadot(0), Ualphadotdot(0),
-    Utm1(0), Utm2(0), scaledDeltaU(0)
+    Ualpha(0), Ualphadot(0), Ualphadotdot(0)
 {
 
 }
 
 
 HHTHybridSimulation::HHTHybridSimulation(double _alphaI, double _alphaF,
-    double _beta, double _gamma, int polyorder)
+    double _beta, double _gamma, ConvergenceTest &theT)
     : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
-    alphaI(_alphaI), alphaF(_alphaF), beta(_beta), gamma(_gamma),
-    polyOrder(polyorder), deltaT(0.0),
+    alphaI(_alphaI), alphaF(_alphaF),
+    beta(_beta), gamma(_gamma), deltaT(0.0),
     alphaM(0.0), betaK(0.0), betaKi(0.0), betaKc(0.0),
-    c1(0.0), c2(0.0), c3(0.0), x(1.0),
+    theTest(&theT), rFact(1.0), c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
-    Ualpha(0), Ualphadot(0), Ualphadotdot(0),
-    Utm1(0), Utm2(0), scaledDeltaU(0)
+    Ualpha(0), Ualphadot(0), Ualphadotdot(0)
 {
 
 }
 
 
 HHTHybridSimulation::HHTHybridSimulation(double _alphaI, double _alphaF,
-    double _beta, double _gamma, int polyorder,
+    double _beta, double _gamma, ConvergenceTest &theT,
     double _alphaM, double _betaK, double _betaKi, double _betaKc)
     : TransientIntegrator(INTEGRATOR_TAGS_HHTHybridSimulation),
-    alphaI(_alphaI), alphaF(_alphaF), beta(_beta), gamma(_gamma),
-    polyOrder(polyorder), deltaT(0.0),
+    alphaI(_alphaI), alphaF(_alphaF),
+    beta(_beta), gamma(_gamma), deltaT(0.0),
     alphaM(_alphaM), betaK(_betaK), betaKi(_betaKi), betaKc(_betaKc),
-    c1(0.0), c2(0.0), c3(0.0), x(1.0),
+    theTest(&theT), rFact(1.0), c1(0.0), c2(0.0), c3(0.0), 
     Ut(0), Utdot(0), Utdotdot(0), U(0), Udot(0), Udotdot(0),
-    Ualpha(0), Ualphadot(0), Ualphadotdot(0),
-    Utm1(0), Utm2(0), scaledDeltaU(0)
+    Ualpha(0), Ualphadot(0), Ualphadotdot(0)
 {
 
 }
@@ -139,12 +133,6 @@ HHTHybridSimulation::~HHTHybridSimulation()
         delete Ualphadot;
     if (Ualphadotdot != 0)
         delete Ualphadotdot;
-    if (Utm1 != 0)
-        delete Utm1;
-    if (Utm2 != 0)
-        delete Utm2;
-    if (scaledDeltaU != 0)
-        delete scaledDeltaU;
 }
 
 
@@ -164,7 +152,7 @@ int HHTHybridSimulation::newStep(double _deltaT)
     }
 
     // get a pointer to the AnalysisModel
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     
     // set the constants
     c1 = 1.0;
@@ -177,11 +165,18 @@ int HHTHybridSimulation::newStep(double _deltaT)
     }
     
     // set response at t to be that at t+deltaT of previous step
-    (*Utm2) = *Utm1;
-    (*Utm1) = *Ut;
-    (*Ut)   = *U;        
+    (*Ut) = *U;        
     (*Utdot) = *Udot;  
     (*Utdotdot) = *Udotdot;
+
+    // increment the time to t+alpha*deltaT and apply the load
+    double time = theModel->getCurrentDomainTime();
+    time += alphaF*deltaT;
+//    theModel->applyLoadDomain(time);
+    if (theModel->updateDomain(time, deltaT) < 0)  {
+        opserr << "HHTHybridSimulation::newStep() - failed to update the domain\n";
+        return -4;
+    }
 
     // determine new velocities and accelerations at t+deltaT
     double a1 = (1.0 - gamma/beta);
@@ -199,18 +194,10 @@ int HHTHybridSimulation::newStep(double _deltaT)
     (*Ualphadotdot) = *Utdotdot;
     Ualphadotdot->addVector((1.0-alphaI), *Udotdot, alphaI);
 
-    // set the trial response quantities
+    // set the trial response quantities for the nodes
     theModel->setVel(*Ualphadot);
     theModel->setAccel(*Ualphadotdot);
         
-    // increment the time to t+alpha*deltaT and apply the load
-    double time = theModel->getCurrentDomainTime();
-    time += alphaF*deltaT;
-    if (theModel->updateDomain(time, deltaT) < 0)  {
-        opserr << "HHTHybridSimulation::newStep() - failed to update the domain\n";
-        return -4;
-    }
-
     return 0;
 }
 
@@ -222,8 +209,6 @@ int HHTHybridSimulation::revertToLastStep()
         (*U) = *Ut;
         (*Udot) = *Utdot;
         (*Udotdot) = *Utdotdot;
-        (*Ut) = *Utm1;
-        (*Utm1) = *Utm2;
     }
 
     return 0;
@@ -260,8 +245,8 @@ int HHTHybridSimulation::formNodTangent(DOF_Group *theDof)
 
 int HHTHybridSimulation::domainChanged()
 {
-    AnalysisModel *myModel = this->getAnalysisModel();
-    LinearSOE *theLinSOE = this->getLinearSOE();
+    AnalysisModel *myModel = this->getAnalysisModelPtr();
+    LinearSOE *theLinSOE = this->getLinearSOEPtr();
     const Vector &x = theLinSOE->getX();
     int size = x.Size();
     
@@ -291,12 +276,6 @@ int HHTHybridSimulation::domainChanged()
             delete Ualphadot;
         if (Ualphadotdot != 0)
             delete Ualphadotdot;
-        if (Utm1 != 0)
-            delete Utm1;
-        if (Utm2 != 0)
-            delete Utm2;
-        if (scaledDeltaU != 0)
-            delete scaledDeltaU;
         
         // create the new
         Ut = new Vector(size);
@@ -308,9 +287,6 @@ int HHTHybridSimulation::domainChanged()
         Ualpha = new Vector(size);
         Ualphadot = new Vector(size);
         Ualphadotdot = new Vector(size);
-        Utm1 = new Vector(size);
-        Utm2 = new Vector(size);
-        scaledDeltaU = new Vector(size);
         
         // check we obtained the new
         if (Ut == 0 || Ut->Size() != size ||
@@ -321,10 +297,7 @@ int HHTHybridSimulation::domainChanged()
             Udotdot == 0 || Udotdot->Size() != size ||
             Ualpha == 0 || Ualpha->Size() != size ||
             Ualphadot == 0 || Ualphadot->Size() != size ||
-            Ualphadotdot == 0 || Ualphadotdot->Size() != size ||
-            Utm1 == 0 || Utm1->Size() != size ||
-            Utm2 == 0 || Utm2->Size() != size ||
-            scaledDeltaU == 0 || scaledDeltaU->Size() != size)  {
+            Ualphadotdot == 0 || Ualphadotdot->Size() != size)  {
             
             opserr << "HHTHybridSimulation::domainChanged - ran out of memory\n";
             
@@ -347,17 +320,10 @@ int HHTHybridSimulation::domainChanged()
                 delete Ualphadot;
             if (Ualphadotdot != 0)
                 delete Ualphadotdot;
-            if (Utm1 != 0)
-                delete Utm1;
-            if (Utm2 != 0)
-                delete Utm2;
-            if (scaledDeltaU != 0)
-                delete scaledDeltaU;
             
             Ut = 0; Utdot = 0; Utdotdot = 0;
             U = 0; Udot = 0; Udotdot = 0;
             Ualpha = 0; Ualphadot = 0; Ualphadotdot = 0;
-            Utm1 = 0; Utm2 = 0; scaledDeltaU = 0;
 
             return -1;
         }
@@ -367,6 +333,7 @@ int HHTHybridSimulation::domainChanged()
     // the DOF_Groups and getting the last committed velocity and accel
     DOF_GrpIter &theDOFs = myModel->getDOFs();
     DOF_Group *dofPtr;
+    
     while ((dofPtr = theDOFs()) != 0)  {
         const ID &id = dofPtr->getID();
         int idSize = id.Size();
@@ -376,8 +343,6 @@ int HHTHybridSimulation::domainChanged()
         for (i=0; i < idSize; i++)  {
             int loc = id(i);
             if (loc >= 0)  {
-                (*Utm1)(loc) = disp(i);
-                (*Ut)(loc) = disp(i);
                 (*U)(loc) = disp(i);		
             }
         }
@@ -399,24 +364,17 @@ int HHTHybridSimulation::domainChanged()
         }        
     }    
     
-    opserr << "WARNING: HHTHybridSimulation::domainChanged() - assuming Ut-2 = Ut-1 = Ut\n";
-
     return 0;
 }
 
 
 int HHTHybridSimulation::update(const Vector &deltaU)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING HHTHybridSimulation::update() - no AnalysisModel set\n";
         return -1;
-    }
-    ConvergenceTest *theTest = this->getConvergenceTest();
-    if (theTest == 0)  {
-        opserr << "WARNING HHTHybridSimulation::update() - no ConvergenceTest set\n";
-        return -1;
-    }
+    }	
     
     // check domainChanged() has been called, i.e. Ut will not be zero
     if (Ut == 0)  {
@@ -431,39 +389,17 @@ int HHTHybridSimulation::update(const Vector &deltaU)
         return -3;
     }
     
-/*    // determine the displacement increment reduction factor
-    x = 1.0/(theTest->getMaxNumTests() - theTest->getNumTests() + 1.0);
-    //  determine the response at t+deltaT
-    U->addVector(1.0, deltaU, x*c1);
-    Udot->addVector(1.0, deltaU, x*c2);
-    Udotdot->addVector(1.0, deltaU, x*c3);
-*/
-
-    // get interpolation location and scale displacement increment 
-    x = (double) theTest->getNumTests()/theTest->getMaxNumTests();
-    if (polyOrder == 1)  {
-        (*scaledDeltaU) = x*((*U)+deltaU) - (x-1.0)*(*Ut)  - (*U);
-    }
-    else if (polyOrder == 2)  {
-        (*scaledDeltaU) = x*(x+1.0)/2.0*((*U)+deltaU) - (x+1.0)*(x-1.0)*(*Ut) 
-                        + x*(x-1.0)/2.0*(*Utm1) - (*U);
-    }
-    else if (polyOrder == 3)  {
-        (*scaledDeltaU) = x*(x+1.0)*(x+2.0)/6.0*((*U)+deltaU) - (x-1.0)*(x+1.0)*(x+2.0)/2.0*(*Ut)
-                        + x*(x-1.0)*(x+2.0)/2.0*(*Utm1) - x*(x-1.0)*(x+1.0)/6.0*(*Utm2) - (*U);
-    }
-    else  {
-        opserr << "WARNING HHTHybridSimulation::update() - polyOrder > 3 not supported\n";
-    }
+    // determine the displacement increment reduction factor
+    rFact = 1.0/(theTest->getMaxNumTests() - theTest->getNumTests() + 1.0);
 
     //  determine the response at t+deltaT
-    U->addVector(1.0, *scaledDeltaU, c1);
+    (*U) += rFact*deltaU;
+
+    Udot->addVector(1.0, deltaU, rFact*c2);
     
-    Udot->addVector(1.0, *scaledDeltaU, c2);
+    Udotdot->addVector(1.0, deltaU, rFact*c3);
 
-    Udotdot->addVector(1.0, *scaledDeltaU, c3);
-
-    // determine response at t+alpha*deltaT
+    // determine displacement and velocity at t+alpha*deltaT
     (*Ualpha) = *Ut;
     Ualpha->addVector((1.0-alphaF), *U, alphaF);
 
@@ -486,7 +422,7 @@ int HHTHybridSimulation::update(const Vector &deltaU)
 
 int HHTHybridSimulation::commit(void)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel == 0)  {
         opserr << "WARNING HHTHybridSimulation::commit() - no AnalysisModel set\n";
         return -1;
@@ -494,10 +430,10 @@ int HHTHybridSimulation::commit(void)
     
     // update the response at the DOFs
     theModel->setResponse(*U,*Udot,*Udotdot);
-    if (theModel->updateDomain() < 0)  {
-        opserr << "HHTHybridSimulation::commit() - failed to update the domain\n";
-        return -4;
-    }
+//    if (theModel->updateDomain() < 0)  {
+//        opserr << "HHTHybridSimulation::commit() - failed to update the domain\n";
+//        return -4;
+//    }
     
     // set the time to be t+deltaT
     double time = theModel->getCurrentDomainTime();
@@ -510,19 +446,25 @@ int HHTHybridSimulation::commit(void)
 
 int HHTHybridSimulation::sendSelf(int cTag, Channel &theChannel)
 {
-    Vector data(9);
+    Vector data(10);
     data(0) = alphaI;
     data(1) = alphaF;
     data(2) = beta;
     data(3) = gamma;
-    data(4) = polyOrder;
-    data(5) = alphaM;
-    data(6) = betaK;
-    data(7) = betaKi;
-    data(8) = betaKc;
+    data(4) = theTest->getClassTag();
+    data(5) = theTest->getDbTag();
+    data(6) = alphaM;
+    data(7) = betaK;
+    data(8) = betaKi;
+    data(9) = betaKc;
     
     if (theChannel.sendVector(this->getDbTag(), cTag, data) < 0)  {
         opserr << "WARNING HHTHybridSimulation::sendSelf() - could not send data\n";
+        return -1;
+    }
+
+    if (theTest->sendSelf(cTag, theChannel) < 0)  {
+        opserr << "WARNING HHTHybridSimulation::sendSelf() - failed to send CTest object\n";
         return -1;
     }
 
@@ -532,37 +474,45 @@ int HHTHybridSimulation::sendSelf(int cTag, Channel &theChannel)
 
 int HHTHybridSimulation::recvSelf(int cTag, Channel &theChannel, FEM_ObjectBroker &theBroker)
 {
-    Vector data(9);
+    Vector data(10);
     if (theChannel.recvVector(this->getDbTag(), cTag, data) < 0)  {
         opserr << "WARNING HHTHybridSimulation::recvSelf() - could not receive data\n";
         return -1;
     }
     
-    alphaI    = data(0);
-    alphaF    = data(1);
-    beta      = data(2);
-    gamma     = data(3);
-    polyOrder = int(data(4));
-    alphaM    = data(5);
-    betaK     = data(6);
-    betaKi    = data(7);
-    betaKc    = data(8);
+    alphaI = data(0);
+    alphaF = data(1);
+    beta   = data(2);
+    gamma  = data(3);
+    int ctType = int(data(4));
+    int ctDb   = int(data(5));
+    alphaM = data(6);
+    betaK  = data(7);
+    betaKi = data(8);
+    betaKc = data(9);
     
+    theTest = theBroker.getNewConvergenceTest(ctType);
+    theTest->setDbTag(ctDb);
+    if (theTest->recvSelf(cTag, theChannel, theBroker) < 0) {
+        opserr << "WARNING HHTHybridSimulation::recvSelf() - failed to recv CTest object\n";
+        return -1;
+    }
+
     return 0;
 }
 
 
 void HHTHybridSimulation::Print(OPS_Stream &s, int flag)
 {
-    AnalysisModel *theModel = this->getAnalysisModel();
+    AnalysisModel *theModel = this->getAnalysisModelPtr();
     if (theModel != 0)  {
         double currentTime = theModel->getCurrentDomainTime();
         s << "\t HHTHybridSimulation - currentTime: " << currentTime << endln;
-        s << "  alphaI: " << alphaI << "  alphaF: " << alphaF  << "  beta: " << beta  << "  gamma: " << gamma << endln;
-        s << "  polyOrder: " << polyOrder << endln;
-        s << "  c1: " << c1 << "  c2: " << c2 << "  c3: " << c3 << endln;
-        s << "  Rayleigh Damping - alphaM: " << alphaM << "  betaK: " << betaK;
-        s << "  betaKi: " << betaKi << "  betaKc: " << betaKc << endln;	    
+        s << "  alphaI: " << alphaI << " alphaF: " << alphaF  << " beta: " << beta  << " gamma: " << gamma << endln;
+        s << "  c1: " << c1 << " c2: " << c2 << " c3: " << c3 << endln;
+        s << "  Rayleigh Damping - alphaM: " << alphaM;
+        s << "  betaK: " << betaK << "   betaKi: " << betaKi << endln;	    
     } else 
         s << "\t HHTHybridSimulation - no associated AnalysisModel\n";
 }
+

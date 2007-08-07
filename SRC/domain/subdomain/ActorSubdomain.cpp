@@ -18,10 +18,12 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2007-05-04 02:04:52 $
+// $Revision: 1.5 $
+// $Date: 2005-11-30 23:47:00 $
 // $Source: /usr/local/cvs/OpenSees/SRC/domain/subdomain/ActorSubdomain.cpp,v $
                                                                         
+                                                                        
+
 #include <ActorSubdomain.h>
 #include <FEM_ObjectBroker.h>
 #include <Element.h>
@@ -42,8 +44,6 @@
 #include <LinearSOE.h>
 #include <LinearSOESolver.h>
 #include <Recorder.h>
-#include <Parameter.h>
-
 
 #include <ArrayOfTaggedObjects.h>
 #include <ShadowActorSubdomain.h>
@@ -67,21 +67,13 @@ ActorSubdomain::run(void)
 {
     Vector theVect(4);
     bool exitYet = false;
-    int res = 0;
 
     while (exitYet == false) {
-      int action;
-      res = this->recvID(msgData);
-      if (res != 0) {
-	opserr << "ActorSubdomain::run - error receiving msgData\n";
-	exitYet = true;
-        action = ShadowActorSubdomain_DIE;
-      } else {
-	action = msgData(0);
-      }
 
-      bool change;
-      int theType, theOtherType, tag, dbTag, loadPatternTag, startTag, endTag, axisDirn, numSP, i;
+  	this->recvID(msgData);
+	int action = msgData(0);
+
+	int theType, theOtherType, tag, dbTag, loadPatternTag;
 	Element *theEle;
 	Node *theNod;
 	SP_Constraint *theSP;
@@ -94,7 +86,6 @@ ActorSubdomain::run(void)
 	const Vector *theVector;
 	Matrix *theM;
 	Vector *theV;
-	ID     *theI, *theNodeTags, *theEleTags;
 	PartitionedModelBuilder *theBuilder;
 	IncrementalIntegrator *theIntegrator;
 	EquiSolnAlgo *theAlgorithm;
@@ -105,12 +96,9 @@ ActorSubdomain::run(void)
 	bool res;
 	double doubleRes;
 	int intRes;
-	NodeResponseType nodeResponseType;
-	Parameter *theParameter;
+
 
 	const ID *theID;
-
-	//	opserr << "ActorSubdomain action: " << action << endln;
 	
 	switch (action) {
 
@@ -118,11 +106,13 @@ ActorSubdomain::run(void)
 	    tag = msgData(1); // subdomain tag
 	    this->setTag(tag);
 	    this->Actor::setCommitTag(tag);
+
 	    break;
 
 	  case ShadowActorSubdomain_newStep:
 	    this->recvVector(theVect);
 	    this->newStep(theVect(0));
+
 	    break;
 
 	  case ShadowActorSubdomain_buildSubdomain:
@@ -225,6 +215,9 @@ ActorSubdomain::run(void)
 	    break;
 
 
+
+
+
 	  case ShadowActorSubdomain_addExternalNode:
 	    theType = msgData(1);
 	    dbTag = msgData(2);
@@ -268,42 +261,6 @@ ActorSubdomain::run(void)
 		    msgData(0) = -1;
 	    } else
 		msgData(0) = -1;
-
-	    break;	    
-
-
-	  case ShadowActorSubdomain_addSP_ConstraintAXIS:
-
-	    startTag = msgData(1);
-	    axisDirn = msgData(2);
-	    theI = new ID(msgData(3));
-	    theV = new Vector(2);
-	    this->recvID(*theI);
-	    this->recvVector(*theV);
-
-	    msgData(0) = 0;				 
-	    endTag = this->addSP_Constraint(startTag, axisDirn, (*theV)(0), *theI, (*theV)(1));
-	    msgData(1) = endTag;
-	    this->sendID(msgData);
-
-	    delete theV;
-	    delete theI;
-
-	    numSP = endTag - startTag;
-	    
-	    if (numSP > 0) {
-	      theI = new ID(numSP);
-	      for (i = 0; i<numSP; i++) {
-		theSP = this->getSP_Constraint(i+startTag);
-		(*theI)(i) = theSP->getClassTag();
-	      }
-	      this->sendID(*theI);	      
-	      for (i = 0; i<numSP; i++) {
-		theSP = this->getSP_Constraint(i+startTag);
-		this->sendObject(*theSP);	      
-	      }
-	      delete theI;
-	    }
 
 	    break;	    
 	    
@@ -516,53 +473,8 @@ ActorSubdomain::run(void)
 	    break;	    	    	    	    
 
 
-	  case ShadowActorSubdomain_getNode:
-	    tag = msgData(1);
-
-	    theNod = this->getNode(tag);
-
-	    if (theNod != 0) 
-		msgData(0) = theNod->getClassTag();
-	    else
-		msgData(0) = -1;
-
-	    this->sendID(msgData);
-
-	    if (theNod != 0) {
-		this->sendObject(*theNod);
-	    }
-
-	    msgData(0) = 0;
-
-	    break;	    	    	    	    
-
-
 	  case ShadowActorSubdomain_Print:
-	    this->Print(opserr, msgData(3));
-	    this->sendID(msgData);
-
-	    break;	    	    	    	    
-
-	  case ShadowActorSubdomain_PrintNodeAndEle:
-	    
-	    theNodeTags = 0;
-	    theEleTags = 0;
-	    if (msgData(1) != 0) {
-	      theNodeTags = new ID(msgData(1));
-	      this->recvID(*theNodeTags);
-	    }
-	    if (msgData(2) != 0) {
-	      theEleTags = new ID(msgData(2));
-	      this->recvID(*theEleTags);
-	    }
-	      
-	    this->Print(opserr, theNodeTags, theEleTags, msgData(3));
-	    
-	    if (theNodeTags != 0)
-	      delete theNodeTags;
-	    if (theEleTags != 0)
-	      delete theEleTags;
-
+	    this->Print(opserr);
 	    this->sendID(msgData);
 
 	    break;	    	    	    	    
@@ -581,7 +493,7 @@ ActorSubdomain::run(void)
 	  case ShadowActorSubdomain_setLoadConstant:
 	    this->setLoadConstant();
 	    break;	    
-
+	    
 	  case ShadowActorSubdomain_update:
 	    this->update();
 	    break;
@@ -650,7 +562,6 @@ ActorSubdomain::run(void)
 	case ShadowActorSubdomain_setAnalysisAlgorithm:
 	  theType = msgData(1);
 	  theAlgorithm = theBroker->getNewEquiSolnAlgo(theType);
-
 	  if (theAlgorithm != 0) {
 	    this->recvObject(*theAlgorithm);
 	    this->setAnalysisAlgorithm(*theAlgorithm);
@@ -676,7 +587,7 @@ ActorSubdomain::run(void)
 	  theType = msgData(1);
 	  theOtherType = msgData(2);
 	  theSOE = theBroker->getNewLinearSOE(theType, theOtherType);
-
+	  
 	  if (theSOE != 0) {
 	    this->recvObject(*theSOE);
 	    theSolver = theSOE->getSolver();
@@ -705,23 +616,12 @@ ActorSubdomain::run(void)
 	    this->domainChange();
 
 	    tag = this->getNumDOF();
-	    if (tag != 0) {
-	      if (lastResponse == 0)
+	    if (lastResponse == 0)
 		lastResponse = new Vector(tag);
-	      else if (lastResponse->Size() != tag) {
+	    else if (lastResponse->Size() != tag) {
 		delete lastResponse;
 		lastResponse = new Vector(tag);
-	      }
 	    }
-	    break;
-
-	  case ShadowActorSubdomain_getDomainChangeFlag:
-	    change = this->getDomainChangeFlag();
-	    if (change == true)
-	      msgData(0) = 0;
-	    else
-	      msgData(0) = 1;
-	    this->sendID(msgData);
 	    
 	    break;
 
@@ -770,6 +670,7 @@ ActorSubdomain::run(void)
 	    this->sendID(msgData);
 	    break;
 
+
 	  case ShadowActorSubdomain_getNodeDisp:
 	    tag = msgData(1);  // nodeTag
 	    dbTag = msgData(2); // dof
@@ -797,32 +698,6 @@ ActorSubdomain::run(void)
 	    this->sendID(msgData);
 	    break;
 
-
-	  case ShadowActorSubdomain_getNodeResponse:
-	    tag = msgData(1);  // nodeTag
-	    nodeResponseType = (NodeResponseType)msgData(2); 
-	    theVector = this->getNodeResponse(tag, nodeResponseType);
-
-	    if (theVector == 0)
-	      msgData(0) = 0;
-	    else {
-	      msgData(0) = 1;
-	      msgData(1) = theVector->Size();
-	    }
-	    this->sendID(msgData);
-
-	    if (theVector != 0)
-	      this->sendVector(*theVector);
-
-	    break;
-
-	  case ShadowActorSubdomain_calculateNodalReactions:
-	    if (msgData(0) == 0)
-	      this->calculateNodalReactions(true);
-	    else
-	      this->calculateNodalReactions(false);
-	    break;
-
          case ShadowActorSubdomain_setRayleighDampingFactors:
 	   theV = new Vector(4);
 	   this->recvVector(*theV);
@@ -830,46 +705,6 @@ ActorSubdomain::run(void)
 (3));
 	   delete theV;
 	   break;
-
-
-         case ShadowActorSubdomain_addParameter:
-	    theType = msgData(1);
-	    dbTag = msgData(2);
-
-	    theParameter = theBroker->getParameter(theType);
-
-	    if (theParameter != 0) {
-		theParameter->setDbTag(dbTag);		
-		this->recvObject(*theParameter);
-		bool result = this->addParameter(theParameter);
-		if (result == true)
-		    msgData(0) = 0;
-		else
-		    msgData(0) = -1;
-	    } else
-		msgData(0) = -1;
-
-	   break;
-
-         case ShadowActorSubdomain_removeParameter:
-	   theType = msgData(1);
-	   this->removeParameter(theType);
-	   break;
-
-         case ShadowActorSubdomain_updateParameterINT:
-	   theType = msgData(1);  // tag
-	   dbTag = msgData(2);    // value
-	   this->Domain::updateParameter(theType, dbTag);
-	   break;
-
-         case ShadowActorSubdomain_updateParameterDOUBLE:
-	   theType = msgData(1);  // tag
-	   theV = new Vector(1);
-	   this->recvVector(*theV);
-	   this->Domain::updateParameter(theType, (*theV)(0));
-	   delete theV;
-	   break;
-
 
 	  case ShadowActorSubdomain_DIE:
 	    exitYet = true;
@@ -918,7 +753,7 @@ ActorSubdomain::update(void)
 {
   int res = this->Domain::update();
 
-  res = this->barrierCheck(res);
+  this->barrierCheck(res);
 
   return res;
 }
@@ -946,6 +781,9 @@ ActorSubdomain::barrierCheck(int myResult)
 
   return data(0);
 }
+
+
+
 
 
 

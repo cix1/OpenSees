@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.6 $
-// $Date: 2007-02-02 01:18:13 $
+// $Revision: 1.4 $
+// $Date: 2006-08-03 23:49:46 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/section/FiberSectionGJ.h,v $
                                                                         
 // Written: fmk
@@ -70,12 +70,13 @@ class FiberSectionGJ : public SectionForceDeformation
 	       FEM_ObjectBroker &theBroker);
   void Print(OPS_Stream &s, int flag = 0);
   
-  Response *setResponse(const char **argv, int argc, OPS_Stream &s);
+  Response *setResponse(const char **argv, int argc, Information &info, OPS_Stream &s);
   int getResponse(int responseID, Information &info);
   
   int addFiber(Fiber &theFiber);
   
-  int setParameter(const char **argv, int argc, Parameter &param);
+  int setParameter(const char **argv, int argc, Information &info);
+  int updateParameter(int parameterID, Information &info);
   
  protected:
   

@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.8 $
-// $Date: 2007-06-26 20:13:24 $
+// $Revision: 1.7 $
+// $Date: 2004-06-07 23:09:32 $
 // $Source: /usr/local/cvs/OpenSees/SRC/renderer/OpenGlDevice.h,v $
                                                                         
                                                                         
@@ -28,13 +28,7 @@
 
 #include <Device.h>
 
-
 #ifdef _GLX
-
-#ifdef _MACOSX
-#include <OpenGL/gl.h>
-#include <OpenGL/glx.h>
-#else
 
 #include <GL/gl.h>
 #include <GL/glx.h>
@@ -46,8 +40,6 @@
 #include <X11/Xatom.h>
 
 #define X11_MAX_COLORS 256
-
-#endif
 
 #elif _WGL
 

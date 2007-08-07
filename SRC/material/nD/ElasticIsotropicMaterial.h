@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.13 $
-// $Date: 2006-09-05 21:21:52 $
+// $Revision: 1.12 $
+// $Date: 2006-08-11 21:20:21 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/nD/ElasticIsotropicMaterial.h,v $
                                                                         
                                                                         
@@ -110,7 +110,7 @@ class ElasticIsotropicMaterial : public NDMaterial
     
     void Print(OPS_Stream &s, int flag = 0);
 
-    virtual int setParameter(const char **argv, int argc, Parameter &param);
+    virtual int setParameter(char **argv, int argc, Information &info);
     virtual int updateParameter(int parameterID, Information &info);
 
   protected:
@@ -119,8 +119,6 @@ class ElasticIsotropicMaterial : public NDMaterial
     double rho ; //mass per unit 3D volume
 
   private:
-    // Uncomment when this material model is "sensitized"
-    //int parameterID;
 };
 
 

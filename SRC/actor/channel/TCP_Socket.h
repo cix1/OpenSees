@@ -18,8 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.9 $
-// $Date: 2007-08-03 00:21:28 $
+// $Revision: 1.4 $
+// $Date: 2005-11-23 23:43:47 $
 // $Source: /usr/local/cvs/OpenSees/SRC/actor/channel/TCP_Socket.h,v $
                                                                         
                                                                         
@@ -46,9 +46,8 @@ class TCP_Socket : public Channel
 {
   public:
     TCP_Socket();        
-    TCP_Socket(unsigned int port, bool checkEndianness = false);    
-    TCP_Socket(unsigned int other_Port, const char *other_InetAddr,
-        bool checkEndianness = false); 
+    TCP_Socket(unsigned int);    
+    TCP_Socket(unsigned int other_Port, char *other_InetAddr); 
     ~TCP_Socket();
 
     char *addToProgram(void);
@@ -72,9 +71,6 @@ class TCP_Socket : public Channel
     int recvMsg(int dbTag, int commitTag, 
 		Message &, 
 		ChannelAddress *theAddress =0);        
-    int recvMsgUnknownSize(int dbTag, int commitTag, 
-		Message &, 
-		ChannelAddress *theAddress =0);        
 
     int sendMatrix(int dbTag, int commitTag, 
 		   const Matrix &theMatrix, 
@@ -84,8 +80,7 @@ class TCP_Socket : public Channel
 		   ChannelAddress *theAddress =0);
     
     int sendVector(int dbTag, int commitTag, 
-		   const Vector &theVector,
-           ChannelAddress *theAddress =0);
+		   const Vector &theVector, ChannelAddress *theAddress =0);
     int recvVector(int dbTag, int commitTag, 
 		   Vector &theVector, 
 		   ChannelAddress *theAddress =0);
@@ -99,7 +94,6 @@ class TCP_Socket : public Channel
     
   protected:
     unsigned int getPortNumber(void) const;
-    unsigned int getBytesAvailable(void);
     
   private:
     socket_type sockfd;
@@ -117,8 +111,17 @@ class TCP_Socket : public Channel
 
     unsigned int myPort;
     int connectType;
-    bool checkEndianness;
-    bool endiannessProblem;
+
+    char add[40];
 };
 
+
 #endif 
+
+
+
+
+
+
+ 
+
