@@ -13,16 +13,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.1 $
-// $Date: 2010-02-17 20:52:18 $
-// $Source: /usr/local/cvs/OpenSees/SRC/material/nD/BoundingCamClay3D.h,v $
-
-// Written: kap	
-// Created: 12/04
-
-//
-// BoundingCamClay3D isotropic hardening material class
-// 
+// Written: Chris McGann
+//          February 2011
 
 #include <stdio.h> 
 #include <stdlib.h> 
@@ -34,27 +26,26 @@
 
 #include <BoundingCamClay.h>
 
-class BoundingCamClay3D : public BoundingCamClay {
+class BoundingCamClayPlaneStrain : public BoundingCamClay {
 
 //-------------------Declarations-------------------------------
 
   public : 
 
   //null constructor
-  BoundingCamClay3D( ) ;
+  BoundingCamClayPlaneStrain();
 
   //full constructor
-  BoundingCamClay3D(int tag, double c, double bulk, double OCR,
-							 double mu_o, double alpha, double lambda, double h, 
-							 double m);
+  BoundingCamClayPlaneStrain(int tag, double c, double bulk, double OCR,
+							 double mu_o, double alpha, double lambda, double h, double m);
 
 
   //destructor
-  ~BoundingCamClay3D( ) ;
+  ~BoundingCamClayPlaneStrain();
 
-  NDMaterial* getCopy( ) ;
-  const char* getType( ) const ;
-  int getOrder( ) const ;
+  NDMaterial* getCopy();
+  const char* getType() const;
+  int getOrder() const;
 
   int setTrialStrain(const Vector &strain_from_element);
 
@@ -62,24 +53,29 @@ class BoundingCamClay3D : public BoundingCamClay {
   int setTrialStrain(const Vector &v, const Vector &r);
     
   //send back the strain
-  const Vector& getStrain( ) ;
+  const Vector& getStrain();
 
   //send back the stress 
-  const Vector& getStress( ) ;
+  const Vector& getStress();
 
   //send back the tangent 
-  const Matrix& getTangent( ) ;
-  const Matrix& getInitialTangent( ) ;
+  const Matrix& getTangent();
+  const Matrix& getInitialTangent();
 
   //this is mike's problem
-  int setTrialStrain(const Tensor &v) ;
-  int setTrialStrain(const Tensor &v, const Tensor &r) ;    
-  int setTrialStrainIncr(const Tensor &v) ;
-  int setTrialStrainIncr(const Tensor &v, const Tensor &r) ;
+  int setTrialStrain(const Tensor &v);
+  int setTrialStrain(const Tensor &v, const Tensor &r);    
+  int setTrialStrainIncr(const Tensor &v);
+  int setTrialStrainIncr(const Tensor &v, const Tensor &r);
 
   private :
 
+  // static vectors and matrices
+  static Vector strain;
+  static Vector stress;
+  static Matrix tangent;
 
-} ; //end of BoundingCamClay3D declarations
+
+} ; //end of BoundingCamClayPlaneStrain declarations
 
 

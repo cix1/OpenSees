@@ -36,6 +36,7 @@
 
 #include <DruckerPrager.h>
 #include <DruckerPrager3D.h>
+#include <DruckerPragerPlaneStrain.h>
 
 #include <Information.h>
 #include <MaterialResponse.h>
@@ -131,7 +132,7 @@ DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, d
     mI1(6),
     mIIvol(6,6),
     mIIdev(6,6),
-    mState(4)
+    mState(5)
 {
 #ifdef DEBUG
         opserr << "DruckerPrager::DruckerPrager(...)" << endln;
@@ -193,7 +194,7 @@ DruckerPrager ::DruckerPrager  ()
 	mI1(6),
     mIIvol(6,6),
     mIIdev(6,6),
-	mState(4)
+	mState(5)
 {
 #ifdef DEBUG
         opserr << "DruckerPrager::DruckerPrager()" << endln;
@@ -295,54 +296,45 @@ NDMaterial * DruckerPrager::getCopy (const char *type)
         opserr << "DruckerPrager::getCopy(..)" << endln;
 #endif
 
-//	DruckerPrager *clone;
-//	clone = new DruckerPrager(); //new instance of this class
-//	*clone = *this;              //assignment to make copy 
-//	return clone;
-
-
-  if (strcmp(type,"ThreeDimensional")==0 || strcmp(type, "3D") ==0) 
-  {  DruckerPrager3D *clone;
-     clone = new DruckerPrager3D(this->getTag(),  mK, mG, msigma_y,
-		 mrho, mrho_bar, mKinf, mKo, mdelta1, mdelta2, mHard, mtheta, mPatm);
-	 return clone;
-  }
-  else {
-	  opserr << "DruckerPrager::getCopy failed to get copy: " << type << endln;
-	  return 0;
-  }
+  	if (strcmp(type,"PlanStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
+		DruckerPragerPlaneStrain *clone;
+		clone = new DruckerPragerPlaneStrain(this->getTag(), mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+		                                                       mdelta1, mdelta2, mHard, mtheta, mPatm);
+		return clone;
+	} else if (strcmp(type,"ThreeDimensional")==0 || strcmp(type, "3D") ==0) {  
+		DruckerPrager3D *clone;
+     	clone = new DruckerPrager3D(this->getTag(),  mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+		                                             mdelta1, mdelta2, mHard, mtheta, mPatm);
+	 	return clone;
+  	} else {
+	  	opserr << "DruckerPrager::getCopy failed to get copy: " << type << endln;
+	  	return 0;
+  	}
 }
 
 int DruckerPrager::commitState (void)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::commitState()" << endln;
-#endif
-
-        mEpsilon_n_p = mEpsilon_n1_p;
-        mAlpha1_n    = mAlpha1_n1; 
-		mAlpha2_n    = mAlpha2_n1; 
-        mBeta_n      = mBeta_n1;
+    mEpsilon_n_p = mEpsilon_n1_p;
+    mAlpha1_n    = mAlpha1_n1; 
+	mAlpha2_n    = mAlpha2_n1; 
+    mBeta_n      = mBeta_n1;
 
     return 0;
 }
  
 int DruckerPrager::revertToLastCommit (void)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::revertToLastCommit()" << endln;
-#endif
-
     return 0;
 }
 
 int DruckerPrager::revertToStart(void)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::revertToStart()" << endln;
-#endif
-
-    this->initialize();
+	if (ops_InitialStateAnalysis) {
+		// do nothing, keep state variables from last step
+	} else {
+		// normal call for revertToStart (not initialStateAnalysis)
+    	this->initialize();
+	}
 
     return 0;
 }
@@ -386,11 +378,12 @@ void DruckerPrager:: plastic_integrator( )
 		double Invariant_1;
 		double Invariant_ep;
 		double norm_ep;
+		double norm_dev_ep;
 		Vector epsilon_e(6);
 		Vector s(6);
-		Vector eta(6);     // eta = s - beta
+		Vector eta(6);
 		Vector dev_ep(6);
-		Vector Jact;
+		Vector Jact(2);
 
 		double fTOL;
 		double gTOL;
@@ -399,18 +392,14 @@ void DruckerPrager:: plastic_integrator( )
 		
         double NormCep;
 
-		double alpha1;			// hardeing parameter for DP surface
+		double alpha1;			// hardening parameter for DP surface
 		double alpha2;			// hardening parameter for tension cut-off
 		Vector n(6);			// normal to the yield surface in strain space
-		Vector R(2);			// residuum vector
+		Vector R(2);			// residual vector
 		Vector gamma(2);		// vector of consistency parameters
 		Vector dgamma(2);		// incremental vector of consistency parameters
 		Matrix g(2,2);			// jacobian of the corner region (return map)
 		Matrix g_contra(2,2);	// inverse of jacobian of the corner region
-
-
-		// Update Elastic Parameter if necessary
-		//this->updateElasticParam( );
 
         // set trial state:
 
@@ -419,6 +408,7 @@ void DruckerPrager:: plastic_integrator( )
 
 		// alpha1_n+1_trial
 		mAlpha1_n1 = mAlpha1_n;
+		// alpha2_n+1_trial
 		mAlpha2_n1 = mAlpha2_n;
 
         // beta_n+1_trial
@@ -435,13 +425,13 @@ void DruckerPrager:: plastic_integrator( )
 		Invariant_1 = ( mSigma(0) + mSigma(1) + mSigma(2) );
 
         // s_n+1_trial
-		s = mSigma - Invariant_1/3.0 *mI1;
+		s = mSigma - (Invariant_1/3.0)*mI1;
 
         //eta_trial = s_n+1_trial - beta_n;
 		eta = s - mBeta_n;
 		
-		// compute yield function value
-        norm_eta = sqrt(eta(0)*eta(0) + eta(1)*eta(1) + eta(2)*eta(2) + 2*(eta(3)*eta(3) + eta(4)*eta(4) +eta(5)*eta(5) ));
+		// compute yield function value (contravariant norm)
+        norm_eta = sqrt(eta(0)*eta(0) + eta(1)*eta(1) + eta(2)*eta(2) + 2*(eta(3)*eta(3) + eta(4)*eta(4) + eta(5)*eta(5)));
 
         // f1_n+1_trial
 		f1 = norm_eta + mrho*Invariant_1 - root23*Kiso(mAlpha1_n1);
@@ -449,15 +439,10 @@ void DruckerPrager:: plastic_integrator( )
 		// f2_n+1_trial
 		f2 = Invariant_1 - T(mAlpha2_n1);
 		
-        //opserr << "Invariant_1 = " << Invariant_1;
-        //opserr << ",  mK     = " << mK;
-        //opserr << ",  mG     = " << mG; 
-		//opserr << ", nu = " << (3*mK-2*mG)/(6*mK+2*mG) << endln;
+		// update elastic bulk and shear moduli 
+ 		this->updateElasticParam();
 
- 		this->updateElasticParam( );
-
-        //opserr << "Plastic Integrator -->" << "K = " << mK  << "  G =" << mG << endln;
-
+		// check trial state
 		int count = 1;
 		if ((f1<=fTOL) && (f2<=fTOL) || mElastFlag < 2) {
 
@@ -466,16 +451,22 @@ void DruckerPrager:: plastic_integrator( )
 			mCep = mCe;
 			count = 0;
 
+			// set state variables for recorders
             Invariant_ep = 	mEpsilon_n1_p(0)+mEpsilon_n1_p(1)+mEpsilon_n1_p(2);
+
+			norm_ep  = sqrt(mEpsilon_n1_p(0)*mEpsilon_n1_p(0) + mEpsilon_n1_p(1)*mEpsilon_n1_p(1) + mEpsilon_n1_p(2)*mEpsilon_n1_p(2)
+                           + 0.5*(mEpsilon_n1_p(3)*mEpsilon_n1_p(3) + mEpsilon_n1_p(4)*mEpsilon_n1_p(4) + mEpsilon_n1_p(5)*mEpsilon_n1_p(5)));
+			
 			dev_ep = mEpsilon_n1_p - one3*Invariant_ep*mI1;
 
-            norm_ep  = sqrt(dev_ep(0)*dev_ep(0) + dev_ep(1)*dev_ep(1) + dev_ep(2)*dev_ep(2)
-                     + 0.5*(dev_ep(3)*dev_ep(3) + dev_ep(4)*dev_ep(4) + dev_ep(5)*dev_ep(5)));
+            norm_dev_ep  = sqrt(dev_ep(0)*dev_ep(0) + dev_ep(1)*dev_ep(1) + dev_ep(2)*dev_ep(2)
+                           + 0.5*(dev_ep(3)*dev_ep(3) + dev_ep(4)*dev_ep(4) + dev_ep(5)*dev_ep(5)));
 
 			mState(0) = Invariant_1;
 			mState(1) = norm_eta;
        		mState(2) = Invariant_ep;
-        	mState(3) = norm_ep;
+        	mState(3) = norm_dev_ep;
+			mState(4) = norm_ep;
 			return;
 		}
 		else {
@@ -484,63 +475,68 @@ void DruckerPrager:: plastic_integrator( )
 
 			// determine number of active surfaces.  size & fill Jact
 			if ( (f1 > fTOL ) && (f2 <= fTOL) ) {
-				Jact.resize(1);
+				// f1 surface only
 				Jact(0) = 1;
+				Jact(1) = 0;
 			}
 			else if ( (f1 <= fTOL ) && (f2 > fTOL) ) {
-				Jact.resize(1);
-				Jact(0) = 2;
+				// f2 surface only
+				Jact(0) = 0;
+				Jact(1) = 1;
 			}
 			else if ( (f1 > fTOL ) && (f2 > fTOL) ) {
-				Jact.resize(2);
+				// both surfaces active
 				Jact(0) = 1;
-				Jact(1) = 2;
+				Jact(1) = 1;
 			}
 		} 
 
 		//-----------------MultiSurface Placity Return Map--------------------------------------
-		// counter for endless loop check
-
-		while (! okay ) {
+		while (!okay) {
 
 			alpha1 = mAlpha1_n;
 			alpha2 = mAlpha2_n;
 	
 			//  n = eta / norm_eta;  (contravaraint)
-			if (norm_eta == 0) 
-				norm_eta = 1e-15;
-			n = eta;
-			n = n/norm_eta;
+			if (norm_eta < 1.0e-13) {
+				n.Zero();
+			} else {
+				n = eta/norm_eta;
+			}
 			
-			R.Zero();  // initialize R, gamma1, gamma2, dgamma1, dgamma2 = 0
+			// initialize R, gamma1, gamma2, dgamma1, dgamma2 = 0
+			R.Zero();  
 			gamma.Zero(); 
 			dgamma.Zero();
-			g(0,0) = 1; // initialize g such that det(g) = 1
+			// initialize g such that det(g) = 1
+			g(0,0) = 1; 
 			g(1,1) = 1;
 			g(1,0) = 0;
 			g(0,1) = 0;
 
 			// Newton procedure to compute nonlinear gamma1 and gamma2
 			//initialize terms
-			for (int i = 0; i < Jact.Size(); i++) {
-				if (Jact(i) == 1){
+			for (int i = 0; i < 2; i++) {
+				if (Jact(i) == 1) {
 					R(0) = norm_eta - (2*mG + two3*mHprime)*gamma(0) + mrho*Invariant_1 
-						-9*mK*mrho*mrho_bar*gamma(0) - 9*mK*mrho*gamma(1) - root23*Kiso(alpha1);
-					g(0,0) = -2*mG - two3*(mHprime + Kisoprime(alpha1))- 9*mK*mrho*mrho_bar;
-				} else if (Jact(i) ==2) {
+						   - 9*mK*mrho*mrho_bar*gamma(0) - 9*mK*mrho*gamma(1) - root23*Kiso(alpha1);
+					g(0,0) = -2*mG - two3*(mHprime + Kisoprime(alpha1)) - 9*mK*mrho*mrho_bar;
+				} else if (Jact(i) == 2) {
 					R(1) = Invariant_1 - 9*mK*mrho_bar*gamma(0) - 9*mK*gamma(1) - T(alpha2);
 					g(1,1) = -9*mK + mdelta2*T(alpha2);
 				}
 			}
-			if (Jact.Size() == 2) {
+			if (Jact(0) == 1 && Jact(1) == 1) {
 				g(0,1) = -9*mK*mrho;
 				g(1,0) = mrho_bar*(-9*mK + mdelta2*T(alpha2));
 			} 
 			g.Invert(g_contra);
+
+			// iteration counter
 			int m = 0;
 
 			//iterate
-			while (fabs(R.Norm()) > 1e-10 && m < 10) {
+			while ((fabs(R.Norm()) > 1e-10) && (m < 10)) {
 
 				dgamma = -1*g_contra * R;
 				gamma += dgamma;
@@ -555,31 +551,24 @@ void DruckerPrager:: plastic_integrator( )
 				g(1,0) = 0;
 				g(0,1) = 0;
 				R.Zero();
-				for (int i = 0; i < Jact.Size(); i++) {
-					if (Jact(i) == 1){
-						R(0) = norm_eta - (2*mG + two3*mHprime)*gamma(0) + mrho*Invariant_1 
-							-9*mK*mrho*mrho_bar*gamma(0) - 9*mK*mrho*gamma(1) - root23*Kiso(alpha1);
-						g(0,0) = -2*mG - two3*(mHprime + Kisoprime(alpha1))- 9*mK*mrho*mrho_bar;
-					} else if (Jact(i) ==2) {
-						R(1) = Invariant_1 - 9*mK*mrho_bar*gamma(0) - 9*mK*gamma(1) - T(alpha2);
-						g(1,1) = - 9*mK + mdelta2*T(alpha2);
-					}
+				for (int i = 0; i < 2; i++) {
+				if (Jact(i) == 1) {
+					R(0) = norm_eta - (2*mG + two3*mHprime)*gamma(0) + mrho*Invariant_1 
+						   - 9*mK*mrho*mrho_bar*gamma(0) - 9*mK*mrho*gamma(1) - root23*Kiso(alpha1);
+					g(0,0) = -2*mG - two3*(mHprime + Kisoprime(alpha1)) - 9*mK*mrho*mrho_bar;
+				} else if (Jact(i) == 2) {
+					R(1) = Invariant_1 - 9*mK*mrho_bar*gamma(0) - 9*mK*gamma(1) - T(alpha2);
+					g(1,1) = -9*mK + mdelta2*T(alpha2);
 				}
-				if (Jact.Size() == 2) {
-			   		g(0,1) = -9*mK*mrho;
+				}
+				if (Jact(0) == 1 && Jact(1) == 1) {
+					g(0,1) = -9*mK*mrho;
 					g(1,0) = mrho_bar*(-9*mK + mdelta2*T(alpha2));
 				} 
-
 				g.Invert(g_contra);
+
 				m++;
 			}
-
-#ifdef DEBUG_LEVEL 2
-        //opserr << "DP -- Jact.Size()= " << "-- gamma = " << gamma << "gg =" << g(0,0) << g(1,1) << g(0,1) << g(1,0) << endln;
-        //opserr << "DP -- Jact.Size()= " << "-- gamma = " << gamma << "gg =" << g_contra(0,0) << g_contra(1,1) << g_contra(0,1) << g_contra(1,0) << endln;
-        //opserr << "DP -- Jact.Size()= " << "-- gamma = " << gamma << "RR =" << R(0) << ", " << R(1) << endln;
-        //opserr << "DP -- Jact.Size()= " << "-- gamma = " << gamma << "RR =" << R(0) << ", " << R(1) << "  norm_eta = " << norm_eta << "  Invariant_1 = " << Invariant_1 << "  m =" << m << endln;
-#endif
 
 			// check maintain Kuhn-Tucker conditions
 			f1 = norm_eta - (2*mG + two3*mHprime)*gamma(0) + mrho*Invariant_1 
@@ -591,42 +580,41 @@ void DruckerPrager:: plastic_integrator( )
                 break;
 			}
 
-			if ((Jact.Size() == 1) && (Jact(0) == 1)){
+			// check active surfaces
+			if ((Jact(0) == 1) && (Jact(1) == 0)) {
 				// f2 may be > or < f2_tr because of softening of f2 related to alpha1
 				if (f2 >= fTOL) {
 					// okay = false;
-					Jact.resize(2);
 					Jact(0) = 1;
-					Jact(1) = 2;
+					Jact(1) = 1;
 					count += 1;
 
 				} else {
 					okay = true;
 
 				}
-			} else if ((Jact.Size() ==1) && (Jact(0) == 2)) {
+			} else if ((Jact(0) == 0) && (Jact(1) == 1)) {
 				// f1 will always be less than f1_tr
 				okay = true;
-			} else if (Jact.Size() ==2) {
-				if ((gamma(0) <= gTOL) && gamma(1) > gTOL){
+			} else if ((Jact(0) == 1) && (Jact(1) == 1)) {
+				if ((gamma(0) <= gTOL) && (gamma(1) > gTOL)){
 					// okay = false;
-					Jact.resize(1);
-					Jact(0) = 2;
+					Jact(0) = 0;
+					Jact(1) = 1;
 					count += 1;
-				} else if ((gamma(0) > gTOL) && gamma(1) <= gTOL){
+				} else if ((gamma(0) > gTOL) && (gamma(1) <= gTOL)){
 					// okay = false;
-					Jact.resize(1);
 					Jact(0) = 1;
+					Jact(1) = 0;
 					count += 1;
-				} else if ((gamma(0) > gTOL) && gamma(1) > gTOL) {
+				} else if ((gamma(0) > gTOL) && (gamma(1) > gTOL)) {
 					okay = true;
 				}
 			}
 							
-			if ( count > 3 && ! okay ) {
-				Jact.resize(2);
+			if ( (count > 3) && (!okay) ) {
 				Jact(0) = 1;
-				Jact(1) = 2;
+				Jact(1) = 1;
 				count += 100;
 			}
 
@@ -637,110 +625,98 @@ void DruckerPrager:: plastic_integrator( )
 
 		} // end of while(!okay) loop
 
-		if ( count > 3 ) {
-			//opserr << "At end of okay: " << endln;
-			//opserr << "            T = " << T(mAlpha2_n1) << endln;
-			//opserr << "        gamma = " << gamma;
-			//opserr << "   mAlpha1_n1 = " << mAlpha1_n1 << "        mAlpha2_n1 = " << mAlpha2_n1 << endln;
-			//opserr << "mEpsilon_n1_p = " << mEpsilon_n1_p;
-			//opserr << "       mSigma = " << mSigma;
-			//opserr << "     mBeta_n1 = " << mBeta_n1;
-			//opserr << "            n = " << n << endln; 
-			//opserr << " mCep = " << mCep << endln;
-		}
 
+		//update everything and exit!
 
-		// if (okay) {
-			//update everything and exit!
+		Vector b1(6);
+		Vector b2(6);
+		Vector n_covar(6);
+		Vector temp1(6);
+		Vector temp2(6);
 
-			Vector b1(6);
-			Vector b2(6);
-			Vector n_covar(6);
-			Vector temp1(6);
-			Vector temp2(6);
+		// update alpha1 and alpha2
+		mAlpha1_n1 = alpha1;
+		mAlpha2_n1 = alpha2;
 
-			// update alpha1 and alpha2
-			mAlpha1_n1 = alpha1;
-			mAlpha2_n1 = alpha2;
-
-			//update epsilon_n1_p
-			//first calculate n_covar
-			// n_a = G_ab * n^b = covariant
-			n_covar(0) = n(0);
-			n_covar(1) = n(1);
-			n_covar(2) = n(2);
-			n_covar(3) = 2*n(3);
-			n_covar(4) = 2*n(4);
-			n_covar(5) = 2*n(5);
-			mEpsilon_n1_p = mEpsilon_n_p + (mrho_bar*gamma(0) + gamma(1))*mI1 + gamma(0)*n_covar;
+		//update epsilon_n1_p
+		//first calculate n_covar
+		// n_a = G_ab * n^b = covariant
+		n_covar(0) = n(0);
+		n_covar(1) = n(1);
+		n_covar(2) = n(2);
+		n_covar(3) = 2*n(3);
+		n_covar(4) = 2*n(4);
+		n_covar(5) = 2*n(5);
+		mEpsilon_n1_p = mEpsilon_n_p + (mrho_bar*gamma(0) + gamma(1))*mI1 + gamma(0)*n_covar;
 
            
-            Invariant_ep = 	mEpsilon_n1_p(0)+mEpsilon_n1_p(1)+mEpsilon_n1_p(2);
-			dev_ep = mEpsilon_n1_p - one3*Invariant_ep*mI1;
+        Invariant_ep = 	mEpsilon_n1_p(0)+mEpsilon_n1_p(1)+mEpsilon_n1_p(2);
 
-            norm_ep  = sqrt(dev_ep(0)*dev_ep(0) + dev_ep(1)*dev_ep(1) + dev_ep(2)*dev_ep(2)
+		norm_ep  = sqrt(mEpsilon_n1_p(0)*mEpsilon_n1_p(0) + mEpsilon_n1_p(1)*mEpsilon_n1_p(1) + mEpsilon_n1_p(2)*mEpsilon_n1_p(2)
+                           + 0.5*(mEpsilon_n1_p(3)*mEpsilon_n1_p(3) + mEpsilon_n1_p(4)*mEpsilon_n1_p(4) + mEpsilon_n1_p(5)*mEpsilon_n1_p(5)));
+			
+		dev_ep = mEpsilon_n1_p - one3*Invariant_ep*mI1;
+
+        norm_ep  = sqrt(dev_ep(0)*dev_ep(0) + dev_ep(1)*dev_ep(1) + dev_ep(2)*dev_ep(2)
                      + 0.5*(dev_ep(3)*dev_ep(3) + dev_ep(4)*dev_ep(4) + dev_ep(5)*dev_ep(5)));
 
-			// update sigma
-			mSigma -= (3*mK*mrho_bar*gamma(0) + 3*mK*gamma(1))*mI1 + 2*mG*gamma(0)*n;
+		// update sigma
+		mSigma -= (3*mK*mrho_bar*gamma(0) + 3*mK*gamma(1))*mI1 + 2*mG*gamma(0)*n;
 
-			s            -= 2*mG*gamma(0) * n;
-			Invariant_1  -= 9*mK*mrho_bar*gamma(0) + 9*mK*gamma(1);
-			mSigma        = s + Invariant_1/3.0 * mI1;
+		s            -= 2*mG*gamma(0) * n;
+		Invariant_1  -= 9*mK*mrho_bar*gamma(0) + 9*mK*gamma(1);
+		//mSigma        = s + Invariant_1/3.0 * mI1;
 
-			//update beta_n1
-			mBeta_n1 = mBeta_n - (two3*mHprime*gamma(0))*n;
+		//update beta_n1
+		mBeta_n1 = mBeta_n - (two3*mHprime*gamma(0))*n;
 			
-			// update Cep
-			// note: Cep is contravariant
-			if ((Jact.Size() == 1) && (Jact(0) == 1)){
-				b1 = 2*mG*n + 3*mK*mrho*mI1;
-				b2.Zero();
-			} else if ((Jact.Size() == 1) && (Jact(0) == 2)){
-				b1.Zero();
-				b2 = 3*mK*mI1;
-			} else if ((Jact.Size() == 2)){
-				b1 = 2*mG*n + 3*mK*mrho*mI1;
-				b2 = 3*mK*mI1;
-			}
+		// update Cep
+		// note: Cep is contravariant
+		if ((Jact(0) == 1) && (Jact(1) == 0)) {
+			b1 = 2*mG*n + 3*mK*mrho*mI1;
+			b2.Zero();
+		} else if ((Jact(0) == 0) && (Jact(1) == 1)){
+			b1.Zero();
+			b2 = 3*mK*mI1;
+		} else if ((Jact(0) == 1) && (Jact(1) == 1)){
+			b1 = 2*mG*n + 3*mK*mrho*mI1;
+			b2 = 3*mK*mI1;
+		}
 
-			temp1 = g_contra(0,0)*b1 + g_contra(0,1)*b2;  
-			temp2 = mrho_bar*temp1 + g_contra(1,0)*b1 + g_contra(1,1)*b2;
+		temp1 = g_contra(0,0)*b1 + g_contra(0,1)*b2;  
+		temp2 = mrho_bar*temp1 + g_contra(1,0)*b1 + g_contra(1,1)*b2;
 
-			NormCep = 0.0;
-			for (int i = 0; i < 6; i++){
-				for (int j = 0; j < 6; j++) {
-					mCep(i,j) = mCe(i,j)
-							  + 3*mK * mI1(i)*temp2(j)  
-							  + 2*mG * n(i)*temp1(j)
-							  - 4*mG*mG/norm_eta*gamma(0) * (mIIdev(i,j) - n(i)*n(j));
-					NormCep += mCep(i,j)*mCep(i,j);
-				}
+		NormCep = 0.0;
+		for (int i = 0; i < 6; i++){
+			for (int j = 0; j < 6; j++) {
+				mCep(i,j) = mCe(i,j)
+						  + 3*mK * mI1(i)*temp2(j)  
+						  + 2*mG * n(i)*temp1(j)
+						  - 4*mG*mG/norm_eta*gamma(0) * (mIIdev(i,j) - n(i)*n(j));
+				NormCep += mCep(i,j)*mCep(i,j);
 			}
+		}
 
-			if ( NormCep < 1e-10){
-				mCep = 1.0e-3 * mCe;
-				opserr << "NormCep = " << NormCep << endln;
-			}
+		if ( NormCep < 1e-10){
+			mCep = 1.0e-3 * mCe;
+			opserr << "NormCep = " << NormCep << endln;
+		}
 
 		mState(0) = Invariant_1;
 		mState(1) = norm_eta;
         mState(2) = Invariant_ep;
-        mState(3) = norm_ep;
+        mState(3) = norm_dev_ep;
+		mState(4) = norm_ep;
 
 	return;
 }
 
 int DruckerPrager::updateElasticParam( )
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::UpdateElasticParam(...)" << endln;
-#endif
-
     double Sigma_mean = 0.0;
 	if ( mElastFlag == 1 && mFlag == 1){
 		Sigma_mean = -one3*(mSigma(0)+mSigma(1)+mSigma(2));
-        if (Sigma_mean < 0.0) Sigma_mean = mPatm;  // prevents modulus update for cases where tension exists 
+        if (Sigma_mean < 0.0) Sigma_mean = 0.0;  // prevents modulus update for cases where tension exists 
         mK = mKref * pow(1+(Sigma_mean/mPatm), 0.5);
         mG = mGref * pow(1+(Sigma_mean/mPatm), 0.5);
    		mCe  = mK * mIIvol + 2*mG*mIIdev;
@@ -901,10 +877,6 @@ int DruckerPrager::setParameter(const char **argv, int argc, Parameter &param)
 int
 DruckerPrager::updateParameter(int responseID, Information &info)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::updateParameter(...)" << endln;
-#endif
-
   if (responseID == 0) {
     // opserr << "DruckerPrager::updateParameter() - materialStage " << info.theInt << endln;
     mloadStagex[matN] = info.theInt;
@@ -912,7 +884,6 @@ DruckerPrager::updateParameter(int responseID, Information &info)
   }
 
   if (responseID == 1) {
-    // opserr << "DruckerPrager::updateParameter() - materialStage " << info.theInt << endln;
     mloadStagex[matN] = info.theInt;
     mElastFlag = info.theInt;
   }
