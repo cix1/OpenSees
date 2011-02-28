@@ -22,6 +22,8 @@
 //          February 2011
                                                                       
 // Description: This file contains the implementation for the InitialStateAnalysisWrapper class.
+//              This wrapper can be used with any nDMaterial, and enables the use of the 
+//              InitialStateAnalysis command for setting initial conditions.
 
 #include <InitialStateAnalysisWrapper.h>
 
@@ -98,7 +100,7 @@ InitialStateAnalysisWrapper::InitialStateAnalysisWrapper(int tag, NDMaterial &ma
 	} else if (mDIM == 3) {
 		theMainMaterial = mainMat.getCopy("ThreeDimensional");
 	} else {
-		opserr << "Incompatible num dimensions for InitialStateAnalysisWrapper" << endln;
+		opserr << "Incompatible number of dimensions for InitialStateAnalysisWrapper - want 2 or 3" << endln;
 	}
 }
 
@@ -155,12 +157,6 @@ InitialStateAnalysisWrapper::getOrder(void) const
 int
 InitialStateAnalysisWrapper::commitState(void)
 {
-	// should this be here?  Or in revertToStart?
-	/*if (ops_InitialStateAnalysis) {
-		mEpsilon_o += mStrain;
-		opserr << "updating epsilon_o for initial state" << endln;
-	}*/
-	
 	return theMainMaterial->commitState();
 }
 
@@ -173,10 +169,9 @@ InitialStateAnalysisWrapper::revertToLastCommit(void)
 int
 InitialStateAnalysisWrapper::revertToStart(void)
 {
-	// should this update be here?  Or in commitState? 
+	// update epsilon_o when InitialStateAnalysis off is called
 	if (ops_InitialStateAnalysis) {
 		mEpsilon_o += mStrain;
-		//opserr << "updating epsilon_o for initial state" << endln;
 	}
 	return theMainMaterial->revertToStart();
 }
@@ -185,12 +180,10 @@ int
 InitialStateAnalysisWrapper::setTrialStrain(const Vector &strain_from_element)
 // this function receives the strain from the element and sends strain to material
 {
-	//opserr << "strain from elem " << strain_from_element << endln;
-	
+	// add epsilon_o to the element strain
 	mStrain = strain_from_element + mEpsilon_o;
 	
-	//opserr << "strain to material " << mStrain << endln;
-
+	// send the sum to the main material
 	theMainMaterial->setTrialStrain(mStrain);
 
 	return 0;
@@ -365,6 +358,7 @@ InitialStateAnalysisWrapper::Print(OPS_Stream &s, int flag)
 int
 InitialStateAnalysisWrapper::setParameter(const char **argv, int argc, Parameter &param)
 {
+	// this allows for the use of updateMaterialStage command for the main material
 	if (strcmp(argv[0], "updateMaterialStage") == 0) {
 		if (argc < 2) {
 			return -1;
@@ -383,6 +377,7 @@ InitialStateAnalysisWrapper::setParameter(const char **argv, int argc, Parameter
 int
 InitialStateAnalysisWrapper::updateParameter(int responseID, Information &info)
 {
+	// routes the updateParameter call to the main material
 	theMainMaterial->updateParameter(responseID, info);
 	
 	return 0;

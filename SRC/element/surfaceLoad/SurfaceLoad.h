@@ -126,6 +126,8 @@ class SurfaceLoad : public Element
 
     static double oneOverRoot3;
     static double GsPts[4][2];
+
+	double mLoadFactor;  // factor from load pattern
 };
 
 #endif
