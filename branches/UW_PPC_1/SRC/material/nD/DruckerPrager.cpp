@@ -54,9 +54,8 @@ const double DruckerPrager :: one3   = 1.0 / 3.0 ;
 const double DruckerPrager :: two3   = 2.0 / 3.0 ;
 const double DruckerPrager :: root23 = sqrt( 2.0 / 3.0 ) ;
 
-int     	DruckerPrager::matCount = 0;
-double *	DruckerPrager::mloadStagex = 0;
-double		DruckerPrager::mElastFlag = 2;    //  0 = elastic+no param update; 1 = elastic+param update; 2 = elastoplastic+no param update (default)
+//  0 = elastic+no param update; 1 = elastic+param update; 2 = elastoplastic+no param update (default)
+double		DruckerPrager::mElastFlag = 2;
 
 
 #include <elementAPI.h>
@@ -69,7 +68,7 @@ OPS_NewDruckerPragerMaterial(void)
 {
   if (numDruckerPragerMaterials == 0) {
     numDruckerPragerMaterials++;
-    OPS_Error("DruckerPrager nDmaterial - Written by K.Petek, P.Mackenzie-Helnwein, P.Arduino, U.Washington\n", 1);
+    OPS_Error("DruckerPrager nDmaterial - Written: K.Petek, P.Mackenzie-Helnwein, P.Arduino, U.Washington\n", 1);
   }
 
   // Pointer to a uniaxial material that will be returned
@@ -134,10 +133,6 @@ DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, d
     mIIdev(6,6),
     mState(5)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::DruckerPrager(...)" << endln;
-#endif
-
     mKref    =  bulk;
     mGref    =  shear;
     mPatm	 =  atm;
@@ -162,21 +157,6 @@ DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, d
 	//msigma_y = 1e10;
 	//mTo      = 100;
 
-	if (matCount%20 == 0) {
-    	double * temp1 = mloadStagex;
-		mloadStagex = new double[matCount+20];
-
-	 	for (int i=0; i<matCount; i++) {
-         	mloadStagex[i] = temp1[i];
-		}
-	 	if (matCount > 0) {
-	    	delete [] temp1;
-		} 
-	}
-    mloadStagex[matCount] = 0;
-	matN = matCount;
-	matCount++;
-
     this->initialize();
 }
    
@@ -196,10 +176,6 @@ DruckerPrager ::DruckerPrager  ()
     mIIdev(6,6),
 	mState(5)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::DruckerPrager()" << endln;
-#endif
-
     mKref    =  0.0;
     mGref    =  0.0;
     mPatm	 =  101.0;
@@ -227,10 +203,6 @@ DruckerPrager::~DruckerPrager  ()
 //zero internal variables
 void DruckerPrager::initialize( )
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::initialize()" << endln;
-#endif
-
     mEpsilon.Zero();
     mEpsilon_n_p.Zero();
     mEpsilon_n1_p.Zero();
@@ -292,11 +264,7 @@ void DruckerPrager::initialize( )
 
 NDMaterial * DruckerPrager::getCopy (const char *type)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::getCopy(..)" << endln;
-#endif
-
-  	if (strcmp(type,"PlanStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
+  	if (strcmp(type,"PlaneStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
 		DruckerPragerPlaneStrain *clone;
 		clone = new DruckerPragerPlaneStrain(this->getTag(), mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
 		                                                       mdelta1, mdelta2, mHard, mtheta, mPatm);
@@ -367,10 +335,6 @@ DruckerPrager::getOrder (void) const
 //plasticity integration routine
 void DruckerPrager:: plastic_integrator( ) 
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::plastic_integrator()" << endln;
-#endif
-
 		bool okay;		// boolean variable to ensure satisfaction of multisurface kuhn tucker conditions
 		double f1;
 		double f2;
@@ -731,38 +695,22 @@ int DruckerPrager::updateElasticParam( )
 
 double DruckerPrager::Kiso(double alpha1)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::Kiso(...)" << endln;
-#endif
-
 	return msigma_y + mtheta * mHard * alpha1 + (mKinf - mKo) * (1 - exp(-mdelta1 * alpha1));
 }
 
 
 double DruckerPrager::Kisoprime(double alpha1)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::Kisoprime(...)" << endln;
-#endif
-
 	return mtheta * mHard + (mKinf - mKo) * mdelta1*  exp(-mdelta1 * alpha1);
 }
 
 double DruckerPrager:: T(double alpha2) 
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::T(...)" << endln;
-#endif
-		return mTo * exp(-mdelta2 * alpha2);
 }
 
 
 double DruckerPrager::deltaH(double dGamma)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::deltaH(...)" << endln;
-#endif
-
 	return mHprime * root23 * dGamma;
 }
 
@@ -776,11 +724,6 @@ Vector DruckerPrager::getState()
 Response*
 DruckerPrager::setResponse (const char **argv, int argc, OPS_Stream &output)
 {
-
-#ifdef DEBUG
-        opserr << "DruckerPrager::setResponse(...)" << endln;
-#endif
-
 	Response *theResponse =0;
 	const char *matType = this->getType();
 
@@ -800,10 +743,6 @@ DruckerPrager::setResponse (const char **argv, int argc, OPS_Stream &output)
 
 int DruckerPrager::getResponse (int responseID, Information &matInfo)
 {
-#ifdef DEBUG
-        opserr << "DruckerPrager::getResponse(...)" << endln;
-#endif
-
 	switch (responseID) {
 		case -1:
 			return -1;
@@ -826,85 +765,45 @@ int DruckerPrager::getResponse (int responseID, Information &matInfo)
 
 int DruckerPrager::setParameter(const char **argv, int argc, Parameter &param)
 {
+	if (argc < 2)
+    	return -1;
 
-#ifdef DEBUG
-        opserr << "DruckerPrager::setParameter(...)" << endln;
-#endif
+	int theMaterialTag;
+	theMaterialTag = atoi(argv[1]);
 
-/*
-  if (argc < 2)
+	if (theMaterialTag == this->getTag()) {
+
+		if (strcmp(argv[0],"updateMaterialStage") == 0) {
+			return param.addObject(1, this);
+		} else if (strcmp(argv[0],"shearModulus") == 0) {
+    		return param.addObject(10, this);
+		} else if (strcmp(argv[0],"bulkModulus") == 0) {
+    		return param.addObject(11, this);
+		}
+	}
+
     return -1;
-
-  int matTag = atoi(argv[1]);
-
-  if (this->getTag() == matTag) {
-    if (strcmp(argv[0],"updateMaterialStage") == 0) 
-      return param.addObject(1, this);
-    else if (strcmp(argv[0],"shearModulus") == 0)
-      return param.addObject(10, this);
-    else if (strcmp(argv[0],"bulkModulus") == 0) {
-      opserr << "DruckerPrager::setParameter() - FOUND \n";      
-      return param.addObject(11, this);
-    }
-  }
-
-  return -1;
-*/
-
-  if (argc < 1)
-    return -1;
-
-  if (strcmp(argv[0],"updateMaterialStage") == 0) {
-    if (argc < 2)
-      return -1;
-    int matTag = atoi(argv[1]);
-    if (this->getTag() == matTag)
-      return param.addObject(1, this);
-    else
-      return -1;
-  }
-
-  else if (strcmp(argv[0],"shearModulus") == 0)
-    return param.addObject(10, this);
-
-  else if (strcmp(argv[0],"bulkModulus") == 0)
-    return param.addObject(11, this);
-
-  return -1;
-
 }
 
 int
 DruckerPrager::updateParameter(int responseID, Information &info)
 {
-  if (responseID == 0) {
-    // opserr << "DruckerPrager::updateParameter() - materialStage " << info.theInt << endln;
-    mloadStagex[matN] = info.theInt;
-    mElastFlag = info.theInt;
-  }
+	// updateMaterialStage called
+	if (responseID == 1) {
+		mElastFlag = info.theInt;
+	}
+    // materialState called
+	if (responseID == 5) {
+		mElastFlag = info.theDouble;
+	}
+	if (responseID == 10) {
+    	mElastFlag = info.theDouble;
+	}
+	if (responseID==11) {
+    	mElastFlag=info.theDouble;
+  	}
 
-  if (responseID == 1) {
-    mloadStagex[matN] = info.theInt;
-    mElastFlag = info.theInt;
-  }
-
-  if (responseID == 2) {
-    // opserr << "DruckerPrager::updateParameter() - materialStage " << info.theInt << endln;
-    mloadStagex[matN] = info.theInt;
-    mElastFlag = info.theInt;
-  }
-
-  else if (responseID==10) {
-    // opserr << "DruckerPrager::updateParameter() - shearModulus " << info.theDouble << endln;
-    mElastFlag=info.theDouble;
-  }
-
-  else if (responseID==11) {
-    // opserr << "DruckerPrager::updateParameter() - bulkModulus " << info.theDouble << endln;
-    mElastFlag=info.theDouble;
-  }
-
-  return 0;
+	return 0;
 }
 
 int DruckerPrager::sendSelf(int commitTag, Channel &theChannel)

@@ -45,7 +45,7 @@
 #include <Renderer.h>
 #include <G3Globals.h>
 #include <ErrorHandler.h>
-
+#include <Parameter.h>
 #include <ContactMaterial3D.h>
 
 #include <math.h>
@@ -1157,7 +1157,7 @@ SimpleContact3D::Print(OPS_Stream &s, int flag)
 
 
 Response*
-SimpleContact3D::setResponse(const char **argv, int argc, Information &eleInfo)
+SimpleContact3D::setResponse(const char **argv, int argc, OPS_Stream &eleInfo)
 {
 #ifdef DEBUG
         opserr << "SimpleContact3D::setResponse(const char **argv, int argc, Information &eleInfo): " << MyTag << endln;
@@ -1243,3 +1243,26 @@ SimpleContact3D::getResponse(int responseID, Information &eleInfo)
     return -1;
 }
 
+int
+SimpleContact3D::setParameter(const char **argv, int argc, Parameter &param)
+{
+	if (argc < 1)
+		return -1;
+
+	if (strcmp(argv[0],"friction") == 0) {
+		return param.addObject(1, this);
+	}
+	
+	return -1;
+}
+
+int
+SimpleContact3D::updateParameter(int parameterID, Information &info)
+{
+	int res = -1;
+	int matRes =  theMaterial->updateParameter(parameterID, info);
+	if (matRes != -1) {
+		res = matRes;
+	}
+	return res;
+}

@@ -17,7 +17,7 @@
 **   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
 **                                                                    **
 ** ****************************************************************** */
-
+                                                                        
 // Written: Kathryn Petek	
 //          December 2004
 // Modified: Chris McGann
@@ -52,7 +52,7 @@ OPS_NewBoundingCamClayMaterial(void)
 {
   if (numBoundingCamClayMaterials == 0) {
     numBoundingCamClayMaterials++;
-    OPS_Error("BoundingCamClay nDmaterial - Written by K.Petek, P.Arduino, C.McGann U.Washington\n", 1);
+    OPS_Error("BoundingCamClay nDmaterial - Written: C.McGann, K.Petek, P.Arduino, U.Washington\n", 1);
   }
 
   NDMaterial *theMaterial = 0;
@@ -1147,12 +1147,13 @@ BoundingCamClay::setParameter(const char **argv, int argc, Parameter &param)
 int
 BoundingCamClay::updateParameter(int responseID, Information &info)
 {
-	if (responseID == 0) {
-		mElastFlag = info.theInt;
-	}
-
+	// called updateMaterialStage in tcl file
 	if (responseID == 1) {
 		mElastFlag = info.theInt;
+	}
+	// called materialState in tcl file
+	if (responseID == 5) {
+		mElastFlag = info.theDouble;
 	}
 	
 	return 0;
