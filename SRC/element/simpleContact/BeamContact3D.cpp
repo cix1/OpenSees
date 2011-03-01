@@ -119,8 +119,8 @@ OPS_BeamContact3D(void)
   }
 
   numRemainingInputArgs -= 10;
-  while (numRemaininerInputArgs >= 1) {
-	  numData = 1:
+  while (numRemainingInputArgs >= 1) {
+	  numData = 1;
 	  if (OPS_GetIntInput(&numData, &icSwitch) != 0) {
 		  opserr << "WARNING invalid initial contact flag: element BeamContact3D " << iData[0] << endln;
 	  	  return 0;
