@@ -38,6 +38,9 @@
 #include <Node.h>
 #include <NDMaterial.h>
 
+#ifndef BRICK_H
+#define BRICK_H
+
 class Brick : public Element {
 
   public :
@@ -178,9 +181,5 @@ class Brick : public Element {
 
 } ; 
 
-
-
-
-
-
+#endif
 

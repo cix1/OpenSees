@@ -4,8 +4,10 @@ OBJS       = Brick.o \
 	shp3d.o \
 	TclBrickCommand.o \
 	BbarBrick.o \
-	BbarBrickWithSensitivity.o \
-	FLBrick.o
+	BbarBrickWithSensitivity.o
+
+
+#	FLBrick.o  ### ????? missing code?
 
 all:         $(OBJS)
 
