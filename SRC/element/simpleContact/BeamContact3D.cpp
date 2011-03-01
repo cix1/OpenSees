@@ -25,6 +25,7 @@
 //    06/05 created
 //    10/07 Peter Mackenzie-Helnwein: adding recorder features
 //    11/10 F.Mckenna and C.McGann: changes for incorporation into main source code
+//    02/11 C.McGann: added initial contact switch (default is inContact)
 //
 // Description: This file contains the implementation for the BeamContact3D class.
 
@@ -60,19 +61,22 @@ OPS_BeamContact3D(void)
 {
   if (num_BeamContact3D == 0) {
     num_BeamContact3D++;
-    OPS_Error("BeamContact3D element - Written by K.Petek, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
+    OPS_Error("BeamContact3D element - Written: K.Petek, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
   }
 
   // Pointer to a uniaxial material that will be returned
   Element *theElement = 0;
 
-  if (OPS_GetNumRemainingInputArgs() != 10) {
-    opserr << "Invalid #args,  want: element BeamContact3D eleTag?  iNode? jNode? slaveNode? lambdaNode? radius? crdTransf? matTag? tolGap? tolF\n";
+  int numRemainingInputArgs = OPS_GetNumRemainingInputArgs();
+
+  if (numRemainingInputArgs < 10) {
+    opserr << "Invalid #args,  want: element BeamContact3D eleTag?  iNode? jNode? slaveNode? lambdaNode? radius? crdTransf? matTag? tolGap? tolF? <cSwitch>?\n";
     return 0;
   }
    
   int    iData[7];
   double dData[3];
+  int icSwitch = 0;
 
   int numData = 5;
   if (OPS_GetIntInput(&numData, iData) != 0) {
@@ -114,7 +118,17 @@ OPS_BeamContact3D(void)
     return 0;
   }
 
-  // Parsing was successful, allocate the material
+  numRemainingInputArgs -= 10;
+  while (numRemaininerInputArgs >= 1) {
+	  numData = 1:
+	  if (OPS_GetIntInput(&numData, &icSwitch) != 0) {
+		  opserr << "WARNING invalid initial contact flag: element BeamContact3D " << iData[0] << endln;
+	  	  return 0;
+      }
+	  numRemainingInputArgs -= 1;
+  }
+
+  // Parsing was successful, allocate the element
   theElement = new BeamContact3D(iData[0], iData[1], iData[2], iData[3], iData[4],
                                  dData[0], *theTransf, *theMaterial,
                                  dData[1], dData[2]);
@@ -132,7 +146,7 @@ OPS_BeamContact3D(void)
 // constructors:
 BeamContact3D::BeamContact3D(int tag, int Nd1, int Nd2,
                              int NdS, int NdL, double rad, CrdTransf &coordTransf,
-                             NDMaterial &theMat, double tolG, double tolF)
+                             NDMaterial &theMat, double tolG, double tolF, int cSwitch)
  :Element(tag,ELE_TAG_BeamContact3D),    
    crdTransf(0),
    theMaterial(0),
@@ -163,7 +177,8 @@ BeamContact3D::BeamContact3D(int tag, int Nd1, int Nd2,
    mc1(BC3D_NUM_NDM),
    mBn(BC3D_NUM_DOF-3),
    mBs(BC3D_NUM_DOF-3,2),
-   mBphi(3,12)
+   mBphi(3,12),
+   mIniContact(cSwitch)
 {
 #ifdef DEBUG
         opserr << "BeamContact3D::BeamContact3D(): " << MyTag << endln;
@@ -176,19 +191,21 @@ BeamContact3D::BeamContact3D(int tag, int Nd1, int Nd2,
         mRadius = rad;
         mTolGap = tolG;
         mTolForce = tolF;
-/*
-        inContact          = false;
-        was_inContact      = false;
-        to_be_released     = false;
-                should_be_released = false;
-        in_bounds          = false;
-*/     
-        inContact          = true;
-        was_inContact      = true;
-        to_be_released     = false;
-        should_be_released = false;
-        in_bounds          = true;
+		mIniContact = cSwitch;
 
+		if (mIniContact == 0) {
+			inContact          = true;
+			was_inContact      = true;
+			to_be_released     = false;
+			should_be_released = false;
+			in_bounds          = true;
+		} else {
+			inContact          = false;
+			was_inContact      = false;
+			to_be_released     = false;
+			should_be_released = false;
+			in_bounds          = true;
+		}
 
         mGap    = 0.0;
         mLambda = 0.0;
@@ -515,23 +532,21 @@ BeamContact3D::revertToLastCommit()
 int
 BeamContact3D::revertToStart()
 {
-#ifdef DEBUG
-        opserr << "BeamContact3D::revertToStart(): " << MyTag << endln;
-#endif
-/*
-          inContact = false;
-          was_inContact = false;
-          should_be_released = false;
-          to_be_released = false;
-                  in_bounds = false;
-*/
-          inContact          = true;
-          was_inContact      = true;
-          should_be_released = false;
-          to_be_released     = false;
-                  in_bounds          = true;
-         
-          return theMaterial->revertToStart();
+	if (mIniContact == 0) {
+		inContact          = true;
+		was_inContact      = true;
+		to_be_released     = false;
+		should_be_released = false;
+		in_bounds          = true;
+	} else {
+		inContact          = false;
+		was_inContact      = false;
+		to_be_released     = false;
+		should_be_released = false;
+		in_bounds          = true;
+	}
+
+    return theMaterial->revertToStart();
 }
 
 int

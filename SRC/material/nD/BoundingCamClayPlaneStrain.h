@@ -11,6 +11,11 @@
 ** file 'COPYRIGHT'  in main directory for information on usage and   **
 ** redistribution,  and for a DISCLAIMER OF ALL WARRANTIES.           **
 **                                                                    **
+** Developed by:                                                      **
+**   Frank McKenna (fmckenna@ce.berkeley.edu)                         **
+**   Gregory L. Fenves (fenves@ce.berkeley.edu)                       **
+**   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
+**                                                                    **
 ** ****************************************************************** */
                                                                         
 // Written: Chris McGann
@@ -27,8 +32,6 @@
 #include <BoundingCamClay.h>
 
 class BoundingCamClayPlaneStrain : public BoundingCamClay {
-
-//-------------------Declarations-------------------------------
 
   public : 
 
@@ -76,6 +79,6 @@ class BoundingCamClayPlaneStrain : public BoundingCamClay {
   static Matrix tangent;
 
 
-} ; //end of BoundingCamClayPlaneStrain declarations
+};
 
 

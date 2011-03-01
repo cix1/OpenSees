@@ -191,34 +191,34 @@ InitialStateAnalysisWrapper::setTrialStrain(const Vector &strain_from_element)
 
 int
 InitialStateAnalysisWrapper::setTrialStrain(const Vector &v, const Vector &r)
-// this function receives the strain from the element and sends strain to material
+// initial state analysis doesn't currently work for large deformation
 {
 	return this->setTrialStrain(v);
 }
 
-// Mike's problem
+// unused setTrialStrain functions
 int 
 InitialStateAnalysisWrapper::setTrialStrain(const Tensor &v) 
 {
- 	return -1 ;
+ 	return -1;
 }
 
 int 
 InitialStateAnalysisWrapper::setTrialStrain(const Tensor &v, const Tensor &r)     
 {
-  	return -1 ;
+  	return -1;
 }
 
 int 
 InitialStateAnalysisWrapper::setTrialStrainIncr(const Tensor &v) 
 {
-  	return -1 ;
+  	return -1;
 }
 
 int 
 InitialStateAnalysisWrapper::setTrialStrainIncr(const Tensor &v, const Tensor &r) 
 {
-  	return -1 ;
+  	return -1;
 }
 
 const Vector&

@@ -18,7 +18,7 @@
 // $Date: 2010-02-04 00:44:04 $
 // $Source: /usr/local/cvs/OpenSees/SRC/material/nD/DruckerPrager3D.h,v $
 
-// Written: Ed "C++" Love
+// Written: K.Petek, U.Washington
 
 //
 // DruckerPrager3D isotropic hardening material class
@@ -78,9 +78,6 @@ class DruckerPrager3D : public DruckerPrager {
   int setTrialStrainIncr(const Tensor &v, const Tensor &r) ;
 
   private :
-//  static vectors and matrices
-//  static Vector strain_vec ;     //strain in vector notation
-//  static Vector stress_vec ;     //stress in vector notation
-//  static Matrix tangent_matrix ; //material tangent in matrix notation
+
 
 } ; //end of DruckerPrager3D declarations

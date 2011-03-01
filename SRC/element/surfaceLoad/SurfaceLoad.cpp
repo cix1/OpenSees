@@ -18,14 +18,12 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision 1.2
-// $Date 2010.10.11
-// $Source $OpenSees/SRC/element/surfaceLoad.cpp
                                                                         
 // Written: Chris McGann
-// Created: 04.2009
+//          04.2009
 // Modified: Chris McGann, 11.2010
-//
+//           Chris McGann, 02.2011 -> added elemental load 
+
 // Description: This file contains the implementation for the SurfaceLoad class.
 
 #include "SurfaceLoad.h"
@@ -57,7 +55,7 @@ OPS_SurfaceLoad(void)
 {
   if (num_SurfaceLoad == 0) {
     num_SurfaceLoad++;
-    OPS_Error("SurfaceLoad element - Written by C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
+    OPS_Error("SurfaceLoad element - Written: C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
   }
 
   // Pointer to a uniaxial material that will be returned
@@ -146,12 +144,10 @@ SurfaceLoad::SurfaceLoad()
 {
 }
 
-
 //  destructor:
 SurfaceLoad::~SurfaceLoad()
 {
 }
-
 
 int
 SurfaceLoad::getNumExternalNodes(void) const
@@ -165,7 +161,6 @@ SurfaceLoad::getExternalNodes(void)
     return myExternalNodes;
 }
 
-
 Node **
 SurfaceLoad::getNodePtrs(void)
 {
@@ -177,7 +172,6 @@ SurfaceLoad::getNumDOF(void)
 {
     return SL_NUM_DOF;
 }
-
 
 void
 SurfaceLoad::setDomain(Domain *theDomain)
@@ -286,7 +280,6 @@ SurfaceLoad::addLoad(ElementalLoad *theLoad, double loadFactor)
 
 	if (type == LOAD_TAG_SurfaceLoader) {
 		mLoadFactor = loadFactor;
-		//opserr << "mLoadFactor = " << mLoadFactor << endln;
 		return 0;
 	} else {
 		opserr << "SurfaceLoad::addLoad() - ele with tag: " << this->getTag() << " does not accept load type: " << type << endln;
@@ -320,7 +313,6 @@ SurfaceLoad::getResistingForce()
 		}
 	}
 
-	//opserr << "internal forces " << internalForces << endln;
 	return internalForces;
 }
 
