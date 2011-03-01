@@ -18,7 +18,7 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                        
-// Created: C.McGann, UW, 01.2011
+// Created: Chris McGann, UW, 01.2011
 //
 // Description: This file contains the implementation of the BeamEndContact3D class
 
@@ -51,7 +51,7 @@ OPS_BeamEndContact3D(void)
 {
   	if (num_BeamEndContact3D == 0) {
     	num_BeamEndContact3D++;
-    	OPS_Error("BeamEndContact3D element - Written by C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
+    	OPS_Error("BeamEndContact3D element - Written: C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
   	}
 
   	// Pointer to an element that will be returned

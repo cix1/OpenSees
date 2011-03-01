@@ -18,7 +18,8 @@
 **                                                                    **
 ** ****************************************************************** */
                                                                        
-// Created: C.McGann, UW, 12.2010
+// Created: Chris McGann, UW
+//          December 2010
 //
 // Description: This file contains the implementation of the BeamContact2D class
 
@@ -52,7 +53,7 @@ OPS_BeamContact2D(void)
 {
   if (num_BeamContact2D == 0) {
     num_BeamContact2D++;
-    OPS_Error("BeamContact2D element - Written by C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
+    OPS_Error("BeamContact2D element - Written: C.McGann, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
   }
 
   // Pointer to an element that will be returned
@@ -61,7 +62,7 @@ OPS_BeamContact2D(void)
   int numRemainingInputArgs = OPS_GetNumRemainingInputArgs();
 
   if (numRemainingInputArgs < 9) {
-    opserr << "Invalid #args, want: element BeamContact2D eleTag? iNode? jNode? slaveNode? lambdaNode? matTag? radius? gapTol? forceTol <cSwitch>?\n";
+    opserr << "Invalid #args, want: element BeamContact2D eleTag? iNode? jNode? slaveNode? lambdaNode? matTag? radius? gapTol? forceTol? <cSwitch>?\n";
 	return 0;
   }
 
@@ -309,23 +310,7 @@ BeamContact2D::setDomain(Domain *theDomain)
 int
 BeamContact2D::commitState()
 {
-	/*opserr << "incoming bool var:\n";
-	if (inContact) {
-		opserr << "inContact\n";
-	}
-	if (was_inContact) {
-		opserr << "was_inContact\n";
-	}
-	if (in_bounds) {
-		opserr << "in_bounds\n";
-	}
-	if (should_be_released) {
-		opserr << "should_be_released\n";
-	}
-	opserr << "gap " << mGap << endln;
-	opserr << "force " << mLambda << endln;*/
-	
-    // update projection
+	// update projection
 	mXi = Project(mXi);
 
 	// update surface tangent vector, g_xi
@@ -346,20 +331,6 @@ BeamContact2D::commitState()
 	    opserr << "BeamContact2D::commitState() - failed in base class";
 	}
 	retVal = theMaterial->commitState();
-
-	/*opserr << "outgoing bool var:\n";
-	if (inContact) {
-		opserr << "inContact\n";
-	}
-	if (was_inContact) {
-		opserr << "was_inContact\n";
-	}
-	if (in_bounds) {
-		opserr << "in_bounds\n";
-	}
-	if (to_be_released) {
-		opserr << "should_be_released\n";
-	}*/
 
 	return retVal;
 }

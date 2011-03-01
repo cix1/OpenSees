@@ -40,8 +40,6 @@
 #include <Channel.h>
 #include <FEM_ObjectBroker.h>
 
-//#include <myDebug.h>
-
 int ContactMaterial3D::matCount = 0;
 double* ContactMaterial3D::frictionCoeffx = 0;
 double* ContactMaterial3D::stiffnessx = 0;
@@ -56,7 +54,7 @@ OPS_NewContactMaterial3DMaterial(void)
 {
   if (numContactMaterial3DMaterials == 0) {
     numContactMaterial3DMaterials++;
-    OPS_Error("ContactMaterial3D nDmaterial - Written by K.Petek, P.Mackenzie-Helnwein, P.Arduino, U.Washington\n", 1);
+    OPS_Error("ContactMaterial3D nDmaterial - Written: K.Petek, P.Mackenzie-Helnwein, P.Arduino, U.Washington\n", 1);
   }
 
   // Pointer to a uniaxial material that will be returned

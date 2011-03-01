@@ -11,17 +11,14 @@
 ** file 'COPYRIGHT'  in main directory for information on usage and   **
 ** redistribution,  and for a DISCLAIMER OF ALL WARRANTIES.           **
 **                                                                    **
+** Developed by:                                                      **
+**   Frank McKenna (fmckenna@ce.berkeley.edu)                         **
+**   Gregory L. Fenves (fenves@ce.berkeley.edu)                       **
+**   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
+**                                                                    **
 ** ****************************************************************** */
                                                                         
-// $Revision: 1.2 $
-// $Date: 2010-03-04 19:10:52 $
-// $Source: /usr/local/cvs/OpenSees/SRC/material/nD/BoundingCamClay3D.cpp,v $
-
-// $Revision: 1.2 $
-// $Date: 2010-03-04 19:10:52 $
-// $Source: /usr/local/cvs/OpenSees/SRC/material/nD/BoundingCamClay3D.cpp,v $
-
-// Written: kap	
+// Written: K.Petek	
 // Created: 12/04
 
 #include <BoundingCamClay3D.h>

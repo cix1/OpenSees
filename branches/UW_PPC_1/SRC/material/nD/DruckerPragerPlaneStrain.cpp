@@ -11,6 +11,11 @@
 ** file 'COPYRIGHT'  in main directory for information on usage and   **
 ** redistribution,  and for a DISCLAIMER OF ALL WARRANTIES.           **
 **                                                                    **
+** Developed by:                                                      **
+**   Frank McKenna (fmckenna@ce.berkeley.edu)                         **
+**   Gregory L. Fenves (fenves@ce.berkeley.edu)                       **
+**   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
+**                                                                    **
 ** ****************************************************************** */
                                                                         
 // Written: Chris McGann
@@ -83,11 +88,10 @@ DruckerPragerPlaneStrain::setTrialStrain(const Vector &strain_from_element)
 	return 0;
 }
 
-//unused trial strain functions
+//unused trial strain function
 int 
 DruckerPragerPlaneStrain::setTrialStrain(const Vector &v, const Vector &r)
 {
-    opserr << "YOU SHOULD NOT SEE THIS: DruckerPrager::setTrialStrain (const Vector &v, const Vector &r)" << endln;
     return this->setTrialStrain (v);
 }
 

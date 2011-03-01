@@ -52,10 +52,8 @@ class InitialStateAnalysisWrapper : public NDMaterial
 		int revertToLastCommit(void);
 		int revertToStart(void);
 		
+		// set the strain to be sent to the main material
 		int setTrialStrain(const Vector &strain_from_element);
-
-		// unused trial strain function
-		int setTrialStrain(const Vector &v, const Vector &r);
 
 		// send back strain
 		const Vector& getStrain();
@@ -65,7 +63,8 @@ class InitialStateAnalysisWrapper : public NDMaterial
 		const Matrix& getTangent();
 		const Matrix& getInitialTangent();
 
-		// Mike's problem
+		// unused trialStrain functions
+		int setTrialStrain(const Vector &v, const Vector &r);
 		int setTrialStrain(const Tensor &v);
 		int setTrialStrain(const Tensor &v, const Tensor &r);
 		int setTrialStrainIncr(const Tensor &v);

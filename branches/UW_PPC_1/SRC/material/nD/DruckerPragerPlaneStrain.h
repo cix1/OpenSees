@@ -11,6 +11,11 @@
 ** file 'COPYRIGHT'  in main directory for information on usage and   **
 ** redistribution,  and for a DISCLAIMER OF ALL WARRANTIES.           **
 **                                                                    **
+** Developed by:                                                      **
+**   Frank McKenna (fmckenna@ce.berkeley.edu)                         **
+**   Gregory L. Fenves (fenves@ce.berkeley.edu)                       **
+**   Filip C. Filippou (filippou@ce.berkeley.edu)                     **
+**                                                                    **
 ** ****************************************************************** */
                                                                         
 // Written: Chris McGann
@@ -27,8 +32,6 @@
 #include <DruckerPrager.h>
 
 class DruckerPragerPlaneStrain : public DruckerPrager {
-
-//-------------------Declarations-------------------------------
 
   public : 
 
@@ -77,6 +80,6 @@ class DruckerPragerPlaneStrain : public DruckerPrager {
   static Matrix tangent;
 
 
-} ; //end of DruckerPragerPlaneStrain declarations
+}; 
 
 

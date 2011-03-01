@@ -58,7 +58,7 @@ class BeamContact3D : public Element
   public:
     BeamContact3D(int tag, int Nd1, int Nd2,
                   int NdS, int NdL, double rad, CrdTransf &coordTransf,
-                  NDMaterial &theMat, double tolG, double tolF);
+                  NDMaterial &theMat, double tolG, double tolF, int cSwitch = 0);
     BeamContact3D();
     ~BeamContact3D();
 
@@ -140,6 +140,8 @@ class BeamContact3D : public Element
     double mRadius;              // radius of Pile Surface
     double mTolGap;              // gap tolerance
     double mTolForce;            // force tolerance
+	int mIniContact;             // initial contact switch (0 = notInContact, 1 = inContact)
+	                             // default is set for initially inContact
    
    
     // boolean variables

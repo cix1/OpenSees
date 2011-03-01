@@ -62,7 +62,7 @@ OPS_SimpleContact2D(void)
 {
   if (num_SimpleContact2D == 0) {
     num_SimpleContact2D++;
-    OPS_Error("SimpleContact2D element - Written by K.Petek, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
+    OPS_Error("SimpleContact2D element - Written: K.Petek, P.Arduino, P.Mackenzie-Helnwein, U.Washington\n", 1);
   }
 
   // Pointer to a uniaxial material that will be returned
