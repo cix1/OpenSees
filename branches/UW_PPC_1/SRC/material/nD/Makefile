@@ -20,7 +20,7 @@ OBJS       = NDMaterial.o \
 	ElasticIsotropicPlaneStress2D.o \
 	ElasticIsotropicPlateFiber.o \
 	FeapMaterial.o \
-	InitialStateAnalysisWrapper.o
+	InitialStateAnalysisWrapper.o \
 	J2AxiSymm.o \
 	J2PlaneStrain.o \
 	J2PlaneStress.o \
