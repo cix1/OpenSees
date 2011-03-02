@@ -49,7 +49,7 @@ class BeamContact2D : public Element
 {
   public:
     BeamContact2D(int tag, int Nd1, int Nd2, int NdS, int NdL, NDMaterial &theMat,
-                  double rad, double tolG, double tolF, int cSwitch = 0);
+                  double width, double tolG, double tolF, int cSwitch = 0);
     BeamContact2D();
     ~BeamContact2D();
 
@@ -114,7 +114,7 @@ class BeamContact2D : public Element
 
 	// input quantities
 	double mLength;                  // length of beam element
-	double mRadius;                  // radius of beam element
+	double mRadius;                  // radius of beam
 	double mGapTol;                  // gap tolerance
 	double mForceTol;                // force tolerance
 	int mIniContact;                 // initial contact switch (0 = notInContact, 1 = inContact)
