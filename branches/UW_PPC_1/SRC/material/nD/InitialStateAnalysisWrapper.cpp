@@ -189,6 +189,13 @@ InitialStateAnalysisWrapper::setTrialStrain(const Vector &strain_from_element)
 	return 0;
 }
 
+double
+InitialStateAnalysisWrapper::getRho(void)
+// this function gets the mass density from the main material
+{
+	return theMainMaterial->getRho();
+}
+
 int
 InitialStateAnalysisWrapper::setTrialStrain(const Vector &v, const Vector &r)
 // initial state analysis doesn't currently work for large deformation

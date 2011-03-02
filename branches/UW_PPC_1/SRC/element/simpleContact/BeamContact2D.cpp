@@ -62,7 +62,7 @@ OPS_BeamContact2D(void)
   int numRemainingInputArgs = OPS_GetNumRemainingInputArgs();
 
   if (numRemainingInputArgs < 9) {
-    opserr << "Invalid #args, want: element BeamContact2D eleTag? iNode? jNode? slaveNode? lambdaNode? matTag? radius? gapTol? forceTol? <cSwitch>?\n";
+    opserr << "Invalid #args, want: element BeamContact2D eleTag? iNode? jNode? slaveNode? lambdaNode? matTag? width? gapTol? forceTol? <cSwitch>?\n";
 	return 0;
   }
 
@@ -114,7 +114,7 @@ OPS_BeamContact2D(void)
 
 // constructors
 BeamContact2D::BeamContact2D(int tag, int Nd1, int Nd2, int NdS, int NdL, NDMaterial &theMat,
-                             double rad, double tolG, double tolF, int cSwitch)
+                             double width, double tolG, double tolF, int cSwitch)
   :Element(tag,ELE_TAG_BeamContact2D),
     theMaterial(0),
 	mExternalNodes(BC2D_NUM_NODE),
@@ -146,7 +146,7 @@ BeamContact2D::BeamContact2D(int tag, int Nd1, int Nd2, int NdS, int NdL, NDMate
 	mExternalNodes(2) = NdS;
 	mExternalNodes(3) = NdL;
 
-	mRadius = rad;
+	mRadius = width/2;
 	mGapTol = tolG;
 	mForceTol = tolF;
 	mIniContact = cSwitch;

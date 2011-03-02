@@ -55,6 +55,9 @@ class InitialStateAnalysisWrapper : public NDMaterial
 		// set the strain to be sent to the main material
 		int setTrialStrain(const Vector &strain_from_element);
 
+		// get mass density from main material
+		double getRho(void);
+
 		// send back strain
 		const Vector& getStrain();
 		// send back stress
