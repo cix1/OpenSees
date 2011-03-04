@@ -7,8 +7,6 @@ OBJS       = Brick.o \
 	BbarBrickWithSensitivity.o
 
 
-#	FLBrick.o  ### ????? missing code?
-
 all:         $(OBJS)
 
 # Miscellaneous
