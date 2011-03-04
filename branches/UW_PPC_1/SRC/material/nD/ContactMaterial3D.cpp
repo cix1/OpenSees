@@ -429,9 +429,16 @@ int ContactMaterial3D::revertToStart(void)
 #ifdef DEBUG
         opserr << "ContactMaterial3D::revertToStart(void)" << endln;
 #endif
-        this->zero();
 
-        return 0;
+	// added: C.McGann, U.Washington for InitialStateAnalysis
+	if (ops_InitialStateAnalysis) {
+		// do nothing, keep state variables from last step
+	} else {
+		// normal call for revertToStart (not initialStateAnalysis)
+    	this->zero();
+	}
+
+    return 0;
 }
 
 
