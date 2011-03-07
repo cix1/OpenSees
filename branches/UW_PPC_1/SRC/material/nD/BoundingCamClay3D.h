@@ -45,7 +45,7 @@ class BoundingCamClay3D : public BoundingCamClay {
   BoundingCamClay3D( ) ;
 
   //full constructor
-  BoundingCamClay3D(int tag, double c, double bulk, double OCR,
+  BoundingCamClay3D(int tag, double mDen, double c, double bulk, double OCR,
 							 double mu_o, double alpha, double lambda, double h, 
 							 double m);
 
