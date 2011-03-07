@@ -37,10 +37,10 @@ DruckerPrager( )
 }
 
 //full constructor
-DruckerPragerPlaneStrain::DruckerPragerPlaneStrain(int tag, double bulk, double shear,
+DruckerPragerPlaneStrain::DruckerPragerPlaneStrain(int tag, double mDen, double bulk, double shear,
 		  double s_y, double r, double r_bar, double Kinfinity, double Kinit, 
 		  double d1, double d2, double H, double t, double atm) : 
-DruckerPrager(tag, ND_TAG_DruckerPragerPlaneStrain, bulk, shear, s_y, r, r_bar, Kinfinity,
+DruckerPrager(tag, ND_TAG_DruckerPragerPlaneStrain, mDen, bulk, shear, s_y, r, r_bar, Kinfinity,
 	                                                Kinit, d1, d2, H, t, atm)
 {
 }

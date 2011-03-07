@@ -39,7 +39,7 @@ class BoundingCamClayPlaneStrain : public BoundingCamClay {
   BoundingCamClayPlaneStrain();
 
   //full constructor
-  BoundingCamClayPlaneStrain(int tag, double c, double bulk, double OCR,
+  BoundingCamClayPlaneStrain(int tag, double mDen, double c, double bulk, double OCR,
 							 double mu_o, double alpha, double lambda, double h, double m);
 
 

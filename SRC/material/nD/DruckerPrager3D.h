@@ -44,7 +44,7 @@ class DruckerPrager3D : public DruckerPrager {
   DruckerPrager3D( ) ;
 
   //full constructor
-  DruckerPrager3D(int tag, double bulk, double shear,
+  DruckerPrager3D(int tag, double massDen, double bulk, double shear,
 		  double s_y, double r, double r_bar, double Kinfinity, double Kinit, 
 		  double d1, double d2, double H, double t, double atm);
 

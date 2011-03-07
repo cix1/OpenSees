@@ -76,35 +76,35 @@ OPS_NewDruckerPragerMaterial(void)
 
   int numArgs = OPS_GetNumRemainingInputArgs();
 
-  if (numArgs < 12) {
-    opserr << "Want: nDMaterial DruckerPrager tag? K? G? sigma_y? rho? rho_bar? Kinf? Ko? delta1? delta2? H? theta? <atm?>" << endln;
+  if (numArgs < 13) {
+    opserr << "Want: nDMaterial DruckerPrager tag? massDensity? K? G? sigma_y? rho? rho_bar? Kinf? Ko? delta1? delta2? H? theta? <atm?>" << endln;
     return 0;	
   }
   
   int tag;
-  double dData[12];
+  double dData[13];
 
   int numData = 1;
   if (OPS_GetInt(&numData, &tag) != 0) {
     opserr << "WARNING invalid nDMaterial DruckerPrager material  tag" << endln;
     return 0;
   }
-  if (numArgs == 12)
-    numData = 11;
-  else
+  if (numArgs == 13)
     numData = 12;
+  else
+    numData = 13;
 
   if (OPS_GetDouble(&numData, dData) != 0) {
     opserr << "WARNING invalid material data for nDMaterial DruckerPrager material  with tag: " << tag << endln;
     return 0;
   }
 
-  if (numArgs  == 12)
-    theMaterial = new DruckerPrager(tag, 0, dData[0], dData[1], dData[2], dData[3], dData[4], dData[5],
-				    dData[6], dData[7], dData[8], dData[9], dData[10]);
-  else
+  if (numArgs  == 13)
     theMaterial = new DruckerPrager(tag, 0, dData[0], dData[1], dData[2], dData[3], dData[4], dData[5],
 				    dData[6], dData[7], dData[8], dData[9], dData[10], dData[11]);
+  else
+    theMaterial = new DruckerPrager(tag, 0, dData[0], dData[1], dData[2], dData[3], dData[4], dData[5],
+				    dData[6], dData[7], dData[8], dData[9], dData[10], dData[11], dData[12]);
 
   if (theMaterial == 0) {
     opserr << "WARNING ran out of memory for nDMaterial DruckerPrager material  with tag: " << tag << endln;
@@ -116,9 +116,9 @@ OPS_NewDruckerPragerMaterial(void)
 
 
 //full constructor
-DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, double s_y,
-			     double r, double r_bar, double Kinfinity, double Kinit, 
-			     double d1, double d2, double H, double t, double atm)
+DruckerPrager::DruckerPrager(int tag, int classTag, double mDen, double bulk, double shear, double s_y,
+			                                        double r, double r_bar, double Kinfinity, double Kinit, 
+			                                        double d1, double d2, double H, double t, double atm)
   : NDMaterial(tag,ND_TAG_DruckerPrager),
     mEpsilon(6), 
     mEpsilon_n_p(6),
@@ -133,6 +133,7 @@ DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, d
     mIIdev(6,6),
     mState(5)
 {
+	massDen =  mDen;
     mKref    =  bulk;
     mGref    =  shear;
     mPatm	 =  atm;
@@ -176,6 +177,7 @@ DruckerPrager ::DruckerPrager  ()
     mIIdev(6,6),
 	mState(5)
 {
+	massDen =  0.0;
     mKref    =  0.0;
     mGref    =  0.0;
     mPatm	 =  101.0;
@@ -266,12 +268,12 @@ NDMaterial * DruckerPrager::getCopy (const char *type)
 {
   	if (strcmp(type,"PlaneStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
 		DruckerPragerPlaneStrain *clone;
-		clone = new DruckerPragerPlaneStrain(this->getTag(), mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+		clone = new DruckerPragerPlaneStrain(this->getTag(), massDen, mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
 		                                                       mdelta1, mdelta2, mHard, mtheta, mPatm);
 		return clone;
 	} else if (strcmp(type,"ThreeDimensional")==0 || strcmp(type, "3D") ==0) {  
 		DruckerPrager3D *clone;
-     	clone = new DruckerPrager3D(this->getTag(),  mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+     	clone = new DruckerPrager3D(this->getTag(),  massDen, mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
 		                                             mdelta1, mdelta2, mHard, mtheta, mPatm);
 	 	return clone;
   	} else {
@@ -685,7 +687,7 @@ int DruckerPrager::updateElasticParam( )
         mG = mGref * pow(1+(Sigma_mean/mPatm), 0.5);
    		mCe  = mK * mIIvol + 2*mG*mIIdev;
         mFlag = 0;
-		opserr << "Plastic Integrator -->" << "K = " << mK  << "  G =" << mG << endln;
+		//opserr << "Plastic Integrator -->" << "K = " << mK  << "  G =" << mG << endln;
 	} else if ( mElastFlag != 1 ){
         mFlag = 1;
 	}

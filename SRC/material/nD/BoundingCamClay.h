@@ -42,7 +42,7 @@ class BoundingCamClay : public NDMaterial
   public:
 
     // full constructor
-    BoundingCamClay(int tag, int classTag, double C, double bulk, double OCR,
+    BoundingCamClay(int tag, int classTag, double massDen, double C, double bulk, double OCR,
 							 double mu_o, double Alpha, double lambda, double h, double m);
     // null constructor
     BoundingCamClay();
@@ -71,6 +71,9 @@ class BoundingCamClay : public NDMaterial
 	int setParameter(const char **argv, int argc, Parameter &param);
   	int updateParameter(int responseID, Information &eleInformation);
 
+	// send mass density to element in dynamic analysis
+	double getRho(void) {return massDen;};
+
   protected:
 
 	// input material parameters
@@ -84,6 +87,7 @@ class BoundingCamClay : public NDMaterial
 	double ih;				// hardening parameter
 	double im;				// hardening parameter
 	double iepsE_vo;		// initial volumetric strain invariant
+	double massDen;         // mass density for dynamic analysis
 
 	// internal variables
 	double mr;              // hardening response variable for load funct, step n+1
@@ -94,7 +98,7 @@ class BoundingCamClay : public NDMaterial
 	double mKappa_n;        // loading/bounding function relation, step n
 	double mp_o;			// initial mean stress
 	double mTHETA;          // compressiblity constant, theta = 1/(ilam - ikap)
-	double mStressRatio;
+	double mStressRatio;    // computational variable
 
 	Vector mEpsilon;        // strain tensor
 	Vector mEpsilon_P;      // plastic strain tensor, step n+1
