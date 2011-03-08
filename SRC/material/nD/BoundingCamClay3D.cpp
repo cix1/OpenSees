@@ -32,10 +32,10 @@ BoundingCamClay( )
 }
 
 //full constructor
-BoundingCamClay3D::BoundingCamClay3D(int tag, double mDen, double C, double bulk, double OCR,
+BoundingCamClay3D::BoundingCamClay3D(int tag, double C, double bulk, double OCR,
 							         double mu_o, double alpha, double lambda, double h, 
-							         double m) : 
-BoundingCamClay(tag, ND_TAG_BoundingCamClay3D, mDen, C, bulk, OCR, mu_o, alpha, lambda, h, m)
+							         double m, double mDen) : 
+BoundingCamClay(tag, ND_TAG_BoundingCamClay3D, C, bulk, OCR, mu_o, alpha, lambda, h, m, mDen)
 {
 }
 

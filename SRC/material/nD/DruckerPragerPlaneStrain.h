@@ -39,9 +39,9 @@ class DruckerPragerPlaneStrain : public DruckerPrager {
   DruckerPragerPlaneStrain();
 
   //full constructor
-  DruckerPragerPlaneStrain(int tag, double massDens, double bulk, double shear,
+  DruckerPragerPlaneStrain(int tag, double bulk, double shear,
 		  double s_y, double r, double r_bar, double Kinfinity, double Kinit, 
-		  double d1, double d2, double H, double t, double atm);
+		  double d1, double d2, double H, double t, double massDens, double atm);
 
 
   //destructor

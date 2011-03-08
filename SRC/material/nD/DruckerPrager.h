@@ -47,9 +47,9 @@ class DruckerPrager : public NDMaterial
 {
   public:
     // Full Constructor
-    DruckerPrager(int tag, int classTag, double massDen, double bulk, double shear,
+    DruckerPrager(int tag, int classTag, double bulk, double shear,
 		  double s_y, double r, double r_bar, double Kinfinity, double Kinit, 
-		  double d1, double d2, double H, double t, double atm = 101.0);
+		  double d1, double d2, double H, double t, double massDen, double atm = 101.0);
 
   // Elastic Constructor
   //	  DruckerPrager(int tag, double bulk, double shear);

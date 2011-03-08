@@ -33,11 +33,11 @@ DruckerPrager( )
 
 
 //full constructor
-DruckerPrager3D::DruckerPrager3D(int tag, double mDen, double bulk, double shear, double s_y,
+DruckerPrager3D::DruckerPrager3D(int tag, double bulk, double shear, double s_y,
 							 double r, double r_bar, double Kinfinity, double Kinit, 
-							 double d1, double d2, double H, double t, double atm) : 
-DruckerPrager(tag, ND_TAG_DruckerPrager3D, mDen, bulk, shear, s_y, r, r_bar, Kinfinity,
-	Kinit, d1, d2, H, t, atm)
+							 double d1, double d2, double H, double t, double mDen, double atm) : 
+DruckerPrager(tag, ND_TAG_DruckerPrager3D, bulk, shear, s_y, r, r_bar, Kinfinity,
+	                                       Kinit, d1, d2, H, t, mDen, atm)
 {
 }
 
