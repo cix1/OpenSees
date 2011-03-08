@@ -89,8 +89,8 @@ OPS_NewBoundingCamClayMaterial(void)
 }
 
 // full constructor
-BoundingCamClay::BoundingCamClay(int tag, int classTag, double mDen, double C, double bulk, double OCR,
-				                 double mu_o, double Alpha, double lambda, double h, double m)
+BoundingCamClay::BoundingCamClay(int tag, int classTag, double C, double bulk, double OCR, double mu_o,
+				                 double Alpha, double lambda, double h, double m, double mDen)
   : NDMaterial(tag,ND_TAG_BoundingCamClay),
     mEpsilon(6), 
     mEpsilon_P(6),
@@ -250,11 +250,11 @@ BoundingCamClay::getCopy(const char *type)
 {
 	if (strcmp(type,"PlanStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
 		BoundingCamClayPlaneStrain *clone;
-		clone = new BoundingCamClayPlaneStrain(this->getTag(), massDen, iC, mBulk, iOCR, imu_o, ialpha, ilambda, ih, im);
+		clone = new BoundingCamClayPlaneStrain(this->getTag(), iC, mBulk, iOCR, imu_o, ialpha, ilambda, ih, im, massDen);
 		return clone;
 	} else if (strcmp(type,"ThreeDimensional")==0 || strcmp(type,"3D") ==0) {
 		BoundingCamClay3D *clone;
-     	clone = new BoundingCamClay3D(this->getTag(), massDen, iC, mBulk, iOCR, imu_o, ialpha, ilambda, ih, im);
+     	clone = new BoundingCamClay3D(this->getTag(), iC, mBulk, iOCR, imu_o, ialpha, ilambda, ih, im, massDen);
 	 	return clone;
   	} else {
 	  	opserr << "BoundingCamClay::getCopy failed to get copy: " << type << endln;

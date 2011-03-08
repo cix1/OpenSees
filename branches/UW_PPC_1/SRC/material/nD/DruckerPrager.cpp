@@ -116,9 +116,9 @@ OPS_NewDruckerPragerMaterial(void)
 
 
 //full constructor
-DruckerPrager::DruckerPrager(int tag, int classTag, double mDen, double bulk, double shear, double s_y,
-			                                        double r, double r_bar, double Kinfinity, double Kinit, 
-			                                        double d1, double d2, double H, double t, double atm)
+DruckerPrager::DruckerPrager(int tag, int classTag, double bulk, double shear, double s_y, double r,
+			                                        double r_bar, double Kinfinity, double Kinit, double d1,
+			                                        double d2, double H, double t, double mDen, double atm)
   : NDMaterial(tag,ND_TAG_DruckerPrager),
     mEpsilon(6), 
     mEpsilon_n_p(6),
@@ -268,13 +268,13 @@ NDMaterial * DruckerPrager::getCopy (const char *type)
 {
   	if (strcmp(type,"PlaneStrain2D") == 0 || strcmp(type,"PlaneStrain") == 0) {
 		DruckerPragerPlaneStrain *clone;
-		clone = new DruckerPragerPlaneStrain(this->getTag(), massDen, mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
-		                                                       mdelta1, mdelta2, mHard, mtheta, mPatm);
+		clone = new DruckerPragerPlaneStrain(this->getTag(), mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+		                                                     mdelta1, mdelta2, mHard, mtheta, massDen, mPatm);
 		return clone;
 	} else if (strcmp(type,"ThreeDimensional")==0 || strcmp(type, "3D") ==0) {  
 		DruckerPrager3D *clone;
-     	clone = new DruckerPrager3D(this->getTag(),  massDen, mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
-		                                             mdelta1, mdelta2, mHard, mtheta, mPatm);
+     	clone = new DruckerPrager3D(this->getTag(),  mK, mG, msigma_y, mrho, mrho_bar, mKinf, mKo,
+		                                             mdelta1, mdelta2, mHard, mtheta, massDen, mPatm);
 	 	return clone;
   	} else {
 	  	opserr << "DruckerPrager::getCopy failed to get copy: " << type << endln;
