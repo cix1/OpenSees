@@ -1066,6 +1066,18 @@
 				RelativePath="..\..\..\SRC\element\simpleContact\BeamContact3D.h">
 			</File>
 			<File
+				RelativePath="..\..\..\SRC\element\simpleContact\BeamEndContact3D.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\SRC\element\simpleContact\BeamEndContact3D.h">
+			</File>
+			<File
+				RelativePath="..\..\..\SRC\element\simpleContact\BeamContact2D.cpp">
+			</File>
+			<File
+				RelativePath="..\..\..\SRC\element\simpleContact\BeamContact2D.h">
+			</File>
+			<File
 				RelativePath="..\..\..\SRC\element\simpleContact\SimpleContact2D.cpp">
 			</File>
 			<File
