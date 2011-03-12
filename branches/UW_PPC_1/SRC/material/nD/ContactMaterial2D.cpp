@@ -344,13 +344,7 @@ int ContactMaterial2D::revertToStart(void)
         opserr << "ContactMaterial2D::revertToStart()" << endln;
 #endif
 	
-	// added: C.McGann, U.Washington for InitialStateAnalysis
-	if (ops_InitialStateAnalysis) {
-		// do nothing, keep state variables from last step
-	} else {
-		// normal call for revertToStart (not initialStateAnalysis)
-    	this->zero();
-	}
+    this->zero();
 
     return 0;
 }
